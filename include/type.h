@@ -77,18 +77,24 @@ class RecordType : public TypeTemplate {
 class ObjectSymbol {
  public:
   ObjectSymbol () {}
-  ObjectSymbol (std::string name, TypeTemplate* type, int decl_line, int ref_line)
-    : name_(name), type_(type), decl_line_(decl_line), ref_line_(ref_line) {}
+  ObjectSymbol (std::string name, TypeTemplate* type, int decl_line)
+    : name_(name), type_(type), decl_line_(decl_line) {}
   ~ObjectSymbol() {}
   std::string name() { return name_; }
+  std::string name_with_addr() {
+    return name_ + "_" + std::to_string((std::size_t)this);
+  }
+
   TypeTemplate* type() { return type_; }
   int decl_line() { return decl_line_; }
-  int ref_line() { return ref_line_; }
+  void InsertRefLine(int ref_line) { ref_lines_.emplace_back(ref_line); }
+  std::vector<int> ref_lines() { return ref_lines_; }
+
  protected:
   std::string name_;
   TypeTemplate* type_;
   int decl_line_;
-  int ref_line_;
+  std::vector<int> ref_lines_;
  private:
   /* data */
 };
@@ -97,12 +103,12 @@ class ObjectSymbol {
 class ConstSymbol : public ObjectSymbol {
  public:
   ConstSymbol() {}
-  ConstSymbol(std::string name, TypeTemplate* type, int decl_line, int ref_line, int value)
-    : ObjectSymbol(name, type, decl_line, ref_line) {
+  ConstSymbol(std::string name, TypeTemplate* type, int decl_line, int value)
+    : ObjectSymbol(name, type, decl_line) {
     value_.num = value;
   }
-  ConstSymbol(std::string name, TypeTemplate* type, int decl_line, int ref_line, char value)
-    : ObjectSymbol(name, type, decl_line, ref_line) {
+  ConstSymbol(std::string name, TypeTemplate* type, int decl_line, char value)
+    : ObjectSymbol(name, type, decl_line) {
     value_.letter = value;
   }
 
@@ -134,15 +140,14 @@ class FunctionSymbol : public ObjectSymbol {
   enum class PARAM_PASSING {
     BY_VALUE,
     BY_REFERENCE,
-  }; // 传参方式
+  };
 
   typedef std::pair<BasicType*, PARAM_PASSING> Parameter; 
 
 	FunctionSymbol() {}
-  FunctionSymbol(std::string name, BasicType *return_type,
-                 int decl_line, int ref_line,
+  FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
                  std::vector<Parameter> params)
-    : ObjectSymbol(name, return_type, decl_line, ref_line), params_(params) {}
+    : ObjectSymbol(name, return_type, decl_line), params_(params) {}
 
   ~FunctionSymbol() {}
   // get parameters size
