@@ -35,6 +35,9 @@ void Node::TransCodeAt(int pos) {
 
 
 //////////////////////////////
+void LeafNode::TransCode() {
+  // TODO
+}
 
 void ProgramNode::TransCode(){
   TransCodeAt(0);
@@ -92,6 +95,12 @@ void ConstDeclarationNode::TransCode(){
   }
 }
 
+void ConstVariableNode::TransCode() {
+  for(auto child : child_list_) {
+    child->TransCode();
+  }
+}
+
 void VariableDeclarationsNode::TransCode() {
   if (grammar_type_ == GrammarType::VAR_DECLARATION) {
     TransCodeAt(0);
@@ -100,9 +109,9 @@ void VariableDeclarationsNode::TransCode() {
 
 void VariableDeclarationNode::TransCode() {
   for (int idx = 0; idx < child_list_.size(); idx += 2) {
-    auto id_list_node = child_list_[idx]->ReinterpretCast<IdListNode>();
+    auto id_list_node = child_list_[idx]->DynamicCast<IdListNode>();
     auto id_list = *id_list_node->IdList();
-    auto type_node = child_list_[idx + 1]->ReinterpretCast<TypeNode>();
+    auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
     auto basic_type = type_node->get_basic_type();
     for (auto id_node : id_list) {
       basic_type->TransCode();
@@ -116,16 +125,16 @@ void VariableDeclarationNode::TransCode() {
   }
 }
 
-void TypeDeclarations::TransCode() {
+void TypeDeclarationsNode::TransCode() {
   if(grammar_type_ == GrammarType::TYPE_DECLARATION) {
     TransCodeAt(0);
   }
 }
 
-void TypeDeclaration::TransCode() {
+void TypeDeclarationNode::TransCode() {
   for (int idx = 0; idx < child_list_.size(); idx += 2) {
     child_list_[idx]->TransCode();
-    auto type_node = child_list_[idx + 1]->ReinterpretCast<TypeNode>();
+    auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
     auto basic_type = type_node->get_basic_type();
     OUT("typedef ")
     basic_type->TransCode();
@@ -153,7 +162,7 @@ void TypeNode::TransCode() {
 void TypeNode::PeriodsTransCode() {
   if (grammar_type_ == GrammarType::ARRAY) {
     child_list_[0]->TransCode();
-    child_list_[1]->ReinterpretCast<TypeNode>()->PeriodsTransCode();
+    child_list_[1]->DynamicCast<TypeNode>()->PeriodsTransCode();
   }
 }
 
@@ -161,8 +170,12 @@ Node* TypeNode::get_basic_type() {
   if (grammar_type_ != GrammarType::ARRAY) {
     return this;
   } else {
-    return child_list_[1]->ReinterpretCast<TypeNode>()->get_basic_type();
+    return child_list_[1]->DynamicCast<TypeNode>()->get_basic_type();
   }
+}
+
+void BasicTypeNode::TransCode() {
+  TransCodeAt(0);
 }
 
 void RecordBodyNode::TransCode() {
@@ -257,25 +270,26 @@ void StatementNode::TransCode() {
       OUT("}\n")
       TransCodeAt(2);
       break;
-    case GrammarType::FOR_STATEMENT:
-      auto updown_node = child_list_[2]->ReinterpretCast<UpdownNode>();
-      bool reverse = updown_node->IsUpdown();
+    case GrammarType::FOR_STATEMENT: {
+      auto updown_node = child_list_[2]->DynamicCast<UpdownNode>();
+      bool increase = updown_node->IsIncrease();
       OUT("for (")
       TransCodeAt(0);
       OUT("=")
       TransCodeAt(1);
       OUT(";")
       TransCodeAt(0);
-      OUT(reverse ? ">=" : "<=")
+      OUT(increase ?  "<=" : ">=")
       TransCodeAt(3);
       OUT(";")
       TransCodeAt(0);
-      OUT(reverse ? "--" : "++")
+      OUT(increase ? "++" : "--")
       OUT(") {\n")
       for (int i = 4; i < child_list_.size(); i++)
-        TransCodeAt(i);
+      TransCodeAt(i);
       OUT("}\n")
       break;
+    }
     case GrammarType::READ_STATEMENT:
     // TODO
       break;
@@ -337,23 +351,24 @@ void IDVarPartNode::TransCode() {
   }
 }
 
-void CaseBodyNode::TransCode() {
-  switch (grammar_type_) {
-    case GrammarType::EPSILON:
-      return;
-    case GrammarType::BRANCH_LIST:
-      GetBranchList()->TransCode();
-  }
-}
 
 void BranchListNode::TransCode() {
   for (auto child : child_list_)
     child->TransCode();
 }
 
+void CaseBodyNode::TransCode() {
+  switch (grammar_type_) {
+  case GrammarType::EPSILON:
+    return;
+  case GrammarType::BRANCH_LIST:
+    GetBranchList()->TransCode();
+  }
+}
+
 void BranchNode::TransCode() {
   for (int id = 0; id < child_list_.size(); id += 2) {
-    auto const_list = child_list_[id]->ReinterpretCast<ConstListNode>();
+    auto const_list = child_list_[id]->DynamicCast<ConstListNode>();
     auto statement = child_list_[id + 1];
     auto const_vars = const_list->Consts();
     for (auto const_var : *const_vars) {
@@ -365,11 +380,14 @@ void BranchNode::TransCode() {
   }
 }
 
-// const_list no need
+void ConstListNode::TransCode() {
+
+}
 
 void UpdownNode::TransCode() {
-  TransCodeAt(0);
+
 }
+
 
 void ProcedureCallNode::TransCode() {
   TransCodeAt(0);

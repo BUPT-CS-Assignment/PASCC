@@ -31,7 +31,6 @@ class Node {
 
   void set_parent(Node* parent);
   void append_child(Node* child);
-
   Node* parent();
   std::vector<Node*> child_list();
 
@@ -40,14 +39,14 @@ class Node {
     return dynamic_cast<T*>(this);
   }
   
-  template <typename T> T* ReinterpretCast() {
-    return reinterpret_cast<T*>(this);
+  template <typename T> T*DynamicCast() {
+    return dynamic_cast<T*>(this);
   }
 
-
-  virtual void TransCode();
   void TransCodeAt(int);
-  
+
+  virtual void TransCode(){};
+
  protected:
   // entry
 
@@ -68,7 +67,6 @@ class ProgramNode : public Node {
  //program → program_head | program_body
  public:
   void TransCode() override;
-  
  private:
 };
 
@@ -127,7 +125,8 @@ class ConstDeclarationNode : public Node {
   GrammarType grammar_type_;
 };
 
-class ConstValueNode : public Node {
+class ConstVariableNode : public Node {
+  // const_variable → +id | -id | id | +num | -num | num | 'letter'
  public:
   void TransCode() override;
  private:
@@ -155,7 +154,7 @@ class VariableDeclarationNode : public Node {
   GrammarType grammar_type_;
 };
 
-class TypeDeclarations : public Node {
+class TypeDeclarationsNode : public Node {
   public:
     enum class GrammarType {
       EPSILON,         //TypeDeclarations→EPSILON
@@ -166,7 +165,7 @@ class TypeDeclarations : public Node {
     GrammarType grammar_type_;
 };
 
-class TypeDeclaration : public Node {
+class TypeDeclarationNode : public Node {
  public:
   enum class GrammarType {
     SINGLE_DECL,  //TypeDeclaration→TypeDeclaration;id=type
@@ -390,6 +389,17 @@ class IDVarPartNode : public Node {
   GrammarType grammar_type_;
 };
 
+class BranchListNode : public Node {
+public:
+  enum class GrammarType {
+    SINGLE_BRAN,   //branchlist → branch
+    MULTIPLE_BRAN, //branchlist → branchlist branch
+  };
+  void TransCode() override;
+private:
+  GrammarType grammar_type_;
+};
+
 class CaseBodyNode : public Node {
  public:
   enum class GrammarType {
@@ -398,22 +408,13 @@ class CaseBodyNode : public Node {
   };
   void TransCode() override;
   BranchListNode* GetBranchList() {
-    return child_list_[0]->ReinterpretCast<BranchListNode>();
+    return child_list_[0]->DynamicCast<BranchListNode>();
   }
  private:
   GrammarType grammar_type_;
 };
 
-class BranchListNode : public Node {
- public:
-  enum class GrammarType {
-    SINGLE_BRAN,   //branchlist → branch
-    MULTIPLE_BRAN, //branchlist → branchlist branch
-  };
-  void TransCode() override;
- private:
-  GrammarType grammar_type_;
-};
+
 
 class BranchNode : public Node {
  //branch → const_list : statement
@@ -429,6 +430,7 @@ class ConstListNode : public Node {
     MULTIPLE_CON, //constlist → constlist , const_variable
   };
   std::vector<Node*>* Consts() { return &child_list_; }
+  void TransCode() override;
  private:
   GrammarType grammar_type_;
 };
@@ -436,10 +438,12 @@ class ConstListNode : public Node {
 class UpdownNode : public Node {
  //updown → to | downto
  public:
+  UpdownNode(bool is_increase = true) : is_increase_(is_increase) {}
+  bool IsIncrease() { return is_increase_; }
   void TransCode() override;
-  bool IsUpdown();
+
  private:
-  bool is_updown_;
+  bool is_increase_;
 };
 
 class ProcedureCallNode : public Node {
@@ -462,7 +466,7 @@ class ElseNode : public Node {
   };
   void TransCode() override;
   StatementNode* GetStatement() {
-    return child_list_[0]->ReinterpretCast<StatementNode>();
+    return child_list_[0]->DynamicCast<StatementNode>();
   }
  private:
   GrammarType grammar_type_;
@@ -533,6 +537,7 @@ class FactorNode : public Node {
 };
 
 class UnsignConstVarNode : public Node {
+  // unsigned_const_variable → num | 'letter'
  public:
   void TransCode() override;
   private:
