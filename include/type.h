@@ -6,6 +6,7 @@
 #include <string>
 #include <typeinfo>
 #include <type_traits>
+#include <unordered_map>
 
 namespace pascal_type {
 
@@ -27,7 +28,7 @@ class TypeTemplate {
 // basic type including INT, REAL, CHAR, BOOL
 class BasicType : public TypeTemplate {
  public:
-  BasicType() {}
+  BasicType() : TypeTemplate(TYPE::BASIC) {}
   BasicType(TypeTemplate* type) : TypeTemplate(TYPE::BASIC) {}
   ~BasicType() {}
 };
@@ -35,14 +36,14 @@ class BasicType : public TypeTemplate {
 // Array type
 class ArrayType : public TypeTemplate {
  public:
-  ArrayType() {}
+  ArrayType() : TypeTemplate(TYPE::ARRAY) {}
   ArrayType(TypeTemplate* type, std::vector<std::pair<int, int>> bounds)
     : TypeTemplate(TYPE::ARRAY), type_(type), bounds_(bounds) {}
   ~ArrayType() {}
   TypeTemplate* type() { return type_; }
   int dimension() { return bounds_.size(); }
   std::vector<std::pair<int, int>> *bounds() { return &bounds_; }
-  bool AccessArray(std::vector<TypeTemplate*> index_types, TypeTemplate *type);
+  bool AccessArray(std::vector<TypeTemplate*> index_types, TypeTemplate **type = nullptr);
  private:
   TypeTemplate* type_;
   std::vector<std::pair<int, int>> bounds_;
@@ -52,23 +53,19 @@ class ArrayType : public TypeTemplate {
 // Record type
 class RecordType : public TypeTemplate {
  public:
-  RecordType() {}
-  RecordType(std::vector<TypeTemplate*>& types)
-    : TypeTemplate(TYPE::RECORD), types_(types) {
-    types_num_ = types.size();
+  RecordType() : TypeTemplate(TYPE::RECORD){}
+  RecordType(const std::unordered_map<std::string, TypeTemplate*>& type_map)
+    : TypeTemplate(TYPE::RECORD){
+    types_map_.insert(type_map.begin(), type_map.end());
+    types_num_ = types_map_.size();
   }
   ~RecordType() {}
-  
-  TYPE TypeAt(int pos) {
-    return types_[pos]->template_type();
-  }
 
-  TypeTemplate* TypePtrAt(int pos) {
-    return types_[pos];
-  }
+  void InsertType(std::string name, TypeTemplate* type);
+  TypeTemplate* Find(std::string name);
 
  private:
-  std::vector<TypeTemplate*> types_;
+  std::unordered_map<std::string, TypeTemplate*> types_map_;
   int types_num_;
 };
 

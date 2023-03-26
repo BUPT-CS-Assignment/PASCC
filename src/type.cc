@@ -4,7 +4,7 @@ using std::vector;
 
 namespace pascal_type {
 
-bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate *type) {
+bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate **type) {
   if (index_types.size() != bound_types_.size()) {
     return false;
   }
@@ -13,8 +13,23 @@ bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate *typ
       return false;
     }
   }
-  type = type_;
+  if(type != nullptr)
+    *type = type_;
+
   return true;
+}
+
+void RecordType::InsertType(std::string name, TypeTemplate* type) {
+  types_map_.insert(std::make_pair(name, type));
+  types_num_++;
+}
+
+TypeTemplate* RecordType::Find(std::string name) {
+  if(types_map_.find(name) != types_map_.end()) {
+    return types_map_[name];
+  } else {
+    return nullptr;
+  }
 }
 
 bool FunctionSymbol::AssertParams(const vector<BasicType*>& params_in){
