@@ -1,7 +1,10 @@
 #include "ast.h"
-#include <iostream>
+#include <fstream>
 
-using namespace std;
+using std::vector;
+using std::string;
+using namespace symbol_table;
+using json = nlohmann::json;
 
 namespace ast {
 
@@ -469,5 +472,41 @@ void FactorNode::TransCode() {
 void UnsignConstVarNode::TransCode() {
   TransCodeAt(0);
 }
+
+
+/////////////////////////////
+
+void AST::LoadFromJson(std::string file_name) {
+  std::ifstream ifs(file_name);
+
+  if (!ifs.is_open()) {
+    std::cout << "open file failed" << std::endl;
+    return;
+  }
+
+  json ast_json;
+  ifs >> ast_json;
+  ifs.close();
+
+  root_ = new ProgramNode();
+  symbol_table_ = new TableSet("root", nullptr);
+
+
+  //
+  root_->LoadFromJson(ast_json, symbol_table_);
+}
+
+
+void Node::LoadFromJson(const nlohmann::json & node_json, const symbol_table::TableSet * node_table) {
+
+
+
+}
+
+
+
+
+
+
 
 }  // namespace ast

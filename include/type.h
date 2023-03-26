@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <unordered_map>
 
+#include "json.hpp"
+
 namespace pascal_type {
 
 class TypeTemplate {
@@ -38,11 +40,15 @@ class ArrayType : public TypeTemplate {
   ArrayType() : TypeTemplate(TYPE::ARRAY) {}
   ArrayType(TypeTemplate* type, std::vector<std::pair<int, int>> bounds)
     : TypeTemplate(TYPE::ARRAY), type_(type), bounds_(bounds) {}
+
+  ArrayType(nlohmann::json&, void* symbol_table);
+
   ~ArrayType() {}
   TypeTemplate* type() { return type_; }
   int dimension() { return bounds_.size(); }
   std::vector<std::pair<int, int>> *bounds() { return &bounds_; }
   bool AccessArray(std::vector<TypeTemplate*> index_types, TypeTemplate **type = nullptr);
+
  private:
   TypeTemplate* type_;
   std::vector<std::pair<int, int>> bounds_;
@@ -58,6 +64,9 @@ class RecordType : public TypeTemplate {
     types_map_.insert(type_map.begin(), type_map.end());
     types_num_ = types_map_.size();
   }
+
+  RecordType(nlohmann::json&, void* symbol_table);
+
   ~RecordType() {}
 
   void InsertType(std::string name, TypeTemplate* type);
@@ -150,7 +159,7 @@ class FunctionSymbol : public ObjectSymbol {
 
   typedef std::pair<BasicType*, PARAM_PASSING> Parameter; 
 
-	FunctionSymbol() {}
+  FunctionSymbol() {}
   FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
                  std::vector<Parameter> params)
     : ObjectSymbol(name, return_type, decl_line), params_(params) {}
@@ -167,6 +176,7 @@ class FunctionSymbol : public ObjectSymbol {
 
  private:
   std::vector<Parameter> params_;
+  std::vector<std::string> param_names_;
 };
 
 }; // namespace pascal_type

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(PASCC)
 
 include_directories("include")
+include_directories("thirdparty")
 
 file(GLOB_RECURSE include "include/*.h")
 file(GLOB_RECURSE src "src/*.cc")

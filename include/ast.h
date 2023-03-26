@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+#include "json.hpp"
+#include "symbol_table.h"
 
 namespace ast{
 
@@ -22,7 +24,23 @@ namespace ast{
   } while (0);
 
 
+class Node;
 
+class AST {
+ public:
+  AST();
+  ~AST();
+
+  Node* root();
+  void set_root(Node* root);
+  symbol_table::TableSet* symbol_table() { return symbol_table_;}
+
+  void LoadFromJson(std::string file_name);
+
+ private:
+  Node* root_;
+  symbol_table::TableSet* symbol_table_;
+};
 
 class Node {
  public:
@@ -39,13 +57,15 @@ class Node {
     return dynamic_cast<T*>(this);
   }
   
-  template <typename T> T*DynamicCast() {
+  template <typename T> T* DynamicCast() {
     return dynamic_cast<T*>(this);
   }
 
   void TransCodeAt(int);
 
   virtual void TransCode(){};
+
+  void LoadFromJson(const nlohmann::json&, const symbol_table::TableSet*);
 
  protected:
   // entry
@@ -71,7 +91,7 @@ class ProgramNode : public Node {
 };
 
 class ProgramHeadNode : public Node {
- //programhead → program id (idlists)
+ //programhead → program_id (idlists)
  public:
   void TransCode() override;
  private:
