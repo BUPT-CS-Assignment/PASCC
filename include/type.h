@@ -78,19 +78,29 @@ class ObjectSymbol {
  public:
   ObjectSymbol () {}
   ObjectSymbol (std::string name, TypeTemplate* type, int decl_line)
-    : name_(name), type_(type), decl_line_(decl_line) {}
+    : name_(name), type_(type), decl_line_(decl_line), global_flag_(false) {}
   ~ObjectSymbol() {}
-  std::string name() { return name_; }
-  std::string name_with_addr() {
-    return name_ + "_" + std::to_string((std::size_t)this);
+
+  std::string origin_name() {
+    return name_;
+  }
+
+  std::string name() {
+    if(global_flag_) {
+      return name_ + "_" + std::to_string((std::size_t)this);
+    } else {
+      return name_;
+    }
   }
 
   TypeTemplate* type() { return type_; }
   int decl_line() { return decl_line_; }
   void InsertRefLine(int ref_line) { ref_lines_.emplace_back(ref_line); }
   std::vector<int> ref_lines() { return ref_lines_; }
+  void set_global(bool flag = true) { global_flag_ = flag; }
 
  protected:
+  bool global_flag_;
   std::string name_;
   TypeTemplate* type_;
   int decl_line_;
