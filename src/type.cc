@@ -21,8 +21,25 @@ bool TypeTemplate::ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::st
   }
 }
 
-bool TypeTemplate::operator==(const TypeTemplate& type) const {
-  if
+bool TypeTemplate::TypeEqual(TypeTemplate* type1, TypeTemplate* type2) {
+  if (type1 == type2) {
+    return true;
+  } else if (type1->template_type_ == TYPE::ARRAY && type2->template_type_ == TYPE::ARRAY) {
+    auto array1 = type1->DynamicCast<ArrayType>();
+    auto array2 = type2->DynamicCast<ArrayType>();
+    auto array1_bounds = array1->bounds();
+    auto array2_bounds = array2->bounds();
+    if(array1_bounds->size() != array2_bounds->size()) {
+      return false;
+    }
+    for(int i = 0; i < array1_bounds->size(); i++) {
+      if((*array1_bounds)[i].first != (*array2_bounds)[i].first ||
+         (*array1_bounds)[i].second != (*array2_bounds)[i].second) {
+        return false;
+      }
+    }
+    return TypeEqual(array1->type(), array2->type());
+  } else return false;
 }
 
 ArrayType::ArrayType(nlohmann::json& json, void* table) : TypeTemplate(TYPE::ARRAY) {
@@ -76,12 +93,12 @@ TypeTemplate* RecordType::Find(std::string name) {
 
 
 void TypeInit() {
-  BOOL = new BasicType();
-  CHAR = new BasicType();
-  INT = new BasicType();
-  REAL = new BasicType();
-  operation_map[Operation(BOOL, BOOL, "and")] = BOOL;
-  operation_map[Operation(BOOL, BOOL, "or")] = BOOL;
+  TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
+  TYPE_CHAR = new BasicType(BasicType::BASIC_TYPE::LETTER);
+  TYPE_INT = new BasicType(BasicType::BASIC_TYPE::INT);
+  TYPE_REAL = new BasicType(BasicType::BASIC_TYPE::REAL);
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "and")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "or")] = TYPE_BOOL;
 
 }
 } // namespace pascal_type

@@ -17,21 +17,14 @@ namespace pascal_symbol {
 // Const value
 class ConstValue {
 public:
-  enum class VALUE_TYPE {
-    INT,
-    REAL,
-    BOOL,
-    LETTER
-  };
-
   ConstValue() {}
-  ConstValue(int value) : value_type_(VALUE_TYPE::INT) {value_.num_int = value;}
-  ConstValue(char value) : value_type_(VALUE_TYPE::LETTER) {value_.letter = value;}
-  ConstValue(float value) : value_type_(VALUE_TYPE::REAL) {value_.num_float = value;}
-  ConstValue(bool value) : value_type_(VALUE_TYPE::BOOL) {value_.bool_val = value;}
+  ConstValue(int value) : type_(pascal_type::INT) {value_.num_int = value;}
+  ConstValue(char value) : type_(pascal_type::CHAR) {value_.letter = value;}
+  ConstValue(float value) : type_(pascal_type::REAL) {value_.num_float = value;}
+  ConstValue(bool value) : type_(pascal_type::BOOL) {value_.bool_val = value;}
   ~ConstValue() {}
 
-  VALUE_TYPE value_type() { return value_type_; }
+  pascal_type::BasicType* type() {return type_;}
   template <typename T> T get() {
     if(std::is_same<T, int>::value) return value_.num_int;
     else if (std::is_same<T, char>::value)  return value_.letter;
@@ -47,7 +40,7 @@ private:
     float num_float;
     int num_int;
   } value_;
-  VALUE_TYPE value_type_;
+  pascal_type::BasicType* type_;
 };
 
 
@@ -99,7 +92,7 @@ public:
     return value_.get<T>();
   }
 
-  ConstValue::VALUE_TYPE value_type() { return value_.value_type(); }
+  pascal_type::BasicType* type() { return value_.type(); }
 
 private:
   ConstValue value_;

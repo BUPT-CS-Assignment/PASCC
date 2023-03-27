@@ -11,10 +11,10 @@
 
 namespace pascal_type {
 
-#define INT int_ptr
-#define BOOL bool_ptr
-#define CHAR char_ptr
-#define REAL real_ptr
+#define TYPE_INT int_ptr
+#define TYPE_BOOL bool_ptr
+#define TYPE_CHAR char_ptr
+#define TYPE_REAL real_ptr
 
 class TypeTemplate {
  public:
@@ -26,9 +26,15 @@ class TypeTemplate {
   TypeTemplate() {}
   TypeTemplate(TYPE template_type) : template_type_(template_type) {}
   ~TypeTemplate() {}
+  template <typename T> T* DynamicCast() {
+    return dynamic_cast<T*>(this);
+  }
+
   TYPE template_type() { return template_type_; }
   bool ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::string op,
                    TypeTemplate** result_type = nullptr);
+  bool TypeEqual(TypeTemplate* type1, TypeTemplate* type2);
+
  protected:
   TYPE template_type_;
 };
@@ -36,9 +42,26 @@ class TypeTemplate {
 // basic type including INT, REAL, CHAR, BOOL
 class BasicType : public TypeTemplate {
  public:
-  BasicType() : TypeTemplate(TYPE::BASIC) {}
-  BasicType(TypeTemplate* type) : TypeTemplate(TYPE::BASIC) {}
+  enum class BASIC_TYPE { INT, REAL, BOOL, LETTER, VOID };
+
+  BasicType() : TypeTemplate(TYPE::BASIC), basic_type_(BASIC_TYPE::VOID) {}
+  BasicType(BASIC_TYPE basic_type) : TypeTemplate(TYPE::BASIC), basic_type_(basic_type) {}
+
   ~BasicType() {}
+
+  BASIC_TYPE type() { return basic_type_; }
+  std::string type_name() {
+    switch (basic_type_) {
+      case BASIC_TYPE::INT: return "int";
+      case BASIC_TYPE::REAL: return "float";
+      case BASIC_TYPE::BOOL: return "bool";
+      case BASIC_TYPE::LETTER: return "char";
+      default: return "void";
+    }
+  }
+
+ private:
+   BASIC_TYPE basic_type_;
 } *int_ptr, *bool_ptr, *char_ptr, *real_ptr;
 
 // Array type
@@ -54,12 +77,12 @@ class ArrayType : public TypeTemplate {
   ~ArrayType() {}
   TypeTemplate* type() { return type_; }
   int dimension() { return bounds_.size(); }
-  std::vector<std::pair<int, int>> *bounds() { return &bounds_; }
+  std::vector<ArrayBound> *bounds() { return &bounds_; }
   bool AccessArray(std::vector<TypeTemplate*> index_types, TypeTemplate **type = nullptr);
 
  private:
   TypeTemplate* type_;
-  std::vector<std::pair<int, int>> bounds_;
+  std::vector<ArrayBound> bounds_;
   std::vector<TypeTemplate*> bound_types_;
 };
 
