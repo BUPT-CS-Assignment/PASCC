@@ -51,26 +51,19 @@ void LeafNode::TransCode() {
   if(leaf_type_ == LEAF_TYPE::IDENTIFIER) {
     OUT(" %s ",entry_->name().c_str())
   } else {
-    switch (value_.value_type()) {
-      case ConstValue::VALUE_TYPE::INT: {
-        OUT(" %d ", value_.get<int>())
-        break;
-      }
-      case ConstValue::VALUE_TYPE::REAL: {
-        OUT(" %.2f ", value_.get<float>())
-        break;
-      }
-      case ConstValue::VALUE_TYPE::BOOL: {
-        OUT(" %s ", value_.get<bool>() ? "true" : "false")
-        break;
-      }
-      case ConstValue::VALUE_TYPE::LETTER: {
-        OUT(" %c ", value_.get<char>())
-        break;
-      }
+    BasicType* tp = value_.type();
+    if(tp == pascal_type::INT) {
+      OUT(" %d ", value_.get<int>())
+    } else if (tp == pascal_type::REAL) {
+      OUT(" %.2f ", value_.get<float>())
+          } else if (tp == pascal_type::BOOL) {
+      OUT(" %s ", value_.get<bool>() ? "true" : "false")
+          } else if (tp == pascal_type::CHAR) {
+      OUT(" %c ", value_.get<char>())
     }
   }
 }
+
 
 void ProgramNode::TransCode(){
   TransCodeAt(0);
@@ -102,6 +95,18 @@ void IdListNode::TransCode() {
     OUT(", ")
     TransCodeAt(1);
   }
+}
+
+vector<Node*> IdListNode::get_id_list() {
+  vector<Node*> lists;
+  IdListNode* cur_node = this;
+  GrammarType gtype = grammar_type_;
+  while(gtype == GrammarType::MULTIPLE_ID) {
+    lists.insert(lists.begin(), this->child_list_[1]);
+    cur_node = child_list_[0]->DynamicCast<IdListNode>();
+    gtype = cur_node->grammar_type_;
+  }
+  lists.insert(lists.begin(), child_list_[0]);
 }
 
 
@@ -208,7 +213,7 @@ Node* TypeNode::get_basic_type() {
 }
 
 void BasicTypeNode::TransCode() {
-  TransCodeAt(0);
+  OUT("%s", type_->type_name().c_str())
 }
 
 void RecordBodyNode::TransCode() {
@@ -234,23 +239,38 @@ void SubprogramDeclarationsNode::TransCode() {
 }
 
 void SubprogramDeclarationNode::TransCode() {
-
+  TransCodeAt(0);
+  TransCodeAt(1);
 }
 
 void SubprogramHeadNode::TransCode() {
-
+  if (grammar_type_ == GrammarType::PROCEDURE) {
+    OUT("void ")
+  } else {
+    TransCodeAt(2);   // basic_type
+  }
+  TransCodeAt(0);
+  TransCodeAt(1);
 }
 
 void SubprogramBodyNode::TransCode() {
-
+  for(auto child : child_list_) {
+    child->TransCode();
+  }
 }
 
 void FormalParamNode::TransCode() {
-
+  OUT("(")
+  if (grammar_type_ == GrammarType::PARAM_LISTS) {
+    TransCodeAt(0);
+  }
+  OUT(")")
 }
 
 void ParamListsNode::TransCode() {
-
+  for(auto child : child_list_) {
+    child->TransCode();
+  }
 }
 
 void ParamListNode::TransCode() {

@@ -152,6 +152,7 @@ class IdListNode : public Node {
     MULTIPLE_ID     //idlists → idlist,id 
   };
   void TransCode() override;
+  std::vector<Node*> get_id_list();
   std::vector<Node*>* IdList() { return &child_list_; }
  private:
   GrammarType grammar_type_;
@@ -250,8 +251,12 @@ class TypeNode : public Node {
 class BasicTypeNode : public Node {
  //BasicType →integer|real|boolean|char
  public:
+  BasicTypeNode() {}
+  BasicTypeNode(pascal_type::BasicType* type) : type_(type) {}
+
   void TransCode() override;
  private:
+  pascal_type::BasicType* type_;
 };
 
 class RecordBodyNode : public Node {
