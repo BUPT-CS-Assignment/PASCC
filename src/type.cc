@@ -21,6 +21,10 @@ bool TypeTemplate::ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::st
   }
 }
 
+bool TypeTemplate::operator==(const TypeTemplate& type) const {
+  if
+}
+
 ArrayType::ArrayType(nlohmann::json& json, void* table) : TypeTemplate(TYPE::ARRAY) {
   TableSet* cur_table = (TableSet*)table;
   std::string type_str = json["base_type"].get<std::string>();

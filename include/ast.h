@@ -78,17 +78,44 @@ class Node {
 // Leaf Node including id, num, letter ...
 class LeafNode : public Node {
  public:
-  void TransCode() override;
-  void set_entry(pascal_type::ObjectSymbol* entry) {
+  enum class LEAF_TYPE {
+     IDENTIFIER,
+     CONST_VALUE,
+   };
+
+  LeafNode() {}
+  LeafNode(LEAF_TYPE t) : leaf_type_(t) {}
+  LeafNode(int val) : leaf_type_(LEAF_TYPE::CONST_VALUE), value_(val) {}
+  LeafNode(float val) : leaf_type_(LEAF_TYPE::CONST_VALUE), value_(val) {}
+  LeafNode(char val) : leaf_type_(LEAF_TYPE::CONST_VALUE), value_(val) {}
+  LeafNode(bool val) : leaf_type_(LEAF_TYPE::CONST_VALUE), value_(val) {}
+  LeafNode(std::string id, symbol_table::TableSet* ts, bool* is_found = nullptr);
+
+  LEAF_TYPE leaf_type() {return leaf_type_;}
+  const pascal_symbol::ConstValue* value() { return &value_; }
+  const std::string id() {
+    if (entry_ == nullptr) return "";
+    return entry_->name();
+  }
+  template <typename T> T value_cast() {
+    return value_.get<T>();
+  }
+
+  void set_entry(pascal_symbol::ObjectSymbol* entry) {
     entry_ = entry;
   }
-  pascal_type::ObjectSymbol* entry() { return entry_; }
+
+  pascal_symbol::ObjectSymbol* entry() { return entry_; }
   template <typename T> T* entry_cast() {
     return static_cast<T*>(entry_);
   }
 
+  void TransCode() override;
+
 private:
-   pascal_type::ObjectSymbol* entry_;
+  LEAF_TYPE leaf_type_;
+  pascal_symbol::ObjectSymbol* entry_;
+  pascal_symbol::ConstValue value_;
 };
 
 class ProgramNode : public Node {

@@ -5,6 +5,7 @@ using std::vector;
 using std::string;
 using namespace symbol_table;
 using json = nlohmann::json;
+using namespace pascal_symbol;
 
 namespace ast {
 
@@ -38,8 +39,37 @@ void Node::TransCodeAt(int pos) {
 
 
 //////////////////////////////
+LeafNode::LeafNode(std::string id, symbol_table::TableSet *ts, bool* is_found)
+                : leaf_type_(LEAF_TYPE::IDENTIFIER) {
+  entry_ = ts->SearchEntry<ObjectSymbol>(id);
+  if ( is_found != nullptr) {
+    *is_found = (entry_ != nullptr);
+  }
+}
+
 void LeafNode::TransCode() {
-  // TODO
+  if(leaf_type_ == LEAF_TYPE::IDENTIFIER) {
+    OUT(" %s ",entry_->name().c_str())
+  } else {
+    switch (value_.value_type()) {
+      case ConstValue::VALUE_TYPE::INT: {
+        OUT(" %d ", value_.get<int>())
+        break;
+      }
+      case ConstValue::VALUE_TYPE::REAL: {
+        OUT(" %.2f ", value_.get<float>())
+        break;
+      }
+      case ConstValue::VALUE_TYPE::BOOL: {
+        OUT(" %s ", value_.get<bool>() ? "true" : "false")
+        break;
+      }
+      case ConstValue::VALUE_TYPE::LETTER: {
+        OUT(" %c ", value_.get<char>())
+        break;
+      }
+    }
+  }
 }
 
 void ProgramNode::TransCode(){
