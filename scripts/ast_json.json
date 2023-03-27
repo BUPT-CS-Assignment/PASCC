@@ -51,14 +51,14 @@
     "children":[
         {
             "type":"program_head",
-            "name":"",
             "children":[
                 {
-                    "type": "program_id"
+                    "type": "leaf",
+                    "entry_type": "basic",
+                    "entry_name": "program_id"
                 },
                 {
                     "type": "idlists"
-
                 }
             ]
         },
