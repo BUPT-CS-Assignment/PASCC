@@ -30,6 +30,7 @@ void Node::set_parent(Node* parent) {
 }
 
 void Node::append_child(Node* child) {
+  child->set_parent(this);
   child_list_.emplace_back(child);
 }
 
@@ -39,13 +40,6 @@ void Node::TransCodeAt(int pos) {
 
 
 //////////////////////////////
-LeafNode::LeafNode(std::string id, symbol_table::TableSet *ts, bool* is_found)
-                : leaf_type_(LEAF_TYPE::IDENTIFIER) {
-  entry_ = ts->SearchEntry<ObjectSymbol>(id);
-  if ( is_found != nullptr) {
-    *is_found = (entry_ != nullptr);
-  }
-}
 
 void LeafNode::TransCode() {
   if(leaf_type_ == LEAF_TYPE::IDENTIFIER) {
@@ -531,7 +525,7 @@ void UnsignConstVarNode::TransCode() {
 
 Node* Node::NewNodeFromStr(std::string str) {
   if (str == "leaf") {
-      return new LeafNode();
+    return new LeafNode();
   } else if (str == "program") {
     return new ProgramNode();
   } else if (str == "program_head") {
