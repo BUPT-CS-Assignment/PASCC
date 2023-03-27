@@ -1,11 +1,25 @@
-#include "type.h"
 #include "symbol_table.h"
+#include "type.h"
+#include "symbol.h"
 
 using std::vector;
 using std::string;
 using namespace symbol_table;
+using namespace pascal_symbol;
 
 namespace pascal_type {
+
+bool TypeTemplate::ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::string op,
+                               TypeTemplate** result_type = nullptr) {
+  if (operation_map.find(Operation(type1, type2, op)) != operation_map.end()) {
+    if (result_type != nullptr) {
+      *result_type = operation_map[Operation(type1, type2, op)];
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
 
 ArrayType::ArrayType(nlohmann::json& json, void* table) : TypeTemplate(TYPE::ARRAY) {
   TableSet* cur_table = (TableSet*)table;
@@ -55,18 +69,15 @@ TypeTemplate* RecordType::Find(std::string name) {
   }
 }
 
-bool FunctionSymbol::AssertParams(const vector<BasicType*>& params_in){
-  if (params_in.size() != params_.size()) {
-    return false;
-  }
 
-  for (int i = 0; i < params_.size(); i++) {
-    // assert parameter type
-    if(params_in[i] != params_[i].first) {
-      return false;
-    }
-  }
-  return true;
+
+void TypeInit() {
+  BOOL = new BasicType();
+  CHAR = new BasicType();
+  INT = new BasicType();
+  REAL = new BasicType();
+  operation_map[Operation(BOOL, BOOL, "and")] = BOOL;
+  operation_map[Operation(BOOL, BOOL, "or")] = BOOL;
+
 }
-
 } // namespace pascal_type

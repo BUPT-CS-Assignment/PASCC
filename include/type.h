@@ -11,6 +11,11 @@
 
 namespace pascal_type {
 
+#define INT int_ptr
+#define BOOL bool_ptr
+#define CHAR char_ptr
+#define REAL real_ptr
+
 class TypeTemplate {
  public:
   enum class TYPE {
@@ -22,6 +27,8 @@ class TypeTemplate {
   TypeTemplate(TYPE template_type) : template_type_(template_type) {}
   ~TypeTemplate() {}
   TYPE template_type() { return template_type_; }
+  bool ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::string op,
+                   TypeTemplate** result_type = nullptr);
  protected:
   TYPE template_type_;
 };
@@ -32,13 +39,14 @@ class BasicType : public TypeTemplate {
   BasicType() : TypeTemplate(TYPE::BASIC) {}
   BasicType(TypeTemplate* type) : TypeTemplate(TYPE::BASIC) {}
   ~BasicType() {}
-};
+} *int_ptr, *bool_ptr, *char_ptr, *real_ptr;
 
 // Array type
 class ArrayType : public TypeTemplate {
  public:
+  typedef std::pair<int, int> ArrayBound ;
   ArrayType() : TypeTemplate(TYPE::ARRAY) {}
-  ArrayType(TypeTemplate* type, std::vector<std::pair<int, int>> bounds)
+  ArrayType(TypeTemplate* type, std::vector<ArrayBound> bounds)
     : TypeTemplate(TYPE::ARRAY), type_(type), bounds_(bounds) {}
 
   ArrayType(nlohmann::json&, void* symbol_table);
@@ -77,113 +85,31 @@ class RecordType : public TypeTemplate {
   int types_num_;
 };
 
-
-// Common object symbol for variables
-class ObjectSymbol {
+class Operation {
  public:
-  ObjectSymbol () {}
-  ObjectSymbol (std::string name, TypeTemplate* type, int decl_line)
-    : name_(name), type_(type), decl_line_(decl_line), global_flag_(false) {}
-  ~ObjectSymbol() {}
-
-  std::string origin_name() {
-    return name_;
+  Operation() {}
+  Operation(TypeTemplate* in_type1, TypeTemplate* in_type2, std::string op)
+    : in_type1(in_type1), in_type2(in_type2), op(op) {}
+  ~Operation() {}
+  bool operator==(const Operation& other) const {
+    return in_type1 == other.in_type1 && in_type2 == other.in_type2 && op == other.op;
   }
-
-  std::string name() {
-    if(global_flag_) {
-      return name_ + "_" + std::to_string((std::size_t)this);
-    } else {
-      return name_;
-    }
-  }
-
-  TypeTemplate* type() { return type_; }
-  int decl_line() { return decl_line_; }
-  void InsertRefLine(int ref_line) { ref_lines_.emplace_back(ref_line); }
-  std::vector<int> ref_lines() { return ref_lines_; }
-  void set_global(bool flag = true) { global_flag_ = flag; }
-
- protected:
-  bool global_flag_;
-  std::string name_;
-  TypeTemplate* type_;
-  int decl_line_;
-  std::vector<int> ref_lines_;
- private:
-  /* data */
+  TypeTemplate* in_type1;
+  TypeTemplate* in_type2; 
+  std::string op;
 };
 
-// Object symbol for const variables
-class ConstSymbol : public ObjectSymbol {
- public:
-  ConstSymbol() {}
-  ConstSymbol(std::string name, TypeTemplate* type, int decl_line, int value)
-    : ObjectSymbol(name, type, decl_line) {
-    value_.num_int = value;
+struct OperationHash {
+  std::size_t operator()(const Operation& k) const {
+    return ((std::hash<TypeTemplate*>()(k.in_type1) ^
+            (std::hash<TypeTemplate*>()(k.in_type2) >> 1)) >> 1) ^
+            std::hash<std::string>()(k.op);
   }
-  ConstSymbol(std::string name, TypeTemplate* type, int decl_line, char value)
-    : ObjectSymbol(name, type, decl_line) {
-    value_.letter = value;
-  }
-  ConstSymbol(std::string name, TypeTemplate* type, int decl_lint, float value)
-        : ObjectSymbol(name, type, decl_lint) {
-    value_.num_float = value;
-  }
-
-  ~ConstSymbol() {}
-
-  // get value by int or char type
-  template <typename T> T value() {
-    if(std::is_same<T, int>::value) {
-      return value_.num_int;
-    } else if (std::is_same<T, char>::value) {
-      return value_.letter;
-    } else if (std::is_same<T, float>::value) {
-      return value_.num_float;
-    } else
-//      std::cout << "Error: ConstSymbol::value() type error" << std::endl;
-//      std::abort();
-      return T();
-    }
-
- private:
-  union CONST_VALUE {
-    char letter;
-    float num_float;
-    int num_int;
-  } value_;
 };
 
+std::unordered_map<Operation, TypeTemplate*, OperationHash> operation_map;
 
-class FunctionSymbol : public ObjectSymbol {
- public:
-  enum class PARAM_PASSING {
-    BY_VALUE,
-    BY_REFERENCE,
-  };
-
-  typedef std::pair<BasicType*, PARAM_PASSING> Parameter; 
-
-  FunctionSymbol() {}
-  FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
-                 std::vector<Parameter> params)
-    : ObjectSymbol(name, return_type, decl_line), params_(params) {}
-
-  ~FunctionSymbol() {}
-  // get parameters size
-  int param_size() { return params_.size(); }
-
-  // get params at specific position
-  Parameter* ParamAt(int pos) { return &params_[pos]; }
-
-  // passing parameter assertion
-  bool AssertParams(const std::vector<BasicType*>& params);
-
- private:
-  std::vector<Parameter> params_;
-  std::vector<std::string> param_names_;
-};
+void TypeInit();
 
 }; // namespace pascal_type
 

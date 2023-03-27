@@ -2,13 +2,13 @@
 #include <unordered_set>
 #include <vector>
 
-//以下的具体值需要符号表生成后才能填上，后续还需要修改
-pascal_type::TypeTemplate *Type_int;
-pascal_type::TypeTemplate *Type_real;
-pascal_type::TypeTemplate *Type_char;
-pascal_type::TypeTemplate *Type_bool;
+using pascal_type::INT;
+using pascal_type::CHAR;
+using pascal_type::BOOL;
+using pascal_type::REAL;
+
 #define IN_BASIC_TYPE(a)                                                       \
-  (a == Type_int) || (a == Type_real) || (a == Type_char) || (a == Type_bool)
+  (a == INT) || (a == CHAR) || (a == BOOL) || (a == _recalloc)
 
 // 基本与Record类型的类型检查
 bool CheckType(pascal_type::TypeTemplate *a, pascal_type::TypeTemplate *b) {
@@ -20,19 +20,22 @@ bool CheckType(pascal_type::TypeTemplate *a, pascal_type::TypeTemplate *b) {
 }
 
 // 函数参数的批量类型检查,传入两个Vector
-bool CheckType(std::vector<pascal_type::TypeTemplate *> la,
-                    std::vector<pascal_type::TypeTemplate *> lb) {
-  if (la.size() != lb.size())
-    return false;
-  for (int i = 0; i < la.size(); i++) {
-    if (!CheckType(la[i], lb[i]))
-      return false;
-  }
-  return true;
-}
+// Deprecated function
+// Use FunctionSymbol*() -> AssertParams(vector<BasicType *> a)
+//bool CheckType(std::vector<pascal_type::TypeTemplate *> la,
+//                    std::vector<pascal_type::TypeTemplate *> lb) {
+//
+//  if (la.size() != lb.size())
+//    return false;
+//  for (int i = 0; i < la.size(); i++) {
+//    if (!CheckType(la[i], lb[i]))
+//      return false;
+//  }
+//  return true;
+//}
 
 // 处理数组情况所需要的api
-bool IsLegalArrayAccess(pascal_type::ArrayType a,
+bool AssertArrayAccess(pascal_type::ArrayType a,
                         std::vector<pascal_type::TypeTemplate *> param,
                         pascal_type::TypeTemplate **baisc_type) {
   return a.AccessArray(param, baisc_type);
@@ -57,4 +60,3 @@ bool IsLegalArrayAccess(pascal_type::ArrayType a,
     }
 */
 }
-
