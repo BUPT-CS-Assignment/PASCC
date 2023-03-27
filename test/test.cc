@@ -8,6 +8,6 @@
 // for test
 
 int main(){
-
+  memcpy(a,b,sizeo)
   return 0;
 }

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(PASCC)
 
+# command>  cmake --build . --target PASCC -j 6
+
 include_directories("include")
 include_directories("thirdparty")
 
@@ -15,5 +17,6 @@ add_executable(PASCC
 
 add_executable(PASCC_TEST
         ${include}
+        ${src}
         ${src_test}
         )
