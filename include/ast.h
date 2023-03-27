@@ -34,7 +34,6 @@ class AST {
   Node* root();
   void set_root(Node* root);
   symbol_table::TableSet* symbol_table() { return symbol_table_;}
-
   void LoadFromJson(std::string file_name);
 
  private:
@@ -46,6 +45,8 @@ class Node {
  public:
   Node();
   ~Node();
+
+  static Node* NewNodeFromStr(std::string str);
 
   void set_parent(Node* parent);
   void append_child(Node* child);
@@ -62,11 +63,9 @@ class Node {
   }
 
   void TransCodeAt(int);
+  void LoadFromJson(const nlohmann::json&, symbol_table::TableSet*);
 
   virtual void TransCode(){};
-
-  void LoadFromJson(const nlohmann::json&, const symbol_table::TableSet*);
-
  protected:
   // entry
 
@@ -76,11 +75,20 @@ class Node {
   
 };
 
+// Leaf Node including id, num, letter ...
 class LeafNode : public Node {
  public:
   void TransCode() override;
- private:
-  
+  void set_entry(pascal_type::ObjectSymbol* entry) {
+    entry_ = entry;
+  }
+  pascal_type::ObjectSymbol* entry() { return entry_; }
+  template <typename T> T* entry_cast() {
+    return static_cast<T*>(entry_);
+  }
+
+private:
+   pascal_type::ObjectSymbol* entry_;
 };
 
 class ProgramNode : public Node {
@@ -155,8 +163,8 @@ class ConstVariableNode : public Node {
 class VariableDeclarationsNode : public Node {
  public:
   enum class GrammarType {
-    EPSILON,          //VariableDeclarations→EPSILON
-    VAR_DECLARATION   //VariableDeclarations→var VariableDeclaration
+    EPSILON,          //variable_declarations→EPSILON
+    VAR_DECLARATION   //variable_declarations→var VariableDeclaration
   };
   void TransCode() override;
  private:
@@ -253,7 +261,7 @@ class SubprogramDeclarationsNode : public Node {
  public:
   enum class GrammarType {
     EPSILON,            //subprogram_declarations → EPSILON
-    SUBPROGRAM_DECL     //subprogram_declarations → subprogram_declarations subprogram ;        
+    SUBPROGRAM_DECL     //subprogram_declarations → subprogram_declarations subprogram subprogram_declaration ;
   };
   void TransCode() override;
  private:
@@ -261,9 +269,19 @@ class SubprogramDeclarationsNode : public Node {
 };
 
 class SubprogramDeclarationNode : public Node {
-  //subprogram_declaration -> subprogram_head  program_body
+  //subprogram_declaration -> subprogram_head subprogram_body
  public:
   void TransCode() override;
+ private:
+};
+
+class SubprogramBodyNode : public Node {
+   // subprogram_body → const_declarations
+   //                type_declarations
+   //                var_declarations
+   //                compound_statement
+ public:
+   void TransCode() override;
  private:
 };
 
@@ -460,6 +478,7 @@ class UpdownNode : public Node {
  public:
   UpdownNode(bool is_increase = true) : is_increase_(is_increase) {}
   bool IsIncrease() { return is_increase_; }
+  void set_increase(bool inc) { is_increase_ = inc;}
   void TransCode() override;
 
  private:

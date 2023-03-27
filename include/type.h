@@ -120,11 +120,15 @@ class ConstSymbol : public ObjectSymbol {
   ConstSymbol() {}
   ConstSymbol(std::string name, TypeTemplate* type, int decl_line, int value)
     : ObjectSymbol(name, type, decl_line) {
-    value_.num = value;
+    value_.num_int = value;
   }
   ConstSymbol(std::string name, TypeTemplate* type, int decl_line, char value)
     : ObjectSymbol(name, type, decl_line) {
     value_.letter = value;
+  }
+  ConstSymbol(std::string name, TypeTemplate* type, int decl_lint, float value)
+        : ObjectSymbol(name, type, decl_lint) {
+    value_.num_float = value;
   }
 
   ~ConstSymbol() {}
@@ -132,20 +136,22 @@ class ConstSymbol : public ObjectSymbol {
   // get value by int or char type
   template <typename T> T value() {
     if(std::is_same<T, int>::value) {
-      return value_.num;
+      return value_.num_int;
     } else if (std::is_same<T, char>::value) {
       return value_.letter;
-    } else {
+    } else if (std::is_same<T, float>::value) {
+      return value_.num_float;
+    } else
 //      std::cout << "Error: ConstSymbol::value() type error" << std::endl;
 //      std::abort();
       return T();
     }
-  }
 
  private:
   union CONST_VALUE {
-    int num;
     char letter;
+    float num_float;
+    int num_int;
   } value_;
 };
 

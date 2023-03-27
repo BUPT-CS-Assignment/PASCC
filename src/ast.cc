@@ -211,6 +211,10 @@ void SubprogramHeadNode::TransCode() {
 
 }
 
+void SubprogramBodyNode::TransCode() {
+
+}
+
 void FormalParamNode::TransCode() {
 
 }
@@ -472,7 +476,105 @@ void FactorNode::TransCode() {
 void UnsignConstVarNode::TransCode() {
   TransCodeAt(0);
 }
+/////////////////////////////
 
+Node* Node::NewNodeFromStr(std::string str) {
+  if (str == "leaf") {
+      return new LeafNode();
+  } else if (str == "program") {
+    return new ProgramNode();
+  } else if (str == "program_head") {
+    return new ProgramHeadNode();
+  } else if (str == "program_body") {
+    return new ProgramBodyNode();
+  } else if (str == "idlists") {
+    return new IdListNode();
+  } else if (str == "const_decls") {
+    return new ConstDeclarationsNode();
+  } else if (str == "const_decl") {
+    return new ConstDeclarationNode();
+  } else if (str == "const_var") {
+    return new ConstVariableNode();
+  } else if (str == "var_decls") {
+    return new VariableDeclarationsNode();
+  } else if (str == "var_decl") {
+    return new VariableDeclarationNode();
+  } else if (str == "type_decls") {
+    return new TypeDeclarationsNode();
+  } else if (str == "type_decl") {
+    return new TypeDeclarationNode();
+  } else if (str == "type") {
+    return new TypeNode();
+  } else if (str == "basic_type") {
+    return new BasicTypeNode();
+  } else if (str == "record_body") {
+    return new RecordBodyNode();
+  } else if (str == "periods") {
+    return new PeriodsNode();
+  } else if (str == "period") {
+    return new PeriodNode();
+  } else if (str == "subp_decls") {
+    return new SubprogramDeclarationsNode();
+  } else if (str == "subp_decl") {
+    return new SubprogramDeclarationNode();
+  } else if (str == "subp_head") {
+    return new SubprogramHeadNode();
+  } else if (str == "subp_body") {
+    return new SubprogramBodyNode();
+  } else if (str == "formal_param") {
+    return new FormalParamNode();
+  } else if (str == "param_lists") {
+    return new ParamListsNode();
+  } else if (str == "param_list") {
+    return new ParamListNode();
+  } else if (str == "var_param") {
+    return new VarParamNode();
+  } else if (str == "value_param") {
+    return new ValueParamNode();
+  } else if (str == "comp_stat") {
+    return new CompoundStatementNode();
+  } else if (str == "stat_list") {
+    return new StatementListNode();
+  } else if (str == "stat") {
+    return new StatementNode();
+  } else if (str == "var_list") {
+    return new VariableListNode();
+  } else if (str == "var") {
+    return new VariableNode();
+  } else if (str == "id_varparts") {
+    return new IDVarPartsNode();
+  } else if (str == "id_varpart") {
+    return new IDVarPartNode();
+  } else if (str == "branch_list") {
+    return new BranchListNode();
+  } else if (str == "case_body") {
+    return new CaseBodyNode();
+  } else if (str == "branch") {
+    return new BranchNode();
+  } else if (str == "const_list") {
+    return new ConstListNode();
+  } else if (str == "updown") {
+    return new UpdownNode();
+  } else if (str == "proc_call") {
+    return new ProcedureCallNode();
+  } else if (str == "else") {
+    return new ElseNode();
+  } else if (str == "exp_list") {
+    return new ExpressionListNode();
+  } else if (str == "exp") {
+    return new ExpressionNode();
+  } else if (str == "simple_exp") {
+    return new SimpleExpressionNode();
+  } else if (str == "term") {
+    return new TermNode();
+  } else if (str == "factor") {
+    return new FactorNode();
+  } else if (str == "unsign_const_var") {
+    return new UnsignConstVarNode();
+  } else {
+    return nullptr;
+  }
+}
 
 /////////////////////////////
 
@@ -490,23 +592,40 @@ void AST::LoadFromJson(std::string file_name) {
 
   root_ = new ProgramNode();
   symbol_table_ = new TableSet("root", nullptr);
-
-
-  //
+  symbol_table_->LoadFromJson(ast_json);
   root_->LoadFromJson(ast_json, symbol_table_);
 }
 
 
-void Node::LoadFromJson(const nlohmann::json & node_json, const symbol_table::TableSet * node_table) {
+void Node::LoadFromJson(const nlohmann::json & node_json, symbol_table::TableSet * node_table) {
+  for(auto item : node_json["children"]) {
+    string tp_str = item["type"];
+    Node* child = Node::NewNodeFromStr(tp_str);
+     if (tp_str == "leaf") {
+      string entry_type = item["entry_type"].get<string>();
+      string entry_name = item["entry_name"].get<string>();
 
+      ObjectSymbol* entry_ptr = nullptr;
+      if (entry_type == "basic" || entry_type == "array") {
+        entry_ptr = node_table->SearchEntry<ObjectSymbol>(entry_name);
+      } else if (entry_type == "function") {
+        entry_ptr = node_table->SearchEntry<FunctionSymbol>(entry_name);
+      } else if (entry_type == "const") {
+        entry_ptr = node_table->SearchEntry<ConstSymbol>(entry_name);
+      }
 
+      child->StaticCast<LeafNode>()->set_entry(entry_ptr);
 
+    } else if (tp_str == "subp_decl") {
+      TableSet* tb = node_table->CreateNext(item["name"].get<string>());
+      tb->LoadFromJson(item);
+      child->LoadFromJson(item, tb);
+
+    } else {
+      child->LoadFromJson(item, node_table);
+    }
+    this->append_child(child);
+  }
 }
-
-
-
-
-
-
 
 }  // namespace ast

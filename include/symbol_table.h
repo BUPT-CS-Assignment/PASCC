@@ -39,6 +39,7 @@ class FunctionSymbolTable : public SymbolTable<FunctionSymbol> {};
 class ConstSymbolTable : public SymbolTable<ConstSymbol> {};
 class TypeSymbolTable : public SymbolTable<TypeTemplate> {};
 
+
 class TableSet {
  public:
   TableSet(std::string tag, TableSet* pre_set) : tag_(tag), prev_table_set_(pre_set) {
@@ -65,8 +66,7 @@ class TableSet {
     }
   }
 
-  template <typename T>
-  T* SearchEntry(std::string name) {
+  template <typename T> T* SearchEntry(std::string name) {
     if(std::is_same<T,ObjectSymbol>::value) {
       auto basic_entry = basic_table_.Find(name);
       if (basic_entry != nullptr) {
@@ -86,7 +86,7 @@ class TableSet {
       if (const_entry != nullptr) {
         return (T*)const_entry;
       }
-    } else if (std::is_same<T,TypeTemplate>::value ||
+    } else if (std::is_same<T, TypeTemplate>::value ||
                std::is_same<T, BasicType>::value ||
                std::is_same<T, ArrayType>::value ||
                std::is_same<T, RecordType>::value) {
@@ -102,7 +102,6 @@ class TableSet {
       return nullptr;
     }
   }
-
 
   TableSet* CreateNext(std::string tag) {
     TableSet* table_set = new TableSet(tag, this);

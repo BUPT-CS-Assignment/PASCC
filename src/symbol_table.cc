@@ -32,35 +32,38 @@ void TableSet::LoadFromJson(nlohmann::json & input_json) {
 
     if (item["type_id"] == "basic") {
       BasicSymbolTable *bst = table_ptr<BasicSymbolTable>();
-      BasicType* tp = SearchEntry<BasicType>(item["type_name"]);
+      BasicType* tp = SearchEntry<BasicType>(item["type"]);
       auto new_basic = new ObjectSymbol(item["type_info"], tp, 0);
       bst->Insert(item["name"], new_basic);
 
     } else if (item["type_id"] == "array") {
       ArraySymbolTable *ast = table_ptr<ArraySymbolTable>();
-      ArrayType* tp = SearchEntry<ArrayType>(item["type_name"]);
+      ArrayType* tp = SearchEntry<ArrayType>(item["type"]);
       auto new_array = new ObjectSymbol(item["type_info"], tp, 0);
       ast->Insert(item["name"], new_array);
 
     } else if (item["type_id"] == "function") {
       FunctionSymbolTable *fst = table_ptr<FunctionSymbolTable>();
       vector<FunctionSymbol::Parameter> params;
+      auto tp = SearchEntry<BasicType>(item["type"]);
       for(auto p : item["params"]) {
         BasicType* tp = SearchEntry<BasicType>(p["type_name"]);
         int passing = p["passing"].get<int>();
         params.emplace_back(FunctionSymbol::Parameter(tp, (FunctionSymbol::PARAM_PASSING)passing));
       }
-      auto new_function = new FunctionSymbol(item["type_info"], tp, 0);
+      auto new_function = new FunctionSymbol(item["type_info"], tp, 0, params);
       fst->Insert(item["name"], new_function);
 
     } else if (item["type_id"] == "const") {
       ConstSymbolTable *cst = table_ptr<ConstSymbolTable>();
-      BasicType* tp = SearchEntry<BasicType>(item["type_name"]);
+      BasicType* tp = SearchEntry<BasicType>(item["type"]);
       ConstSymbol* new_const = nullptr;
       if(item["type_name"] == "int") {
         new_const = new ConstSymbol(item["type_info"], tp, 0, item["value"].get<int>());
       } else if (item["type_name"] == "char") {
         new_const = new ConstSymbol(item["type_info"], tp, 0, item["value"].get<char>());
+      } else if (item["type_name"] == "real") {
+        new_const = new ConstSymbol(item["type_info"], tp, 0, item["value"].get<float>());
       }
       cst->Insert(item["name"], new_const);
     }
