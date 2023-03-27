@@ -8,19 +8,19 @@
 
 namespace ast{
 
-#define OUT(format, ...)                        \
-  do {                                          \
-    fprintf(stdout, format, ##__VA_ARGS__);     \  
+#define OUT(format, ...)\
+  do {\
+    fprintf(stdout, format, ##__VA_ARGS__);\
   } while (0);
 
-#define ERR(format, ...)                        \
-  do {                                          \
-    fprintf(stderr, format, ##__VA_ARGS__);     \  
+#define ERR(format, ...)\
+  do {\
+    fprintf(stderr, format, ##__VA_ARGS__);\
   } while (0);
   
-#define FILE(file, format, ...)                 \
-  do {                                          \
-    fprintf(file, format, ##__VA_ARGS__);       \  
+#define FILE(file, format, ...)\
+  do {\
+    fprintf(file, format, ##__VA_ARGS__);\
   } while (0);
 
 
