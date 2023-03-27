@@ -52,13 +52,13 @@ void LeafNode::TransCode() {
     OUT(" %s ",entry_->name().c_str())
   } else {
     BasicType* tp = value_.type();
-    if(tp == pascal_type::INT) {
+    if(tp == pascal_type::TYPE_INT) {
       OUT(" %d ", value_.get<int>())
-    } else if (tp == pascal_type::REAL) {
+    } else if (tp == pascal_type::TYPE_REAL) {
       OUT(" %.2f ", value_.get<float>())
-          } else if (tp == pascal_type::BOOL) {
+          } else if (tp == pascal_type::TYPE_BOOL) {
       OUT(" %s ", value_.get<bool>() ? "true" : "false")
-          } else if (tp == pascal_type::CHAR) {
+          } else if (tp == pascal_type::TYPE_CHAR) {
       OUT(" %c ", value_.get<char>())
     }
   }
@@ -107,6 +107,7 @@ vector<Node*> IdListNode::get_id_list() {
     gtype = cur_node->grammar_type_;
   }
   lists.insert(lists.begin(), child_list_[0]);
+  return lists;
 }
 
 

@@ -18,10 +18,10 @@ namespace pascal_symbol {
 class ConstValue {
 public:
   ConstValue() {}
-  ConstValue(int value) : type_(pascal_type::INT) {value_.num_int = value;}
-  ConstValue(char value) : type_(pascal_type::CHAR) {value_.letter = value;}
-  ConstValue(float value) : type_(pascal_type::REAL) {value_.num_float = value;}
-  ConstValue(bool value) : type_(pascal_type::BOOL) {value_.bool_val = value;}
+  ConstValue(int value) : type_(pascal_type::TYPE_INT) {value_.num_int = value;}
+  ConstValue(char value) : type_(pascal_type::TYPE_CHAR) {value_.letter = value;}
+  ConstValue(float value) : type_(pascal_type::TYPE_REAL) {value_.num_float = value;}
+  ConstValue(bool value) : type_(pascal_type::TYPE_BOOL) {value_.bool_val = value;}
   ~ConstValue() {}
 
   pascal_type::BasicType* type() {return type_;}

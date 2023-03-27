@@ -11,11 +11,6 @@
 
 namespace pascal_type {
 
-#define TYPE_INT int_ptr
-#define TYPE_BOOL bool_ptr
-#define TYPE_CHAR char_ptr
-#define TYPE_REAL real_ptr
-
 class TypeTemplate {
  public:
   enum class TYPE {
@@ -25,7 +20,7 @@ class TypeTemplate {
   };
   TypeTemplate() {}
   TypeTemplate(TYPE template_type) : template_type_(template_type) {}
-  ~TypeTemplate() {}
+  virtual ~TypeTemplate() {}
   template <typename T> T* DynamicCast() {
     return dynamic_cast<T*>(this);
   }
@@ -62,7 +57,13 @@ class BasicType : public TypeTemplate {
 
  private:
    BASIC_TYPE basic_type_;
-} *int_ptr, *bool_ptr, *char_ptr, *real_ptr;
+};
+
+extern BasicType* TYPE_INT;
+extern BasicType* TYPE_REAL;
+extern BasicType* TYPE_BOOL;
+extern BasicType* TYPE_CHAR;
+
 
 // Array type
 class ArrayType : public TypeTemplate {
@@ -130,8 +131,8 @@ struct OperationHash {
   }
 };
 
-std::unordered_map<Operation, TypeTemplate*, OperationHash> operation_map;
-
+typedef std::unordered_map<Operation, TypeTemplate*, OperationHash> OperationMap;
+extern OperationMap operation_map;
 void TypeInit();
 
 }; // namespace pascal_type

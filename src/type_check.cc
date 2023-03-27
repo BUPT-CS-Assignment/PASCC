@@ -2,10 +2,10 @@
 #include <unordered_set>
 #include <vector>
 
-using pascal_type::INT;
-using pascal_type::CHAR;
-using pascal_type::BOOL;
-using pascal_type::REAL;
+using pascal_type::TYPE_INT;
+using pascal_type::TYPE_CHAR;
+using pascal_type::TYPE_BOOL;
+using pascal_type::TYPE_REAL;
 
 #define IN_BASIC_TYPE(a)                                                       \
   (a == INT) || (a == CHAR) || (a == BOOL) || (a == _recalloc)

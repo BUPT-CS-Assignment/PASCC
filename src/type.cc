@@ -10,7 +10,7 @@ using namespace pascal_symbol;
 namespace pascal_type {
 
 bool TypeTemplate::ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::string op,
-                               TypeTemplate** result_type = nullptr) {
+                               TypeTemplate** result_type) {
   if (operation_map.find(Operation(type1, type2, op)) != operation_map.end()) {
     if (result_type != nullptr) {
       *result_type = operation_map[Operation(type1, type2, op)];
@@ -91,6 +91,14 @@ TypeTemplate* RecordType::Find(std::string name) {
 }
 
 
+/////////////////////
+// global initialize
+
+BasicType* TYPE_INT;
+BasicType* TYPE_REAL;
+BasicType* TYPE_BOOL;
+BasicType* TYPE_CHAR;
+OperationMap operation_map;
 
 void TypeInit() {
   TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
