@@ -1,0 +1,67 @@
+{
+    "type":"program",
+    "type_def": [
+        {
+            "type_id": "array",
+            "type_name": "A",
+            "type_info": {
+                "bounds" : [
+                    {"type": "int", "lb": 1, "ub": 10},
+                    {"type": "char", "lb": "A", "ub": "Z"}
+                ],
+                "base_type" : "int"
+            }
+        },
+        {
+            "type_id": "array",
+            "type_name": "B",
+            "type_info": {
+                "bounds" : [[1, 10]],
+                "base_type" : "A"
+            }
+        }
+    ],
+    "symbol": [
+        {
+            "name": "a",
+            "type_id": "basic",
+            "type": "int"
+        },
+        {
+            "name": "b",
+            "type_id" : "array",
+            "type": "B"
+        },
+        {
+            "name": "c",
+            "type_id" : "const",
+            "type": "int",
+            "value": 10
+        },
+        {
+            "name": "d",
+            "type_id" : "function",
+            "type": "int",
+            "params": [
+                {"name": "a", "passing" : 0, "type": "int"},
+                {"name": "b", "passing" : 1, "type": "real"}
+            ]
+        }
+    ],
+    "children":[
+        {
+            "type":"program_head",
+            "children":[
+                {
+                    "type": "leaf",
+                    "entry_type": "basic",
+                    "entry_name": "program_id"
+                },
+                {
+                    "type": "idlists"
+                }
+            ]
+        },
+        {}
+    ]
+}

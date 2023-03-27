@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <unordered_map>
 
+#include "json.hpp"
+
 namespace pascal_type {
 
 class TypeTemplate {
@@ -38,11 +40,15 @@ class ArrayType : public TypeTemplate {
   ArrayType() : TypeTemplate(TYPE::ARRAY) {}
   ArrayType(TypeTemplate* type, std::vector<std::pair<int, int>> bounds)
     : TypeTemplate(TYPE::ARRAY), type_(type), bounds_(bounds) {}
+
+  ArrayType(nlohmann::json&, void* symbol_table);
+
   ~ArrayType() {}
   TypeTemplate* type() { return type_; }
   int dimension() { return bounds_.size(); }
   std::vector<std::pair<int, int>> *bounds() { return &bounds_; }
   bool AccessArray(std::vector<TypeTemplate*> index_types, TypeTemplate **type = nullptr);
+
  private:
   TypeTemplate* type_;
   std::vector<std::pair<int, int>> bounds_;
@@ -58,6 +64,9 @@ class RecordType : public TypeTemplate {
     types_map_.insert(type_map.begin(), type_map.end());
     types_num_ = types_map_.size();
   }
+
+  RecordType(nlohmann::json&, void* symbol_table);
+
   ~RecordType() {}
 
   void InsertType(std::string name, TypeTemplate* type);
@@ -111,11 +120,15 @@ class ConstSymbol : public ObjectSymbol {
   ConstSymbol() {}
   ConstSymbol(std::string name, TypeTemplate* type, int decl_line, int value)
     : ObjectSymbol(name, type, decl_line) {
-    value_.num = value;
+    value_.num_int = value;
   }
   ConstSymbol(std::string name, TypeTemplate* type, int decl_line, char value)
     : ObjectSymbol(name, type, decl_line) {
     value_.letter = value;
+  }
+  ConstSymbol(std::string name, TypeTemplate* type, int decl_lint, float value)
+        : ObjectSymbol(name, type, decl_lint) {
+    value_.num_float = value;
   }
 
   ~ConstSymbol() {}
@@ -123,20 +136,22 @@ class ConstSymbol : public ObjectSymbol {
   // get value by int or char type
   template <typename T> T value() {
     if(std::is_same<T, int>::value) {
-      return value_.num;
+      return value_.num_int;
     } else if (std::is_same<T, char>::value) {
       return value_.letter;
-    } else {
+    } else if (std::is_same<T, float>::value) {
+      return value_.num_float;
+    } else
 //      std::cout << "Error: ConstSymbol::value() type error" << std::endl;
 //      std::abort();
       return T();
     }
-  }
 
  private:
   union CONST_VALUE {
-    int num;
     char letter;
+    float num_float;
+    int num_int;
   } value_;
 };
 
@@ -150,7 +165,7 @@ class FunctionSymbol : public ObjectSymbol {
 
   typedef std::pair<BasicType*, PARAM_PASSING> Parameter; 
 
-	FunctionSymbol() {}
+  FunctionSymbol() {}
   FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
                  std::vector<Parameter> params)
     : ObjectSymbol(name, return_type, decl_line), params_(params) {}
@@ -167,6 +182,7 @@ class FunctionSymbol : public ObjectSymbol {
 
  private:
   std::vector<Parameter> params_;
+  std::vector<std::string> param_names_;
 };
 
 }; // namespace pascal_type
