@@ -107,26 +107,32 @@ public:
     BY_REFERENCE,
   };
 
-  typedef std::pair<pascal_type::BasicType*, PARAM_PASSING> Parameter;
+  typedef std::pair<pascal_type::BasicType*, PARAM_PASSING> ParamType;
+  typedef std::pair<std::string, ParamType> Parameter;
 
   FunctionSymbol() {}
   FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line,
-                 std::vector<Parameter> params)
-      : ObjectSymbol(name, return_type, decl_line), params_(params) {}
+                 const std::vector<Parameter>& params);
 
   ~FunctionSymbol() {}
   // get parameters size
   int param_size() { return params_.size(); }
 
   // get params at specific position
-  Parameter* ParamAt(int pos) { return &params_[pos]; }
+  const Parameter* ParamAt(int pos) { return &params_[pos]; }
+  bool InsertParam(Parameter&);
 
   // passing parameter assertion
   bool AssertParams(const std::vector<pascal_type::BasicType*>& params);
 
+  // get param type
+  ParamType* operator[](std::string );
+  // check ref
+  bool IsReference(std::string);
+
 private:
   std::vector<Parameter> params_;
-  std::vector<std::string> param_names_;
+  std::unordered_map<std::string, int> param_map_;
 };
 
 

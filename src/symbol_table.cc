@@ -49,11 +49,15 @@ void TableSet::LoadFromJson(nlohmann::json & input_json) {
     } else if (item["type_id"] == "function") {
       vector<FunctionSymbol::Parameter> params;
       auto tp = SearchEntry<BasicType>(item["type"]);
+
+      // parse params
       for(auto p : item["params"]) {
         BasicType* tp = SearchEntry<BasicType>(p["type_name"]);
         int passing = p["passing"].get<int>();
-        params.emplace_back(FunctionSymbol::Parameter(tp, (FunctionSymbol::PARAM_PASSING)passing));
+        FunctionSymbol::ParamType param_type(tp,(FunctionSymbol::PARAM_PASSING)passing);
+        params.emplace_back(FunctionSymbol::Parameter(p["name"], param_type));
       }
+
       auto new_function = new FunctionSymbol(item["type_info"], tp, 0, params);
       symbols_.Insert(item["name"], new_function);
 

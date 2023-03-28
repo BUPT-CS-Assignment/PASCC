@@ -56,7 +56,14 @@ class TableSet {
                std::is_same<T, RecordType>::value) {
       auto type_entry = def_types_.Find(name);
       if (type_entry != nullptr)  return (T*)type_entry;
+
+    } else if (std::is_same<T, BasicType>::value) {
+      if (name == "int") return (T*)pascal_type::TYPE_INT;
+      else if (name == "real") return (T*)pascal_type::TYPE_REAL;
+      else if (name == "char") return (T*)pascal_type::TYPE_CHAR;
+      else if (name == "bool") return (T*)pascal_type::TYPE_BOOL;
     }
+
     if(prev_table_set_ != nullptr)  return prev_table_set_->SearchEntry<T>(name);
     else return nullptr;
   }
