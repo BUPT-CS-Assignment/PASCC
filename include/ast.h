@@ -257,13 +257,22 @@ class TypeNode : public Node {
     RECORD_TYPE
   };
   void TransCode() override;
-  Node* get_basic_type();
-  GrammarType GetGrammarType() { return grammar_type_; }
+  GrammarType grammar_type() { return grammar_type_; }
+  pascal_type::TypeTemplate* type() { return type_; }
+  template <typename T> T* type_cast() {
+    return type_->DynamicCast<T>();
+  }
+
+  template <typename T> void set_type(std::string type_name, symbol_table::TableSet* ts){
+    type_ = ts->SearchEntry<T>(type_name);
+  }
+
   void PeriodsTransCode();
-  BasicType** basic_type_pointer() { return &basic_type_; }
+  Node* get_basic_type();
+
  private:
   GrammarType grammar_type_;
-  BasicType* basic_type_;
+  pascal_type::TypeTemplate* type_;
 };
 
 class BasicTypeNode : public Node {

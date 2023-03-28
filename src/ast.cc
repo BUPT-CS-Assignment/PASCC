@@ -150,7 +150,7 @@ void VariableDeclarationNode::TransCode() {
       basic_type->TransCode();
       OUT(" ")
       id_node->TransCode();
-      if (type_node->GetGrammarType() == TypeNode::GrammarType::ARRAY) {
+      if (type_node->grammar_type() == TypeNode::GrammarType::ARRAY) {
         type_node->PeriodsTransCode();
       }
       OUT(";\n")
