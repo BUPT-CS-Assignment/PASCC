@@ -306,7 +306,7 @@ void StatementNode::TransCode() {
       TransCodeAt(0);
       OUT(" = ")
       TransCodeAt(1);
-      OUT(";\n");      
+      OUT(";\n");
       break;
     case GrammarType::PROCEDURE_CALL:
       TransCodeAt(0);
@@ -664,7 +664,7 @@ void Node::LoadFromJson(const nlohmann::json & node_json, symbol_table::TableSet
       }
 
     } else if (tp_str == "subp_decl") {
-      TableSet* tb = node_table->CreateNext(item["name"].get<string>());
+      TableSet* tb = new TableSet(item["name"], node_table);
       tb->LoadFromJson(item);
       child->LoadFromJson(item, tb);
 

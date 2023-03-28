@@ -12,12 +12,6 @@ using std::string;
 
 namespace symbol_table {
 
-TableSet* TableSet::CreateNext(std::string tag) {
-  TableSet* table_set = new TableSet(tag, this);
-  next_table_sets_.insert(std::make_pair(tag, table_set));
-  return table_set;
-}
-
 void TableSet::LoadFromJson(nlohmann::json & input_json) {
   // parse type define
   json type_json = input_json["type_def"];

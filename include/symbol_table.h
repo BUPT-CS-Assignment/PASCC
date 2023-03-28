@@ -42,10 +42,9 @@ class TableSet {
 
   SymbolTable *symbols() { return &symbols_; }
   TypeTable *def_types() { return &def_types_; }
-  TableSet *prev_table_set() { return prev_table_set_; }
+  TableSet *previous() { return prev_table_set_; }
 
   std::string tag() { return tag_; }
-  std::unordered_map<std::string, TableSet*> *next_table_sets() { return &next_table_sets_; }
 
   template <typename T> T* SearchEntry(std::string name) {
     if(std::is_same<T,pascal_symbol::ObjectSymbol>::value) {
@@ -65,10 +64,10 @@ class TableSet {
     }
 
     if(prev_table_set_ != nullptr)  return prev_table_set_->SearchEntry<T>(name);
-    else return nullptr;
+
+    return nullptr;
   }
 
-  TableSet* CreateNext(std::string tag);
   void LoadFromJson(nlohmann::json&);
 
 
@@ -78,8 +77,6 @@ class TableSet {
   TypeTable def_types_;
 
   TableSet* prev_table_set_;
-  std::unordered_map<std::string, TableSet*> next_table_sets_;
-
 };
 
 } // namespace symbol_table
