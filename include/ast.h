@@ -260,8 +260,10 @@ class TypeNode : public Node {
   Node* get_basic_type();
   GrammarType GetGrammarType() { return grammar_type_; }
   void PeriodsTransCode();
+  BasicType** basic_type_pointer() { return &basic_type_; }
  private:
   GrammarType grammar_type_;
+  BasicType* basic_type_;
 };
 
 class BasicTypeNode : public Node {
