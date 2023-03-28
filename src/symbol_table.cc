@@ -56,14 +56,13 @@ void TableSet::LoadFromJson(nlohmann::json & input_json) {
       symbols_.Insert(item["name"], new_function);
 
     } else if (item["type_id"] == "const") {
-      BasicType* tp = SearchEntry<BasicType>(item["type"]);
       ConstSymbol* new_const = nullptr;
       if(item["type_name"] == "int") {
-        new_const = new ConstSymbol(item["type_info"], tp, 0, item["value"].get<int>());
+        new_const = new ConstSymbol(item["type_info"], 0, item["value"].get<int>());
       } else if (item["type_name"] == "char") {
-        new_const = new ConstSymbol(item["type_info"], tp, 0, item["value"].get<char>());
+        new_const = new ConstSymbol(item["type_info"], 0, item["value"].get<char>());
       } else if (item["type_name"] == "real") {
-        new_const = new ConstSymbol(item["type_info"], tp, 0, item["value"].get<float>());
+        new_const = new ConstSymbol(item["type_info"], 0, item["value"].get<float>());
       }
       symbols_.Insert(item["name"], new_const);
     }

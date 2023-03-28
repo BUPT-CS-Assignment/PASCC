@@ -76,14 +76,14 @@ private:
 class ConstSymbol : public ObjectSymbol {
 public:
   ConstSymbol() {}
-  ConstSymbol(std::string name, pascal_type::TypeTemplate* type, int decl_line, int value)
-      : ObjectSymbol(name, type, decl_line), value_(value) {}
-  ConstSymbol(std::string name, pascal_type::TypeTemplate* type, int decl_line, char value)
-      : ObjectSymbol(name, type, decl_line), value_(value)  {}
-  ConstSymbol(std::string name, pascal_type::TypeTemplate* type, int decl_lint, float value)
-      : ObjectSymbol(name, type, decl_lint), value_(value) {}
-  ConstSymbol(std::string name, pascal_type::TypeTemplate* type, int decl_lint, bool value)
-      : ObjectSymbol(name, type, decl_lint), value_(value)  {}
+  ConstSymbol(std::string name, int decl_line, int value)
+      : ObjectSymbol(name, pascal_type::TYPE_INT, decl_line), value_(value) {}
+  ConstSymbol(std::string name, int decl_line, char value)
+      : ObjectSymbol(name, pascal_type::TYPE_CHAR, decl_line), value_(value)  {}
+  ConstSymbol(std::string name, int decl_lint, float value)
+      : ObjectSymbol(name, pascal_type::TYPE_REAL, decl_lint), value_(value) {}
+  ConstSymbol(std::string name, int decl_lint, bool value)
+      : ObjectSymbol(name, pascal_type::TYPE_BOOL, decl_lint), value_(value)  {}
 
   ~ConstSymbol() {}
 
