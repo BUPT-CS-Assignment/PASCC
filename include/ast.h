@@ -167,6 +167,7 @@ class IdListNode : public Node {
     SINGLE_ID,      //idlists → id
     MULTIPLE_ID     //idlists → idlist,id 
   };
+  IdListNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
   std::vector<Node*> get_id_list();
   std::vector<Node*>* IdList() { return &child_list_; }
@@ -181,6 +182,7 @@ class ConstDeclarationsNode : public Node {
     EPSILON,             //const_declarations → EPSILON
     CONST_DECLARATION    //const_declarations → const_declaration
   };
+  ConstDeclarationsNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -192,6 +194,7 @@ class ConstDeclarationNode : public Node {
     VALUE,        //ConstDeclaration → id = const_var
     DECLARATION   //ConstDeclaration →ConstDeclaration; id = const_var
   };
+  ConstDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -210,6 +213,7 @@ class VariableDeclarationsNode : public Node {
     EPSILON,          //variable_declarations→EPSILON
     VAR_DECLARATION   //variable_declarations→var VariableDeclaration
   };
+  VariableDeclarationsNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -221,6 +225,7 @@ class VariableDeclarationNode : public Node {
     SINGLE_DECL,  //VariableDeclaration→idlist:type
     MULTIPLE_DECL //VariableDeclaration→VariableDeclaration;idlist:type
   };
+  VariableDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -232,6 +237,8 @@ class TypeDeclarationsNode : public Node {
       EPSILON,         //TypeDeclarations→EPSILON
       TYPE_DECLARATION //TypeDeclarations→type TypeDeclaration
   };
+
+  TypeDeclarationsNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
   private:
     GrammarType grammar_type_;
@@ -243,6 +250,8 @@ class TypeDeclarationNode : public Node {
     SINGLE_DECL,  //TypeDeclaration→TypeDeclaration;id=type
     MULTIPLE_DECL //id = type
   };
+
+  TypeDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -256,6 +265,8 @@ class TypeNode : public Node {
     ARRAY,
     RECORD_TYPE
   };
+
+  TypeNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
   GrammarType grammar_type() { return grammar_type_; }
   pascal_type::TypeTemplate* type() { return type_; }
@@ -292,6 +303,8 @@ class RecordBodyNode : public Node {
     EPSILON,
     VAR_DECLARATION
   };
+
+  RecordBodyNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -303,6 +316,8 @@ class PeriodsNode : public Node {
     SINGLE_DECL,   //Periods→Period
     MULTIPLE_DECL  //Periods→Periods,Period
   };
+
+  PeriodsNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -322,6 +337,8 @@ class SubprogramDeclarationsNode : public Node {
     EPSILON,            //subprogram_declarations → EPSILON
     SUBPROGRAM_DECL     //subprogram_declarations → subprogram_declarations subprogram subprogram_declaration ;
   };
+
+  SubprogramDeclarationsNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -350,6 +367,8 @@ class SubprogramHeadNode : public Node {
     PROCEDURE,    // subprogram_head → procedure id formal_parameter
     FUNCTION      // subprogram_head → function id formal_parameter : basic_type
   };
+
+  SubprogramHeadNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
 
  private:
@@ -362,6 +381,8 @@ class FormalParamNode : public Node {
     EPSILON,      //formal_parameter → EPSILON 
     PARAM_LISTS,  //formal_parameter → ( parameter_lists )
   };
+
+  FormalParamNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -373,6 +394,8 @@ class ParamListsNode : public Node {
     SINGLE_PARAM_LIST,      //param_lists→ param_list
     MULTIPLE_PARAM_LIST,    //param_lists→ param_lists ; param_list
   };
+
+  ParamListsNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -384,6 +407,8 @@ class ParamListNode : public Node {
     VAR_PARAM,              //parameter_list → var_parameter
     VALUE_PARAM,            //parameter_list → value_parameter 
   };
+
+  ParamListNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -418,6 +443,8 @@ class StatementListNode : public Node {
     STATEMENT,                  //statement_list → statement 
     STATEMENT_LIST_STATEMENT,   //statement_list → statement_list ; statement
   };
+
+  StatementListNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -439,6 +466,8 @@ class StatementNode : public Node {
     WHILE_STATEMENT,      //statement → while expression do s
     REPEAT_STATEMENT      //statement → repeat statement_list until expresssion
   };
+
+  StatementNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -450,6 +479,8 @@ class VariableListNode : public Node {
      VARIABLE,                  //variable_list → variable  
      VARIABLE_LIST_VARIABLE,    //variable_list → variable_list , variable
   };
+
+  VariableListNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -470,6 +501,8 @@ class IDVarPartsNode : public Node {
     EPSILON,      //id_varparts → EPSILON 
     MULTIPLE_IDv, //id_varparts → id_varparts id_varpart 
   };
+
+  IDVarPartsNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -481,6 +514,8 @@ class IDVarPartNode : public Node {
     _ID,          //id_varpart → .id 
     EXP_LIST,     //id_varpart → [ expression_list ]
   };
+
+  IDVarPartNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -492,6 +527,8 @@ public:
     SINGLE_BRAN,   //branchlist → branch
     MULTIPLE_BRAN, //branchlist → branchlist branch
   };
+
+  BranchListNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
 private:
   GrammarType grammar_type_;
@@ -503,6 +540,8 @@ class CaseBodyNode : public Node {
     BRANCH_LIST,   //case_body → branch_list 
     EPSILON,       //case_body → EPSILON
   };
+
+  CaseBodyNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
   BranchListNode* GetBranchList() {
     return child_list_[0]->DynamicCast<BranchListNode>();
@@ -526,6 +565,8 @@ class ConstListNode : public Node {
     SINGLE_CON,   //constlist → const_variable
     MULTIPLE_CON, //constlist → constlist , const_variable
   };
+
+  ConstListNode(GrammarType gt) : grammar_type_(gt) {}
   std::vector<Node*>* Consts() { return &child_list_; }
   void TransCode() override;
  private:
@@ -550,6 +591,8 @@ class ProcedureCallNode : public Node {
     ID,             //procedure_call → id
     ID_EXP_LIST,    //procedure_call → id ( expression_list )
   };
+
+  ProcedureCallNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -562,6 +605,8 @@ class ElseNode : public Node {
     EPSILON,          //else_part → EPSILON
     ELSE_STATEMENT,   //else_part → else statement 
   };
+
+  ElseNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
   StatementNode* GetStatement() {
     return child_list_[0]->DynamicCast<StatementNode>();
@@ -576,6 +621,8 @@ class ExpressionListNode: public Node {
     EXP,              //expression_list → expression
     EXP_LIST_EXP,     //expression_list → expression_list , expression
   };
+
+  ExpressionListNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -588,6 +635,8 @@ class ExpressionNode : public Node {
     S_EXP,              //expression → simple_expression 
     S_EXP_ADDOP_TERM,   //expression → simple_expression relop simple_expression 
   };
+
+  ExpressionNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -602,6 +651,8 @@ class SimpleExpressionNode : public Node {
     NEGI_TERM,          //simple_expression → -term
     S_EXP_ADDOP_TERM,   //simple_expression → simple_expression addop term 
   };
+
+  SimpleExpressionNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -614,6 +665,8 @@ class TermNode : public Node {
     FACTOR,               //term → factor
     TERM_MULOP_FACTOR,    //term → term mulop factor
   };
+
+  TermNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -629,6 +682,8 @@ class FactorNode : public Node {
     ID_EXP_LIST,    //factor → id ( expression_list ) 
     NOT,            //factor → not factor 
   };
+
+  FactorNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
@@ -638,13 +693,11 @@ class UnsignConstVarNode : public Node {
   // unsigned_const_variable → num | 'letter'
  public:
   void TransCode() override;
-  private:
-  
+ private:
 };
 
+
 } // namespace ast
-
-
 
 
 #endif
