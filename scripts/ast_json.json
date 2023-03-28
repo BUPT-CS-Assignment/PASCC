@@ -54,8 +54,13 @@
             "children":[
                 {
                     "type": "leaf",
-                    "entry_type": "basic",
-                    "entry_name": "program_id"
+                    "leaf_type": "id",
+                    "id" : "main"
+                },
+                {
+                    "type": "leaf",
+                    "leaf_type": "real",
+                    "value": 10.0
                 },
                 {
                     "type": "idlists"

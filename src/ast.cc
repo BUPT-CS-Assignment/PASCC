@@ -50,9 +50,9 @@ void LeafNode::TransCode() {
       OUT(" %d ", value_.get<int>())
     } else if (tp == pascal_type::TYPE_REAL) {
       OUT(" %.2f ", value_.get<float>())
-          } else if (tp == pascal_type::TYPE_BOOL) {
+    } else if (tp == pascal_type::TYPE_BOOL) {
       OUT(" %s ", value_.get<bool>() ? "true" : "false")
-          } else if (tp == pascal_type::TYPE_CHAR) {
+    } else if (tp == pascal_type::TYPE_CHAR) {
       OUT(" %c ", value_.get<char>())
     }
   }
@@ -647,19 +647,21 @@ void Node::LoadFromJson(const nlohmann::json & node_json, symbol_table::TableSet
     string tp_str = item["type"];
     Node* child = Node::NewNodeFromStr(tp_str);
      if (tp_str == "leaf") {
-      string entry_type = item["entry_type"].get<string>();
-      string entry_name = item["entry_name"].get<string>();
+      string leaf_type = item["leaf_type"].get<string>();
+      LeafNode* lf = child->StaticCast<LeafNode>();
 
-      ObjectSymbol* entry_ptr = nullptr;
-      if (entry_type == "basic" || entry_type == "array") {
-        entry_ptr = node_table->SearchEntry<ObjectSymbol>(entry_name);
-      } else if (entry_type == "function") {
-        entry_ptr = node_table->SearchEntry<FunctionSymbol>(entry_name);
-      } else if (entry_type == "const") {
-        entry_ptr = node_table->SearchEntry<ConstSymbol>(entry_name);
+      if (leaf_type == "id") {
+        lf->set_id(item["name"].get<string>());
+        lf->set_tableset(node_table);
+      } else if (leaf_type == "int") {
+        lf->set_value(ConstValue(item["value"].get<int>()));
+      } else if (leaf_type == "real") {
+        lf->set_value(ConstValue(item["value"].get<float>()));
+      } else if (leaf_type == "char") {
+        lf->set_value(ConstValue(item["value"].get<char>()));
+      } else if (leaf_type == "bool") {
+        lf->set_value(ConstValue(item["value"].get<bool>()));
       }
-
-      child->StaticCast<LeafNode>()->set_entry(entry_ptr);
 
     } else if (tp_str == "subp_decl") {
       TableSet* tb = node_table->CreateNext(item["name"].get<string>());
@@ -669,6 +671,8 @@ void Node::LoadFromJson(const nlohmann::json & node_json, symbol_table::TableSet
     } else {
       child->LoadFromJson(item, node_table);
     }
+
+    child->set_parent(this);
     this->append_child(child);
   }
 }

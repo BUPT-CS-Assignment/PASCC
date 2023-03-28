@@ -98,19 +98,22 @@ class LeafNode : public Node {
   const std::string id() {
     return name_;
   }
+  void set_id (std::string name) { name_ = name;}
+  void set_tableset(symbol_table::TableSet* ts) { ts_ = ts; searched_ = false;}
   void set_entry(pascal_symbol::ObjectSymbol* entry) { entry_ = entry; }
+  void set_value(pascal_symbol::ConstValue value) { leaf_type_ = LEAF_TYPE::CONST_VALUE; value_ = value; }
 
   template <typename T> T value() {
     return value_.get<T>();
   }
 
   pascal_symbol::ObjectSymbol* entry() {
-    if(entry_ == nullptr) SearchEntry();
+    if(!searched_) SearchEntry();
     return entry_;
   }
 
   template <typename T> T* entry_cast() {
-    if(entry_ == nullptr) SearchEntry();
+    if(!searched_) SearchEntry();
     return static_cast<T*>(entry_);
   }
 
@@ -120,13 +123,14 @@ private:
   LEAF_TYPE leaf_type_;
   std::string name_ = "";
   pascal_symbol::ConstValue value_;
-
-  void SearchEntry(){
-    entry_ = ts_->SearchEntry<pascal_symbol::ObjectSymbol>(name_);
-  }
-
   symbol_table::TableSet* ts_;
   pascal_symbol::ObjectSymbol* entry_;
+  bool searched_ = false;
+
+  void SearchEntry(){
+    if (ts_ != nullptr) entry_ = ts_->SearchEntry<pascal_symbol::ObjectSymbol>(name_);
+    searched_ = true;
+  }
 
 };
 
