@@ -105,8 +105,69 @@ void TypeInit() {
   TYPE_CHAR = new BasicType(BasicType::BASIC_TYPE::LETTER);
   TYPE_INT = new BasicType(BasicType::BASIC_TYPE::INT);
   TYPE_REAL = new BasicType(BasicType::BASIC_TYPE::REAL);
+
+  //bool
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "and")] = TYPE_BOOL;
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "or")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, NULL, "not")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "<>")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "<")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, ">")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "<=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_BOOL, TYPE_BOOL, ">=")] = TYPE_BOOL;
+  // int
+  operation_map[Operation(TYPE_INT, TYPE_INT, "+")] = TYPE_INT;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "-")] = TYPE_INT;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "*")] = TYPE_INT;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "/")] = TYPE_REAL;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "mod")] = TYPE_INT;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "div")] = TYPE_INT;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "<>")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "<")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_INT, ">")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_INT, "<=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_INT, ">=")] = TYPE_BOOL;
+  //real
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "+")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "-")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "*")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "/")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "<>")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, ">")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "<")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, ">=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_REAL, "<=")] = TYPE_BOOL;
+  //char
+  operation_map[Operation(TYPE_CHAR, TYPE_CHAR, "=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_CHAR, TYPE_CHAR, "<>")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_CHAR, TYPE_CHAR, "<")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_CHAR, TYPE_CHAR, "<=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_CHAR, TYPE_CHAR, ">")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_CHAR, TYPE_CHAR, ">=")] = TYPE_BOOL;
+  // int real
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "+")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "-")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "*")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "/")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "<>")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, ">")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, ">=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "<=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_REAL, TYPE_INT, "<")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "+")] = TYPE_REAL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "-")] = TYPE_REAL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "*")] = TYPE_REAL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "/")] = TYPE_REAL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "<>")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, ">")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, ">=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "<=")] = TYPE_BOOL;
+  operation_map[Operation(TYPE_INT, TYPE_REAL, "<")] = TYPE_BOOL;
 
 }
 } // namespace pascal_type
