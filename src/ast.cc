@@ -145,9 +145,9 @@ void VariableDeclarationNode::TransCode() {
     auto id_list_node = child_list_[idx]->DynamicCast<IdListNode>();
     auto id_list = *id_list_node->IdList();
     auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
-    auto basic_type = type_node->get_basic_type();
+    auto base_type = type_node->base_type();
     for (auto id_node : id_list) {
-      basic_type->TransCode();
+      base_type->TransCode();
       OUT(" ")
       id_node->TransCode();
       if (type_node->grammar_type() == TypeNode::GrammarType::ARRAY) {
@@ -168,9 +168,9 @@ void TypeDeclarationNode::TransCode() {
   for (int idx = 0; idx < child_list_.size(); idx += 2) {
     child_list_[idx]->TransCode();
     auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
-    auto basic_type = type_node->get_basic_type();
+    auto base_type = type_node->base_type();
     OUT("typedef ")
-    basic_type->TransCode();
+    base_type->TransCode();
     OUT(" ")
     type_node->TransCode();
     OUT(";\n")
@@ -199,13 +199,6 @@ void TypeNode::PeriodsTransCode() {
   }
 }
 
-Node* TypeNode::get_basic_type() {
-  if (grammar_type_ != GrammarType::ARRAY) {
-    return this;
-  } else {
-    return child_list_[1]->DynamicCast<TypeNode>()->get_basic_type();
-  }
-}
 
 void BasicTypeNode::TransCode() {
   OUT("%s", type_->type_name().c_str())
@@ -524,101 +517,101 @@ void UnsignConstVarNode::TransCode() {
 /////////////////////////////
 
 Node* Node::NewNodeFromStr(std::string str) {
-  if (str == "leaf") {
-    return new LeafNode();
-  } else if (str == "program") {
-    return new ProgramNode();
-  } else if (str == "program_head") {
-    return new ProgramHeadNode();
-  } else if (str == "program_body") {
-    return new ProgramBodyNode();
-  } else if (str == "idlists") {
-    return new IdListNode();
-  } else if (str == "const_decls") {
-    return new ConstDeclarationsNode();
-  } else if (str == "const_decl") {
-    return new ConstDeclarationNode();
-  } else if (str == "const_var") {
-    return new ConstVariableNode();
-  } else if (str == "var_decls") {
-    return new VariableDeclarationsNode();
-  } else if (str == "var_decl") {
-    return new VariableDeclarationNode();
-  } else if (str == "type_decls") {
-    return new TypeDeclarationsNode();
-  } else if (str == "type_decl") {
-    return new TypeDeclarationNode();
-  } else if (str == "type") {
-    return new TypeNode();
-  } else if (str == "basic_type") {
-    return new BasicTypeNode();
-  } else if (str == "record_body") {
-    return new RecordBodyNode();
-  } else if (str == "periods") {
-    return new PeriodsNode();
-  } else if (str == "period") {
-    return new PeriodNode();
-  } else if (str == "subp_decls") {
-    return new SubprogramDeclarationsNode();
-  } else if (str == "subp_decl") {
-    return new SubprogramDeclarationNode();
-  } else if (str == "subp_head") {
-    return new SubprogramHeadNode();
-  } else if (str == "subp_body") {
-    return new SubprogramBodyNode();
-  } else if (str == "formal_param") {
-    return new FormalParamNode();
-  } else if (str == "param_lists") {
-    return new ParamListsNode();
-  } else if (str == "param_list") {
-    return new ParamListNode();
-  } else if (str == "var_param") {
-    return new VarParamNode();
-  } else if (str == "value_param") {
-    return new ValueParamNode();
-  } else if (str == "comp_stat") {
-    return new CompoundStatementNode();
-  } else if (str == "stat_list") {
-    return new StatementListNode();
-  } else if (str == "stat") {
-    return new StatementNode();
-  } else if (str == "var_list") {
-    return new VariableListNode();
-  } else if (str == "var") {
-    return new VariableNode();
-  } else if (str == "id_varparts") {
-    return new IDVarPartsNode();
-  } else if (str == "id_varpart") {
-    return new IDVarPartNode();
-  } else if (str == "branch_list") {
-    return new BranchListNode();
-  } else if (str == "case_body") {
-    return new CaseBodyNode();
-  } else if (str == "branch") {
-    return new BranchNode();
-  } else if (str == "const_list") {
-    return new ConstListNode();
-  } else if (str == "updown") {
-    return new UpdownNode();
-  } else if (str == "proc_call") {
-    return new ProcedureCallNode();
-  } else if (str == "else") {
-    return new ElseNode();
-  } else if (str == "exp_list") {
-    return new ExpressionListNode();
-  } else if (str == "exp") {
-    return new ExpressionNode();
-  } else if (str == "simple_exp") {
-    return new SimpleExpressionNode();
-  } else if (str == "term") {
-    return new TermNode();
-  } else if (str == "factor") {
-    return new FactorNode();
-  } else if (str == "unsign_const_var") {
-    return new UnsignConstVarNode();
-  } else {
-    return nullptr;
-  }
+//  if (str == "leaf") {
+//    return new LeafNode();
+//  } else if (str == "program") {
+//    return new ProgramNode();
+//  } else if (str == "program_head") {
+//    return new ProgramHeadNode();
+//  } else if (str == "program_body") {
+//    return new ProgramBodyNode();
+//  } else if (str == "idlists") {
+//    return new IdListNode();
+//  } else if (str == "const_decls") {
+//    return new ConstDeclarationsNode();
+//  } else if (str == "const_decl") {
+//    return new ConstDeclarationNode();
+//  } else if (str == "const_var") {
+//    return new ConstVariableNode();
+//  } else if (str == "var_decls") {
+//    return new VariableDeclarationsNode();
+//  } else if (str == "var_decl") {
+//    return new VariableDeclarationNode();
+//  } else if (str == "type_decls") {
+//    return new TypeDeclarationsNode();
+//  } else if (str == "type_decl") {
+//    return new TypeDeclarationNode();
+//  } else if (str == "type") {
+//    return new TypeNode();
+//  } else if (str == "basic_type") {
+//    return new BasicTypeNode();
+//  } else if (str == "record_body") {
+//    return new RecordBodyNode();
+//  } else if (str == "periods") {
+//    return new PeriodsNode();
+//  } else if (str == "period") {
+//    return new PeriodNode();
+//  } else if (str == "subp_decls") {
+//    return new SubprogramDeclarationsNode();
+//  } else if (str == "subp_decl") {
+//    return new SubprogramDeclarationNode();
+//  } else if (str == "subp_head") {
+//    return new SubprogramHeadNode();
+//  } else if (str == "subp_body") {
+//    return new SubprogramBodyNode();
+//  } else if (str == "formal_param") {
+//    return new FormalParamNode();
+//  } else if (str == "param_lists") {
+//    return new ParamListsNode();
+//  } else if (str == "param_list") {
+//    return new ParamListNode();
+//  } else if (str == "var_param") {
+//    return new VarParamNode();
+//  } else if (str == "value_param") {
+//    return new ValueParamNode();
+//  } else if (str == "comp_stat") {
+//    return new CompoundStatementNode();
+//  } else if (str == "stat_list") {
+//    return new StatementListNode();
+//  } else if (str == "stat") {
+//    return new StatementNode();
+//  } else if (str == "var_list") {
+//    return new VariableListNode();
+//  } else if (str == "var") {
+//    return new VariableNode();
+//  } else if (str == "id_varparts") {
+//    return new IDVarPartsNode();
+//  } else if (str == "id_varpart") {
+//    return new IDVarPartNode();
+//  } else if (str == "branch_list") {
+//    return new BranchListNode();
+//  } else if (str == "case_body") {
+//    return new CaseBodyNode();
+//  } else if (str == "branch") {
+//    return new BranchNode();
+//  } else if (str == "const_list") {
+//    return new ConstListNode();
+//  } else if (str == "updown") {
+//    return new UpdownNode();
+//  } else if (str == "proc_call") {
+//    return new ProcedureCallNode();
+//  } else if (str == "else") {
+//    return new ElseNode();
+//  } else if (str == "exp_list") {
+//    return new ExpressionListNode();
+//  } else if (str == "exp") {
+//    return new ExpressionNode();
+//  } else if (str == "simple_exp") {
+//    return new SimpleExpressionNode();
+//  } else if (str == "term") {
+//    return new TermNode();
+//  } else if (str == "factor") {
+//    return new FactorNode();
+//  } else if (str == "unsign_const_var") {
+//    return new UnsignConstVarNode();
+//  } else {
+//    return nullptr;
+//  }
 }
 
 /////////////////////////////

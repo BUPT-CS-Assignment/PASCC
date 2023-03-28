@@ -54,13 +54,8 @@ class Node {
   std::vector<Node*> child_list();
 
   // type cast
-  template <typename T> T* StaticCast() {
-    return dynamic_cast<T*>(this);
-  }
-  
-  template <typename T> T* DynamicCast() {
-    return dynamic_cast<T*>(this);
-  }
+  template <typename T> T* StaticCast() { return dynamic_cast<T*>(this); }
+  template <typename T> T* DynamicCast() { return dynamic_cast<T*>(this); }
 
   void TransCodeAt(int);
   void LoadFromJson(const nlohmann::json&, symbol_table::TableSet*);
@@ -204,6 +199,7 @@ class ConstVariableNode : public Node {
   // const_variable → +id | -id | id | +num | -num | num | 'letter'
  public:
   void TransCode() override;
+
  private:
 };
 
@@ -222,8 +218,10 @@ class VariableDeclarationsNode : public Node {
 class VariableDeclarationNode : public Node {
  public:
   enum class GrammarType {
-    SINGLE_DECL,  //VariableDeclaration→idlist:type
-    MULTIPLE_DECL //VariableDeclaration→VariableDeclaration;idlist:type
+    SINGLE_DECL_TYPE,     //VariableDeclaration → idlist : type
+    SINGLE_DECL_ID,       //VariableDeclaration → idlist : id
+    MULTIPLE_DECL_TYPE,   //VariableDeclaration → VariableDeclaration ; idlist : type
+    MULTIPLE_DECL_ID      //VariableDeclaration → VariableDeclaration ; idlist : id
   };
   VariableDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
@@ -247,7 +245,7 @@ class TypeDeclarationsNode : public Node {
 class TypeDeclarationNode : public Node {
  public:
   enum class GrammarType {
-    SINGLE_DECL,  //TypeDeclaration→TypeDeclaration;id=type
+    SINGLE_DECL,  //TypeDeclaration→TypeDeclaration ; id = type
     MULTIPLE_DECL //id = type
   };
 
@@ -267,23 +265,16 @@ class TypeNode : public Node {
   };
 
   TypeNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+
   GrammarType grammar_type() { return grammar_type_; }
-  pascal_type::TypeTemplate* type() { return type_; }
-  template <typename T> T* type_cast() {
-    return type_->DynamicCast<T>();
-  }
-
-  template <typename T> void set_type(std::string type_name, symbol_table::TableSet* ts){
-    type_ = ts->SearchEntry<T>(type_name);
-  }
-
+  void set_base_type_node(TypeNode* node) { base_type_node_ = node; }
+  TypeNode* base_type() { return base_type_node_; }
   void PeriodsTransCode();
-  Node* get_basic_type();
 
+  void TransCode() override;
  private:
   GrammarType grammar_type_;
-  pascal_type::TypeTemplate* type_;
+  TypeNode* base_type_node_;
 };
 
 class BasicTypeNode : public Node {
@@ -327,6 +318,8 @@ class PeriodNode : public Node {
  //Period → const_var ... const var
  public:
   void TransCode() override;
+  int len() { return len_; }
+  void set_len(int len) { len_ = len; }
  private:
   int len_;
 };
@@ -463,8 +456,8 @@ class StatementNode : public Node {
     READ_STATEMENT,       //statement → read ( variable_list )
     WRITE_STATEMENT,      //statement → write ( expression_list )
     CASE_STATEMET,        //statement → case expression of case_body end
-    WHILE_STATEMENT,      //statement → while expression do s
-    REPEAT_STATEMENT      //statement → repeat statement_list until expresssion
+    WHILE_STATEMENT,      //statement → while expression do statement
+    REPEAT_STATEMENT      //statement → repeat statement_list until expression
   };
 
   StatementNode(GrammarType gt) : grammar_type_(gt) {}
