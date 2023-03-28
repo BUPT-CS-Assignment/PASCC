@@ -10,6 +10,7 @@ namespace symbol_table {
 
 using namespace pascal_type;
 
+// table template
 template <typename T>
 class SymbolTableTemplate {
  public:
@@ -28,6 +29,11 @@ class SymbolTableTemplate {
     if (it != table_.end()) return it->second;
     return nullptr;
   }
+
+  T* operator[](std::string name) {
+    return Find(name);
+  }
+
  protected:
   std::unordered_map<std::string, T*> table_;
 };
@@ -35,6 +41,7 @@ class SymbolTableTemplate {
 class TypeTable : public SymbolTableTemplate<TypeTemplate> {};
 class SymbolTable : public SymbolTableTemplate<pascal_symbol::ObjectSymbol> {};
 
+// table set including symbol table and type table
 class TableSet {
  public:
   TableSet(std::string tag, TableSet* pre_set) : tag_(tag), prev_table_set_(pre_set) {}
@@ -46,6 +53,7 @@ class TableSet {
 
   std::string tag() { return tag_; }
 
+  // unified entry-search
   template <typename T> T* SearchEntry(std::string name) {
     if(std::is_same<T,pascal_symbol::ObjectSymbol>::value) {
       auto symbol_entry = symbols_.Find(name);

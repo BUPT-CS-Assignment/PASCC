@@ -76,6 +76,7 @@ bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate **ty
   return true;
 }
 
+
 void RecordType::InsertType(std::string name, TypeTemplate* type) {
   types_map_.insert(std::make_pair(name, type));
   types_num_++;
