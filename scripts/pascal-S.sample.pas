@@ -1,1 +1,21 @@
-program a (c,d);
+program test_array;
+var
+  arr: array[1..5] of integer;
+  i: integer;
+begin
+  arr[1] := 1;
+  arr[2] := 3;
+  arr[3] := 5;
+  arr[4] := 7;
+  arr[5] := 9;
+  for i := 1 to 5 do
+    writeln(arr[i]);
+end.
+
+1
+3
+5
+7
+9
+
+var a,b : integer ; c  : real

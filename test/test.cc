@@ -10,4 +10,14 @@
 int main(){
   memcpy(a,b,sizeo)
   return 0;
+
+  void InheritedFromNode::TransCode() {
+    FormatOutput();
+    for (auto child: child_list_) {
+      FormatOutput();
+      child->TransCode();
+      FormatOutput();
+    }
+    FormatOutput();
+  }
 }
