@@ -93,7 +93,8 @@ class LeafNode : public Node {
   LeafNode(bool val) : leaf_type_(LEAF_TYPE::CONST_VALUE), name_(""),
                        value_(val), ts_(nullptr), entry_(nullptr) {}
   // identifier
-  LeafNode(std::string id): leaf_type_(LEAF_TYPE::IDENTIFIER), name_(id), ts_(nullptr), entry_(nullptr) {}
+  LeafNode(std::string id)
+      : leaf_type_(LEAF_TYPE::IDENTIFIER), name_(id), ts_(nullptr), entry_(nullptr) {}
   LeafNode(std::string id, symbol_table::TableSet* ts)
       : leaf_type_(LEAF_TYPE::IDENTIFIER), name_(id), ts_(ts), entry_(nullptr) {};
   LeafNode(std::string id, symbol_table::TableSet* ts, pascal_symbol::FunctionSymbol* func)
@@ -105,7 +106,7 @@ class LeafNode : public Node {
   const std::string origin_id() { return name_;}
 
   void set_id (std::string name) { name_ = name;}
-  void set_tableset(symbol_table::TableSet* ts) { ts_ = ts; searched_ = false;}
+  void set_tableset(symbol_table::TableSet* ts) { ts_ = ts; searched_ = false; SearchEntry();}
   void set_entry(pascal_symbol::ObjectSymbol* entry) { entry_ = entry; }
   void set_value(pascal_symbol::ConstValue value) { leaf_type_ = LEAF_TYPE::CONST_VALUE; value_ = value; }
   void set_ref(bool ref) { is_ref_ = ref; }
