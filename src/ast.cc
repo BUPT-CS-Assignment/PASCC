@@ -73,7 +73,7 @@ void ProgramHeadNode::TransCode(){
 
 void ProgramBodyNode::TransCode(){
   TransCodeAt(0);   // const decl
-  TransCodeAt(1);   // type decl // TODO
+  TransCodeAt(1);   // type decl
   TransCodeAt(2);   // var decl
   TransCodeAt(3);   // sub prog decl
   OUT("int main(int argc, char** argv) {\n")
@@ -91,16 +91,21 @@ void IdListNode::TransCode() {
   }
 }
 
-vector<Node*> IdListNode::get_id_list() {
-  vector<Node*> lists;
+vector<LeafNode*> IdListNode::Lists() {
+  vector<LeafNode*> lists;
   IdListNode* cur_node = this;
   GrammarType gtype = grammar_type_;
   while(gtype == GrammarType::MULTIPLE_ID) {
-    lists.insert(lists.begin(), this->child_list_[1]);
+    LeafNode* ln = this->child_list_[1]->DynamicCast<LeafNode>();
+    lists.insert(lists.begin(), ln);
+    // switch to next layer
     cur_node = child_list_[0]->DynamicCast<IdListNode>();
     gtype = cur_node->grammar_type_;
   }
-  lists.insert(lists.begin(), child_list_[0]);
+
+  // insert last
+  LeafNode* ln = (*this->child_list_.rbegin())->DynamicCast<LeafNode>();
+  lists.insert(lists.begin(), ln);
   return lists;
 }
 
@@ -128,34 +133,61 @@ void ConstDeclarationNode::TransCode(){
   }
 }
 
-void ConstVariableNode::TransCode() {
-  for(auto child : child_list_) {
-    child->TransCode();
-  }
-}
+//void ConstVariableNode::TransCode() {
+//  for(auto child : child_list_) {
+//    child->TransCode();
+//  }
+//}
 
-void VariableDeclarationsNode::TransCode() {
-  if (grammar_type_ == GrammarType::VAR_DECLARATION) {
-    TransCodeAt(0);
-  }
-}
+//void VariableDeclarationsNode::TransCode() {
+//  if (grammar_type_ == GrammarType::VAR_DECLARATION) {
+//    TransCodeAt(0);
+//  }
+//}
 
 void VariableDeclarationNode::TransCode() {
-  for (int idx = 0; idx < child_list_.size(); idx += 2) {
-    auto id_list_node = child_list_[idx]->DynamicCast<IdListNode>();
-    auto id_list = *id_list_node->IdList();
-    auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
-    auto base_type = type_node->base_type();
-    for (auto id_node : id_list) {
-      base_type->TransCode();
-      OUT(" ")
-      id_node->TransCode();
-      if (type_node->grammar_type() == TypeNode::GrammarType::ARRAY) {
-        type_node->PeriodsTransCode();
-      }
-      OUT(";\n")
+  if(grammar_type_ == GrammarType::MULTIPLE_DECL) {
+    TransCodeAt(0);
+  }
+
+  // analyze current layer
+  Node* tnode = *child_list_.rbegin();
+  vector<LeafNode*> idlist = (*(child_list_.rbegin() - 1))->DynamicCast<IdListNode>()->Lists();
+
+  if(list_type_ == ListType::ID){
+    tnode->TransCode();
+    OUT(" ")
+    for(auto id : idlist) id->TransCode();
+  } else {
+    // ListType::TYPE
+    TypeNode* tn = tnode->DynamicCast<TypeNode>()->base_type();
+    tn->TransCode();
+    OUT(" ")
+    // idlist
+    bool array_flag = (tn->grammar_type() == TypeNode::GrammarType::ARRAY);
+    for(auto id : idlist) {
+      id->TransCode();
+      if(array_flag) tn->PeriodsTransCode();
+      OUT(", ")
     }
   }
+  OUT(";\n")
+
+//  for (int idx = 0; idx < child_list_.size(); idx += 2) {
+//    auto id_list_node = child_list_[idx]->DynamicCast<IdListNode>();
+//    auto id_list = *id_list_node->IdList();
+//    auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
+//    auto base_type = type_node->base_type();
+//    for (auto id_node : id_list) {
+//      base_type->TransCode();
+//      OUT(" ")
+//      id_node->TransCode();
+//      if (type_node->grammar_type() == TypeNode::GrammarType::ARRAY) {
+//        type_node->PeriodsTransCode();
+//      }
+//      OUT(";\n")
+//    }
+//  }
 }
 
 void TypeDeclarationsNode::TransCode() {
@@ -210,26 +242,26 @@ void RecordBodyNode::TransCode() {
   }
 }
 
-void PeriodsNode::TransCode() {
-  for (auto child : child_list_) {
-    child->TransCode();
-  }
-}
+//void PeriodsNode::TransCode() {
+//  for (auto child : child_list_) {
+//    child->TransCode();
+//  }
+//}
 
 void PeriodNode::TransCode() {
   OUT("[%d]", len_)
 }
 
-void SubprogramDeclarationsNode::TransCode() {
-  for (auto child : child_list_) {
-    child->TransCode();
-  }
-}
+//void SubprogramDeclarationsNode::TransCode() {
+//  for (auto child : child_list_) {
+//    child->TransCode();
+//  }
+//}
 
-void SubprogramDeclarationNode::TransCode() {
-  TransCodeAt(0);
-  TransCodeAt(1);
-}
+//void SubprogramDeclarationNode::TransCode() {
+//  TransCodeAt(0);
+//  TransCodeAt(1);
+//}
 
 void SubprogramHeadNode::TransCode() {
   if (grammar_type_ == GrammarType::PROCEDURE) {
@@ -241,11 +273,11 @@ void SubprogramHeadNode::TransCode() {
   TransCodeAt(1);
 }
 
-void SubprogramBodyNode::TransCode() {
-  for(auto child : child_list_) {
-    child->TransCode();
-  }
-}
+//void SubprogramBodyNode::TransCode() {
+//  for(auto child : child_list_) {
+//    child->TransCode();
+//  }
+//}
 
 void FormalParamNode::TransCode() {
   OUT("(")
@@ -256,21 +288,43 @@ void FormalParamNode::TransCode() {
 }
 
 void ParamListsNode::TransCode() {
-  for(auto child : child_list_) {
-    child->TransCode();
+  for(int i = 0; i < child_list_.size(); i++) {
+    child_list_[i]->TransCode();
+    if(i < child_list_.size() - 1) {
+      OUT(",")
+    }
   }
 }
 
 void ParamListNode::TransCode() {
-
+  TransCodeAt(0);
+  OUT(", ")
+  TransCodeAt(1);
 }
 
 void VarParamNode::TransCode() {
-
+  ValueParamNode* vp = child_list_[0]->DynamicCast<ValueParamNode>();
+  vp->TransCode(true);
 }
 
 void ValueParamNode::TransCode() {
+  this->TransCode(false);
+}
 
+void ValueParamNode::TransCode(bool ref) {
+  // get idlists
+  IdListNode* idnode = child_list_[0]->DynamicCast<IdListNode>();
+  // get type
+  BasicTypeNode *tnode = child_list_[1]->DynamicCast<BasicTypeNode>();
+  vector<LeafNode*> idlist = idnode->Lists();
+  string tname = tnode->TypeName(ref);
+
+  for(int i = 0; i < idlist.size(); i++) {
+    OUT("%s %s", tname.c_str(), idlist[i]->id().c_str());
+    if(i != idlist.size() - 1) {
+      OUT(", ")
+    }
+  }
 }
 
 void CompoundStatementNode::TransCode() {
@@ -425,13 +479,13 @@ void BranchNode::TransCode() {
   }
 }
 
-void ConstListNode::TransCode() {
+//void ConstListNode::TransCode() {
+//
+//}
 
-}
-
-void UpdownNode::TransCode() {
-
-}
+//void UpdownNode::TransCode() {
+//
+//}
 
 
 void ProcedureCallNode::TransCode() {

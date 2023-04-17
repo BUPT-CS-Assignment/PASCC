@@ -60,7 +60,10 @@ class Node {
   void TransCodeAt(int);
   void LoadFromJson(const nlohmann::json&, symbol_table::TableSet*);
 
-  virtual void TransCode(){};
+  virtual void TransCode(){
+      for(auto child : child_list_) child->TransCode();
+  };
+
  protected:
   // entry
 
@@ -164,8 +167,9 @@ class IdListNode : public Node {
   };
   IdListNode(GrammarType gt) : grammar_type_(gt) {}
   void TransCode() override;
-  std::vector<Node*> get_id_list();
-  std::vector<Node*>* IdList() { return &child_list_; }
+  // std::vector<Node*> Lists();
+  std::vector<LeafNode*> Lists();
+  // std::vector<Node*>* IdList() { return &child_list_; }
  private:
   GrammarType grammar_type_;
 };
@@ -198,8 +202,7 @@ class ConstDeclarationNode : public Node {
 class ConstVariableNode : public Node {
   // const_variable → +id | -id | id | +num | -num | num | 'letter'
  public:
-  void TransCode() override;
-
+//  void TransCode() override;
  private:
 };
 
@@ -210,7 +213,7 @@ class VariableDeclarationsNode : public Node {
     VAR_DECLARATION   //variable_declarations→var VariableDeclaration
   };
   VariableDeclarationsNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  // void TransCode() override;
  private:
   GrammarType grammar_type_;
 };
@@ -218,15 +221,18 @@ class VariableDeclarationsNode : public Node {
 class VariableDeclarationNode : public Node {
  public:
   enum class GrammarType {
-    SINGLE_DECL_TYPE,     //VariableDeclaration → idlist : type
-    SINGLE_DECL_ID,       //VariableDeclaration → idlist : id
-    MULTIPLE_DECL_TYPE,   //VariableDeclaration → VariableDeclaration ; idlist : type
-    MULTIPLE_DECL_ID      //VariableDeclaration → VariableDeclaration ; idlist : id
+    SINGLE_DECL,      //VariableDeclaration → idlist : xx
+    MULTIPLE_DECL     //VariableDeclaration → VariableDeclaration ; idlist : xx
   };
-  VariableDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
+  enum class ListType {
+    TYPE,
+    ID
+  };
+  VariableDeclarationNode(GrammarType gt, ListType lt) : grammar_type_(gt), list_type_(lt) {}
   void TransCode() override;
  private:
   GrammarType grammar_type_;
+  ListType list_type_;
 };
 
 class TypeDeclarationsNode : public Node {
@@ -283,6 +289,10 @@ class BasicTypeNode : public Node {
   BasicTypeNode() {}
   BasicTypeNode(pascal_type::BasicType* type) : type_(type) {}
 
+  std::string TypeName(bool ref = false) {
+    std::string type_name = type_->type_name() + (ref ? "*" : "");
+    return type_name;
+  }
   void TransCode() override;
  private:
   pascal_type::BasicType* type_;
@@ -309,7 +319,7 @@ class PeriodsNode : public Node {
   };
 
   PeriodsNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  // void TransCode() override;
  private:
   GrammarType grammar_type_;
 };
@@ -332,7 +342,7 @@ class SubprogramDeclarationsNode : public Node {
   };
 
   SubprogramDeclarationsNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  //void TransCode() override;
  private:
   GrammarType grammar_type_;
 };
@@ -340,7 +350,7 @@ class SubprogramDeclarationsNode : public Node {
 class SubprogramDeclarationNode : public Node {
   //subprogram_declaration -> subprogram_head subprogram_body
  public:
-  void TransCode() override;
+  // void TransCode() override;
  private:
 };
 
@@ -350,7 +360,7 @@ class SubprogramBodyNode : public Node {
    //                var_declarations
    //                compound_statement
  public:
-   void TransCode() override;
+   // void TransCode() override;
  private:
 };
 
@@ -418,6 +428,7 @@ class ValueParamNode : public Node {
  //ValueParam → idlist : basic_type
  public:
   void TransCode() override;
+  void TransCode(bool ref);
  private:
 
 };
