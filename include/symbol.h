@@ -17,7 +17,7 @@ namespace pascal_symbol {
 // Const value
 class ConstValue {
 public:
-  ConstValue() {}
+  ConstValue() : type_(pascal_type::TYPE_INT) {value_.num_int = 0;}
   ConstValue(int value) : type_(pascal_type::TYPE_INT) {value_.num_int = value;}
   ConstValue(char value) : type_(pascal_type::TYPE_CHAR) {value_.letter = value;}
   ConstValue(float value) : type_(pascal_type::TYPE_REAL) {value_.num_float = value;}
