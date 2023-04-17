@@ -58,6 +58,23 @@ void LeafNode::TransCode() {
   }
 }
 
+bool LeafNode::SearchReference(pascal_symbol::FunctionSymbol *func) {
+  if(func == nullptr || leaf_type_ != LEAF_TYPE::IDENTIFIER)
+    return false;
+
+  // search table and judge if is current layer
+  if(!searched_) SearchEntry();
+  if(is_local_) {
+    // search param
+    FunctionSymbol::ParamType* pt = (*func)[name_];
+    // search param-passing mode
+    if(pt != nullptr && pt->second == FunctionSymbol::PARAM_MODE::REFERENCE) {
+      is_ref_ = true;
+    }
+  }
+  return is_ref_;
+}
+/////////////////////////////////////////////
 
 void ProgramNode::TransCode(){
   TransCodeAt(0);
