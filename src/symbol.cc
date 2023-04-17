@@ -44,7 +44,7 @@ bool FunctionSymbol::IsReference(std::string name) {
   if(ptr == nullptr) {
     return false;
   } else {
-    return ptr->second == PARAM_PASSING::BY_REFERENCE;
+    return ptr->second == PARAM_MODE::REFERENCE;
   }
 }
 

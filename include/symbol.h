@@ -102,12 +102,12 @@ private:
 // function symbols
 class FunctionSymbol : public ObjectSymbol {
 public:
-  enum class PARAM_PASSING {
-    BY_VALUE,
-    BY_REFERENCE,
+  enum class PARAM_MODE {
+    VALUE,
+    REFERENCE,
   };
 
-  typedef std::pair<pascal_type::BasicType*, PARAM_PASSING> ParamType;
+  typedef std::pair<pascal_type::BasicType*, PARAM_MODE> ParamType;
   typedef std::pair<std::string, ParamType> Parameter;
 
   FunctionSymbol() {}
@@ -121,6 +121,7 @@ public:
   // get params at specific position
   const Parameter* ParamAt(int pos) { return &params_[pos]; }
   bool InsertParam(Parameter&);
+
 
   // passing parameter assertion
   bool AssertParams(const std::vector<pascal_type::BasicType*>& params);
