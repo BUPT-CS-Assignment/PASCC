@@ -48,7 +48,7 @@ void TableSet::LoadFromJson(nlohmann::json & input_json) {
       for(auto p : item["params"]) {
         BasicType* tp = SearchEntry<BasicType>(p["type_name"]);
         int passing = p["passing"].get<int>();
-        FunctionSymbol::ParamType param_type(tp,(FunctionSymbol::PARAM_PASSING)passing);
+        FunctionSymbol::ParamType param_type(tp,(FunctionSymbol::PARAM_MODE)passing);
         params.emplace_back(FunctionSymbol::Parameter(p["name"], param_type));
       }
 

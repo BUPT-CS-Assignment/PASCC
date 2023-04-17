@@ -50,11 +50,18 @@ class TableSet {
   SymbolTable *symbols() { return &symbols_; }
   TypeTable *def_types() { return &def_types_; }
   TableSet *previous() { return prev_table_set_; }
-
   std::string tag() { return tag_; }
 
-  // unified entry-search
-  template <typename T> T* SearchEntry(std::string name) {
+
+  /**
+   * Unified search entry of Symbol (from symbol-table) or Type (form type-table)
+   * @tparam T ObjectSymbol || TypeTemplate | ArrayType | RecordType | BasciType
+   * @param name name of identifier
+   * @param local_zone if is searched from current layer
+   * @return T-pointer
+   */
+  template <typename T> T* SearchEntry(std::string name, bool* local_zone = nullptr) {
+    if(local_zone != nullptr) *local_zone = true;
     if(std::is_same<T,pascal_symbol::ObjectSymbol>::value) {
       auto symbol_entry = symbols_.Find(name);
       if (symbol_entry != nullptr)  return (T*)symbol_entry;
@@ -71,8 +78,8 @@ class TableSet {
       else if (name == "bool") return (T*)pascal_type::TYPE_BOOL;
     }
 
+    if(local_zone != nullptr) *local_zone = false;
     if(prev_table_set_ != nullptr)  return prev_table_set_->SearchEntry<T>(name);
-
     return nullptr;
   }
 
@@ -83,7 +90,6 @@ class TableSet {
   std::string tag_;
   SymbolTable symbols_;
   TypeTable def_types_;
-
   TableSet* prev_table_set_;
 };
 
