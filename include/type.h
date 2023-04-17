@@ -7,7 +7,6 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include "json.hpp"
 
 namespace pascal_type {
 
@@ -73,8 +72,6 @@ class ArrayType : public TypeTemplate {
   ArrayType(TypeTemplate* type, std::vector<ArrayBound> bounds)
     : TypeTemplate(TYPE::ARRAY), type_(type), bounds_(bounds) {}
 
-  ArrayType(nlohmann::json&, void* symbol_table);
-
   ~ArrayType() {}
   TypeTemplate* type() { return type_; }
   int dimension() { return bounds_.size(); }
@@ -96,8 +93,6 @@ class RecordType : public TypeTemplate {
     types_map_.insert(type_map.begin(), type_map.end());
     types_num_ = types_map_.size();
   }
-
-  RecordType(nlohmann::json&, void* symbol_table);
 
   ~RecordType() {}
 

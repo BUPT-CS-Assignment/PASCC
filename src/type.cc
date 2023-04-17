@@ -42,24 +42,6 @@ bool TypeTemplate::TypeEqual(TypeTemplate* type1, TypeTemplate* type2) {
   } else return false;
 }
 
-ArrayType::ArrayType(nlohmann::json& json, void* table) : TypeTemplate(TYPE::ARRAY) {
-  TableSet* cur_table = (TableSet*)table;
-  std::string type_str = json["base_type"].get<std::string>();
-  type_ = cur_table->SearchEntry<TypeTemplate>(type_str);
-
-  for (auto& bound : json["bounds"]) {
-    string type_str = bound["type"].get<string>();
-    bound_types_.emplace_back(cur_table->SearchEntry<TypeTemplate>(type_str));
-
-    if(type_str == "int"){
-        bounds_.push_back(std::make_pair(bound["lb"].get<int>(), bound["ub"].get<int>()));
-    } else if (type_str == "char") {
-        bounds_.push_back(std::make_pair((int)bound["lb"].get<string>()[0], (int)bound["ub"].get<string>()[0]));
-    }
-  }
-
-}
-
 
 bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate **type) {
   if (index_types.size() != bound_types_.size()) {

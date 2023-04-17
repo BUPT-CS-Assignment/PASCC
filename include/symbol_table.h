@@ -83,8 +83,6 @@ class TableSet {
     return nullptr;
   }
 
-  void LoadFromJson(nlohmann::json&);
-
 
  private:
   std::string tag_;
