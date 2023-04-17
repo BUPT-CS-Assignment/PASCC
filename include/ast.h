@@ -61,13 +61,11 @@ class AST {
   void LoadFromJson(std::string file_name);
 
   void Print() {
-    // PreProcess();
     if(root_ != nullptr) root_->TransCode();
     fclose(OUTPUT_DST);
   }
 
 private:
-  void PreProcess();
   Node* root_;
   symbol_table::TableSet* symbol_table_;
 
