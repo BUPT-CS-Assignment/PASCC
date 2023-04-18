@@ -54,10 +54,11 @@ public:
     };
 
     class Exception : public std::exception{
-        std::string _msg = "";
+        std::string _msg;
     public:
         Exception(BasicArgument* arg,std::string msg = ""){
-          _msg = arg->tag() + " (" + arg->type_name() + ") : " + std::string(msg);
+          std::string name = (arg->name().length() > 0 ? arg->name() : arg->tag());
+          _msg = "argument " + name + "::" + arg->type_name() + " -- " + std::string(msg);
         }
 
         Exception(std::string msg = ""){
@@ -69,7 +70,20 @@ public:
         }
 
     };
-    
+
+    template <typename T>
+    bool type_assert(){
+        switch(base_type_){
+            case BaseType::TYPE_BOOL: return std::is_same<bool,T>::value;
+            case BaseType::TYPE_CHAR: return std::is_same<char,T>::value;
+            case BaseType::TYPE_INT: return std::is_same<int,T>::value;
+            case BaseType::TYPE_LONG_LONG: return std::is_same<long long,T>::value;
+            case BaseType::TYPE_DOUBLE: return std::is_same<double,T>::value;
+            case BaseType::TYPE_STRING: return std::is_same<std::string,T>::value;
+            default: return false;
+        }
+    }
+
     template <typename T>
     void init(){
         base_type_ = std::is_same<bool,T>::value ? BaseType::TYPE_BOOL :
@@ -383,13 +397,14 @@ public:
         }
 
         /* consturct new argument and initialize */
+        /* tag assertion */
         std::string tag_f, name_f;
         _filter(tag,tag_f);
         _filter(name,name_f);
 
         if(tag_f == "h" || tag_f == "help" || name_f == "help")
             throw BasicArgument::Exception("reserved keyword");
-        /* do tag assertion*/
+
         Argument<T>* new_arg = new Argument<T>();
         new_arg->set_tag(tag_f);
         new_arg->set_name(name_f);
@@ -431,7 +446,10 @@ public:
         auto iter = _tag_map.find(index);
         if(iter == _tag_map.end()) iter = _name_map.find(index);
         if(iter == _tag_map.end() || iter == _name_map.end())  return T();
-        return (dynamic_cast<Argument<T>*>(_args[(*iter).second]))->value();
+        BasicArgument* arg = _args[(*iter).second];
+        if(!arg->type_assert<T>())
+            throw BasicArgument::Exception(arg,"invalid value cast <" + std::string(typeid(T).name()) + ">");
+        return (dynamic_cast<Argument<T>*>(arg))->value();
     }
 
 
@@ -444,7 +462,11 @@ public:
      */
     template<typename T>
     T get_value(int index){
-        return dynamic_cast<Argument<T>*>(_args[index])->value();
+        if(index < 0) index += _args.size();
+        BasicArgument* arg = _args[index];
+        if(!arg->type_assert<T>())
+            throw BasicArgument::Exception(arg,"invalid value cast <" + std::string(typeid(T).name()) + ">");
+        return dynamic_cast<Argument<T>*>(arg)->value();
     }
 
 
@@ -460,7 +482,10 @@ public:
         auto iter = _tag_map.find(index);
         if(iter == _tag_map.end()) iter = _name_map.find(index);
         if(iter == _tag_map.end() || iter == _name_map.end())  return std::vector<T>();
-        return dynamic_cast<Argument<T>*>(_args[(*iter).second])->values();
+        BasicArgument* arg = _args[(*iter).second];
+        if(!arg->type_assert<T>())
+            throw BasicArgument::Exception(arg,"invalid value cast <" + std::string(typeid(T).name()) + ">");
+        return (dynamic_cast<Argument<T>*>(arg))->values();
     }
 
 
@@ -473,7 +498,11 @@ public:
      */
     template<typename T>
     std::vector<T> get_values(int index){
-        return dynamic_cast<Argument<T>*>(_args[index])->values();
+        if(index < 0) index += _args.size();
+        BasicArgument* arg = _args[index];
+        if(!arg->type_assert<T>())
+            throw BasicArgument::Exception(arg,"invalid value cast <" + std::string(typeid(T).name()) + ">");
+        return dynamic_cast<Argument<T>*>(arg)->values();
     }
 
 
