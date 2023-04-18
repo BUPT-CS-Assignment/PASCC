@@ -32,6 +32,7 @@ class Node {
   // type cast
   template <typename T> T* StaticCast() { return dynamic_cast<T*>(this); }
   template <typename T> T* DynamicCast() { return dynamic_cast<T*>(this); }
+  
   // getter and setter functions
   void set_parent(Node* parent) { parent_ = parent;}
   Node* parent() { return parent_; }
@@ -40,9 +41,10 @@ class Node {
     child->set_parent(this);
     child_list_.emplace_back(child);
   }
-  // trans code
-  void TransCodeAt(int pos) { return child_list_[pos]->TransCode(); }
-  virtual void TransCode(){ for(auto child : child_list_) child->TransCode(); }
+  
+  // generate
+  void FormatAt(int pos) { return child_list_[pos]->Format(); }
+  virtual void Format(){ for(auto child : child_list_) child->Format(); }
   // load from json file
   void LoadFromJson(const nlohmann::json&);
 
@@ -67,10 +69,11 @@ class AST {
    * @brief print AST
    * @param file_name, default nullptr, print to stdout
    */
-  void Print(const char* file_name = nullptr);
+  void Format(const char* file_name = nullptr);
 
 private:
   Node* root_;  // root node pointer
+  FILE* astout = stdout;  // output file pointer
 };
 
 
@@ -111,7 +114,7 @@ class LeafNode : public Node {
   template <typename T> T value() { return value_.get<T>(); }
   // Analyze reference
   bool AnalyzeReference(symbol_table::TableSet* ts, pascal_symbol::FunctionSymbol* fn);
-  void TransCode() override;
+  void Format() override;
 
 private:
   LEAF_TYPE leaf_type_;   // leaf type
@@ -128,7 +131,7 @@ class ProgramNode : public Node {
 class ProgramHeadNode : public Node {
  //programhead → program_id (idlists)
  public:
-  void TransCode() override;
+  void Format() override;
  private:
 };
 
@@ -139,7 +142,7 @@ class ProgramBodyNode : public Node {
   //                subprogram_declarations
   //                compound_statement
  public:
-  void TransCode() override;
+  void Format() override;
  private:
 
 };
@@ -151,7 +154,7 @@ class IdListNode : public Node {
     MULTIPLE_ID     //idlists → idlist,id 
   };
   IdListNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
   std::vector<LeafNode*> Lists();
  private:
   GrammarType grammar_type_;
@@ -173,7 +176,7 @@ class ConstDeclarationNode : public Node {
     DECLARATION   //ConstDeclaration →ConstDeclaration; id = const_var
   };
   ConstDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 };
@@ -202,7 +205,7 @@ class VariableDeclarationNode : public Node {
     ID
   };
   VariableDeclarationNode(GrammarType gt, ListType lt) : grammar_type_(gt), list_type_(lt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
   ListType list_type_;
@@ -224,7 +227,7 @@ class TypeDeclarationNode : public Node {
   };
 
   TypeDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 
@@ -245,7 +248,7 @@ class TypeNode : public Node {
   TypeNode* base_type() { return base_type_node_; }
   void PeriodsTransCode();
 
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
   TypeNode* base_type_node_;
@@ -262,7 +265,7 @@ class BasicTypeNode : public Node {
     return type_name;
   }
   void set_type(pascal_type::BasicType* type) { type_ = type; }
-  void TransCode() override;
+  void Format() override;
  private:
   pascal_type::BasicType* type_;
 };
@@ -286,7 +289,7 @@ class PeriodsNode : public Node {
 class PeriodNode : public Node {
  //Period → const_var ... const var
  public:
-  void TransCode() override;
+  void Format() override;
   int len() { return len_; }
   void set_len(int len) { len_ = len; }
  private:
@@ -304,7 +307,7 @@ class SubprogramDeclarationsNode : public Node {
 class SubprogramDeclarationNode : public Node {
   //subprogram_declaration -> subprogram_head subprogram_body
  public:
-   void TransCode() override;
+   void Format() override;
 };
 
 class SubprogramBodyNode : public Node {
@@ -323,7 +326,7 @@ class SubprogramHeadNode : public Node {
   };
 
   SubprogramHeadNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
 
  private:
   GrammarType grammar_type_;
@@ -335,7 +338,7 @@ class FormalParamNode : public Node {
 //    EPSILON,      //formal_parameter → EPSILON
 //    PARAM_LISTS,  //formal_parameter → ( parameter_lists )
 //  };
-  void TransCode() override;
+  void Format() override;
 };
 
 class ParamListsNode : public Node {
@@ -346,7 +349,7 @@ class ParamListsNode : public Node {
   };
 
   ParamListsNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 };
@@ -366,15 +369,15 @@ class ParamListNode : public Node {
 class VarParamNode : public Node {
  //VarParam → var ValueParam
  public:
-  void TransCode() override;
+  void Format() override;
  private:
 };
 
 class ValueParamNode : public Node {
  //ValueParam → idlist : basic_type
  public:
-  void TransCode() override;
-  void TransCode(bool ref);
+  void Format() override;
+  void Format(bool ref);
  private:
 
 };
@@ -382,7 +385,7 @@ class ValueParamNode : public Node {
 class CompoundStatementNode : public Node {
  //CompoundStatement → begin StatementList end
  public:
-  void TransCode() override;
+  void Format() override;
  private:
 
 };
@@ -413,7 +416,7 @@ class StatementNode : public Node {
   };
 
   StatementNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 };
@@ -426,7 +429,7 @@ class VariableListNode : public Node {
   };
 
   VariableListNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 
@@ -453,7 +456,7 @@ class IDVarPartNode : public Node {
   };
 
   IDVarPartNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 };
@@ -466,7 +469,7 @@ public:
   };
 
   BranchListNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
 private:
   GrammarType grammar_type_;
 };
@@ -479,7 +482,7 @@ class CaseBodyNode : public Node {
   };
 
   CaseBodyNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
   BranchListNode* GetBranchList() {
     return child_list_[0]->DynamicCast<BranchListNode>();
   }
@@ -492,7 +495,7 @@ class CaseBodyNode : public Node {
 class BranchNode : public Node {
  //branch → const_list : statement
  public:
-  void TransCode() override;
+  void Format() override;
  private:
 };
 
@@ -525,7 +528,7 @@ class ProcedureCallNode : public Node {
   };
 
   ProcedureCallNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 };
@@ -539,7 +542,7 @@ class ElseNode : public Node {
   };
 
   ElseNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
   StatementNode* GetStatement() {
     return child_list_[0]->DynamicCast<StatementNode>();
   }
@@ -555,7 +558,7 @@ class ExpressionListNode: public Node {
   };
 
   ExpressionListNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 };
@@ -601,7 +604,7 @@ class FactorNode : public Node {
   };
 
   FactorNode(GrammarType gt) : grammar_type_(gt) {}
-  void TransCode() override;
+  void Format() override;
  private:
   GrammarType grammar_type_;
 };

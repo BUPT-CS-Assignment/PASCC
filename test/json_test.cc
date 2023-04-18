@@ -24,6 +24,6 @@ int main(int argc, char** argv){
   // load ast
   ast::AST ast;
   ast.LoadFromJson(input);
-  ast.Print(output.c_str());
+  ast.Format(output.c_str());
   return 0;
 }
