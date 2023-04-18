@@ -65,8 +65,6 @@ protected:
   pascal_type::TypeTemplate* type_;
   int decl_line_;
   std::vector<int> ref_lines_;
-private:
-  /* data */
 };
 
 
@@ -88,10 +86,8 @@ public:
   ~ConstSymbol() {}
 
   // get value by int or char type
-  template <typename T> T value() {
-    return value_.get<T>();
-  }
-
+  template <typename T> T value() { return value_.get<T>(); }
+  // get value type
   pascal_type::BasicType* type() { return value_.type(); }
 
 private:
@@ -114,18 +110,14 @@ public:
   FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line,
                  const std::vector<Parameter>& params);
 
-  ~FunctionSymbol() {}
   // get parameters size
   int param_size() { return params_.size(); }
-
   // get params at specific position
   const Parameter* ParamAt(int pos) { return &params_[pos]; }
   bool InsertParam(Parameter&);
 
-
   // passing parameter assertion
   bool AssertParams(const std::vector<pascal_type::BasicType*>& params);
-
   // get param type
   ParamType* operator[](std::string );
   // check ref
