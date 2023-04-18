@@ -116,7 +116,7 @@ protected:
 
 /**
  * @brief Argument Type
- * 
+ *
  */
 template <typename T>
 class Argument : public BasicArgument{
@@ -127,19 +127,19 @@ class Argument : public BasicArgument{
 public:
     /**
      * @brief Construct a new Argument object
-     * 
+     *
      */
     Argument() {
         init<T>();
-        _default = T(); 
+        _default = T();
     }
 
 
     /**
      * @brief set relatice choices
-     * 
-     * @param choice_values 
-     * @return Argument& 
+     *
+     * @param choice_values
+     * @return Argument&
      */
     Argument& choices(std::vector<T> choice_values){
         if(choice_values.size() == 0)
@@ -150,25 +150,25 @@ public:
             _choices.insert(it);
         return *this;
     }
-    
+
 
     /**
      * @brief set default value
-     * 
-     * @param default_value 
-     * @return Argument& 
+     *
+     * @param default_value
+     * @return Argument&
      */
     Argument& default_(T default_value){
         _default = default_value;
         return *this;
     }
-    
+
 
     /**
      * @brief set required flag
-     * 
-     * @param required_value 
-     * @return Argument& 
+     *
+     * @param required_value
+     * @return Argument&
      */
     Argument& required(bool required_value = true){
         _required = required_value;
@@ -178,9 +178,9 @@ public:
 
     /**
      * @brief set n-arg number-tag
-     * 
-     * @param ch 
-     * @return Argument& 
+     *
+     * @param ch
+     * @return Argument&
      */
     Argument& nArgs(const char ch){
         if(std::is_same<bool,T>::value && ch == '+')
@@ -190,16 +190,16 @@ public:
         else if(ch == '?') _n_args = 1;
         else if(ch == '+') _n_args = 2;
         else throw BasicArgument::Exception(this,"unknown n-arg tag '" + std::to_string(ch) + "'");
-    
+
         return *this;
     }
 
 
     /**
      * @brief set help info string
-     * 
-     * @param str 
-     * @return Argument& 
+     *
+     * @param str
+     * @return Argument&
      */
     Argument& help(std::string str){
         _help = str;
@@ -209,9 +209,9 @@ public:
 
     /**
      * @brief get one argument value (parameter)
-     * 
-     * @param index 
-     * @return T 
+     *
+     * @param index
+     * @return T
      */
     T value(int index = 0){
         if(_values.size() > 0){
@@ -227,8 +227,8 @@ public:
 
     /**
      * @brief get argument values (parameters)
-     * 
-     * @return std::vector<T> 
+     *
+     * @return std::vector<T>
      */
     std::vector<T> values(){
         if(_values.size() > 0){
@@ -239,11 +239,11 @@ public:
     }
 
     /**
-     * @brief argument_assert value type
+     * @brief assert value type
      * @param str
      * @return
      */
-    bool value_argument_assert(std::string str) {
+    bool value_assert(std::string str) {
         try{
             switch(base_type_){
                 case BaseType::TYPE_BOOL: break;
@@ -263,9 +263,9 @@ public:
 
     /**
      * @brief add value from argv (const char*)
-     * 
-     * @param str 
-     * @return Argument& 
+     *
+     * @param str
+     * @return Argument&
      */
     void add_value(std::string str) override{
         if(std::is_same<bool,T>::value){
@@ -275,7 +275,7 @@ public:
         if(_n_args == 1 && _values.size() >= 1)
             throw BasicArgument::Exception(this,"too many arg values");
         std::string str_(str);
-        if(!value_argument_assert(str_))
+        if(!value_assert(str_))
             throw BasicArgument::Exception(this,"mistyped value '" + str_ + "'");
         std::istringstream iss(str_);
         T value;
@@ -283,24 +283,24 @@ public:
         _values.emplace_back(value);
     }
 
-    
+
     /**
-     * @brief argument_assert read parameters
-     * 
+     * @brief assert read parameters
+     *
      */
     void argument_assert() override{
-        /* argument_assert require */
+        /* assert require */
         if(_required && _values.size() == 0)
             throw BasicArgument::Exception(this,"argument required");
 
-        /* argument_assert numbers */
+        /* assert numbers */
         if(_n_args == 2 && _values.size() == 0)
             throw BasicArgument::Exception(this,"too few parameters");
 
-        if(_n_args == 1 && _values.size() > 1)        
+        if(_n_args == 1 && _values.size() > 1)
             throw BasicArgument::Exception(this,"too many parameters");
-        
-        /* argument_assert choices */
+
+        /* assert choices */
         if(_choices.size() > 0){
             for(int i = 0; i < _values.size(); i++){
                 if(_choices.find(_values[i]) == _choices.end())
@@ -317,7 +317,7 @@ public:
 
 /**
  * @brief Argument Parser Type
- * 
+ *
  */
 class ArgumentParser{
     std::string                         _file_name = "command";     // filename
@@ -338,7 +338,7 @@ class ArgumentParser{
     }
 
     // calc prefix of '-'
-    int _argname_argument_assert(std::string name){
+    int _argname_assert(std::string name){
         if(name.length() == 0 || name.find(' ') != std::string::npos)
             return -1;
         int p;
@@ -348,9 +348,9 @@ class ArgumentParser{
 
     /**
      * @brief Get the argument object pointer from argument list
-     * 
-     * @param index 
-     * @return Argument* 
+     *
+     * @param index
+     * @return Argument*
      */
     BasicArgument* _get_argument(std::string index){
         std::string name;
@@ -358,24 +358,24 @@ class ArgumentParser{
         if(p != 1 && p != 2) return nullptr;
         int pos = p == 1 ? (_tag_map.find(name) == _tag_map.end() ? -1 : _tag_map[name]) :
                            (_name_map.find(name) == _name_map.end() ? -1 : _name_map[name]);
-        return pos == -1 ? nullptr : _args[pos]; 
+        return pos == -1 ? nullptr : _args[pos];
     }
 
 public:
 
     /**
      * @brief Add new argument structure
-     * 
-     * @tparam T 
-     * @param name_or_flag 
-     * @param full_argname 
-     * @return Argument& 
+     *
+     * @tparam T
+     * @param name_or_flag
+     * @param full_argname
+     * @return Argument&
      */
     template<typename T>
     Argument<T>& add_argument(std::string tag, std::string name = ""){
-        /* argument_assertion */
-        int tag_type[2] = {_argname_argument_assert(tag), _argname_argument_assert(name)};
-        if((tag_type[0] != 0 && tag_type[0] != 1)           || 
+        /* assertion */
+        int tag_type[2] = {_argname_assert(tag), _argname_assert(name)};
+        if((tag_type[0] != 0 && tag_type[0] != 1)           ||
            (name.length() > 0 && tag_type[1] != 2)  ||
            (tag_type[0] == 0 && tag_type[1] > 0))
         {
@@ -389,7 +389,7 @@ public:
 
         if(tag_f == "h" || tag_f == "help" || name_f == "help")
             throw BasicArgument::Exception("reserved keyword");
-        /* do tag argument_assertion*/
+        /* do tag assertion*/
         Argument<T>* new_arg = new Argument<T>();
         new_arg->set_tag(tag_f);
         new_arg->set_name(name_f);
@@ -405,7 +405,7 @@ public:
             /* optional arguments */
             _positional_flag = false;
         }
-        
+
         /* insert into parser */
         if(_tag_map.find(tag_f) != _tag_map.end() ||
             _name_map.find(name_f) != _name_map.end())
@@ -414,17 +414,17 @@ public:
         _tag_map[tag_f] = _args.size() - 1;
         if(name.length() > 0)
             _name_map[name_f] = _args.size() - 1;
-        
+
         return *new_arg;
     }
 
 
     /**
      * @brief Get one argument value by tag name
-     * 
-     * @tparam T 
-     * @param index 
-     * @return T 
+     *
+     * @tparam T
+     * @param index
+     * @return T
      */
     template<typename T>
     T get_value(const char* index){
@@ -437,10 +437,10 @@ public:
 
     /**
      * @brief Get one argument value by index
-     * 
-     * @tparam T 
-     * @param index 
-     * @return T 
+     *
+     * @tparam T
+     * @param index
+     * @return T
      */
     template<typename T>
     T get_value(int index){
@@ -450,10 +450,10 @@ public:
 
     /**
      * @brief Get all argument values by tag name
-     * 
-     * @tparam T 
-     * @param index 
-     * @return std::vector<T> 
+     *
+     * @tparam T
+     * @param index
+     * @return std::vector<T>
      */
     template<typename T>
     std::vector<T> get_values(std::string index){
@@ -466,10 +466,10 @@ public:
 
     /**
      * @brief Get all argument values by index
-     * 
-     * @tparam T 
-     * @param index 
-     * @return std::vector<T> 
+     *
+     * @tparam T
+     * @param index
+     * @return std::vector<T>
      */
     template<typename T>
     std::vector<T> get_values(int index){
@@ -479,9 +479,9 @@ public:
 
     /**
      * @brief start parsing args with argc and argv
-     * 
-     * @param argc 
-     * @param argv 
+     *
+     * @param argc
+     * @param argv
      */
     void parse_args(int argc, char** argv){
         if(argc <= 0 || argv == nullptr)
@@ -508,14 +508,14 @@ public:
             BasicArgument* arg_ptr = _get_argument(arg_str);
             if(arg_ptr == nullptr)
                 throw std::runtime_error("unknown argument '" + arg_str + "'");
-            
+
             arg_ptr->add_value();
-            while(ptr < argc && _argname_argument_assert(std::string(argv[ptr])) == 0){
+            while(ptr < argc && _argname_assert(std::string(argv[ptr])) == 0){
                 arg_ptr->add_value(argv[ptr++]);
             }
         }
 
-        /* argument_assertion */
+        /* assertion */
         for(auto it:_args)
             it->argument_assert();
     }
