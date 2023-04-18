@@ -2,21 +2,25 @@ cmake_minimum_required(VERSION 3.24)
 project(PASCC)
 
 # command>  cmake --build . --target PASCC -j 6
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
 include_directories("include")
 include_directories("thirdparty")
 
-file(GLOB_RECURSE include "include/*.h")
+file(GLOB_RECURSE include "include/*.h" "thirdparty/*.h")
 file(GLOB_RECURSE src "src/*.cc")
-file(GLOB_RECURSE src_test "test/*.cc")
+list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc")
+file(GLOB_RECURSE test "test/*.cc")
+file(GLOB_RECURSE tools "thirdparty/*.c" "thirdparty/*.cc")
 
 add_executable(PASCC
-        ${include}
+        ${tools}
         ${src}
+        src/main.cc
         )
 
 add_executable(PASCC_TEST
-        ${include}
+        ${tools}
         ${src}
-        ${src_test}
+        ${test}
         )
