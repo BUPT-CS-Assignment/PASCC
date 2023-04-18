@@ -10,7 +10,7 @@ if ( num1  >  num2 ) {
 else {
  result  =  num2 ;
 }
- result  =  result ;
+return  result ;
 }
 }
 int main(int argc, char** argv) {

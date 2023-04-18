@@ -345,14 +345,11 @@ void StatementNode::TransCode() {
       PRINT(";\n")
       break;
     case GrammarType::FUNC_ASSIGN_OP_EXP:
-      TransCodeAt(0);
-      PRINT(" = ")
+      PRINT("return ")
       TransCodeAt(1);
       PRINT(";\n");
       break;
     case GrammarType::PROCEDURE_CALL:
-      TransCodeAt(0);
-      break;
     case GrammarType::COMPOUND_STATEMENT:
       TransCodeAt(0);
       break;

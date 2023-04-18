@@ -394,20 +394,12 @@
                             },
                             {
                               "type": "stmt",
-                              "sub_type": 1,
+                              "sub_type": 2,
                                 "children": [
                                   {
-                                    "type": "var",
-                                    "children": [
-                                      {
-                                      "type": "leaf",
-                                      "sub_type": 0,
-                                      "value": "result"
-                                      },
-                                      {
-                                      "type": "id_varparts"
-                                      }
-                                    ]
+                                    "type": "leaf",
+                                    "sub_type": 0,
+                                    "value": "max"
                                   },
                                   {
                                     "type": "exp",
