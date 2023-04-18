@@ -10,10 +10,10 @@ int main(int argc, char** argv){
   ArgumentParser parser;
   // add optional argument 'input file'
   parser.add_argument<string>("-i","--input").help("input json files")
-        .default_<string>("../scripts/json/max.json");
+        .default_("../scripts/json/max.json");
   // add optional argument 'output file'
   parser.add_argument<string>("-o","--output").help("output c files")
-        .default_<string>("output.c");
+        .default_("output.c");
 
   // argument parse
   parser.parse_args(argc, argv);

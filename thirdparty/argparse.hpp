@@ -33,58 +33,31 @@
 #ifndef __ARGPARSE_HPP__
 #define __ARGPARSE_HPP__
 
-#include <iostream>
-#include <vector>
-#include <map>
-#include <unordered_map>
-#include <any>
 #include <cstring>
+#include <iostream>
+#include <set>
+#include <sstream>
 #include <string>
-#include <typeinfo>
-#include <type_traits>
+#include <unordered_map>
+#include <vector>
 
-
-/**
- * @brief Argument Type
- * 
- */
-class Argument{
-    bool                    _required   = false;                // required flag
-    char                    _n_args     = '?';                  // arg-number tag
-    std::string             _help = "";                         // help-info string
-    std::string             _short_tag = "", _full_tag = "";    // tag-names
-
-    std::any                _default;                           // default values
-    std::vector<std::any>   _values;                            // values from input(console)
-    std::vector<std::any>   _choices;                           // relative choices
-    
-    // helper function for compare two std::any vars
-    bool _is_equal(std::any& e1, std::any& e2){
-        if(_default.type() == typeid(bool))
-            return std::any_cast<bool>(e1) == std::any_cast<bool>(e2);
-        else if(_default.type() == typeid(int))
-            return std::any_cast<int>(e1) == std::any_cast<int>(e2);
-        else if(_default.type() == typeid(long long))
-            return std::any_cast<long long>(e1) == std::any_cast<long long>(e2);
-        else if(_default.type() == typeid(double))
-            return std::any_cast<double>(e1) == std::any_cast<double>(e2);
-        else if(_default.type() == typeid(char))
-            return std::any_cast<char>(e1) == std::any_cast<char>(e2);
-        else if(_default.type() == typeid(std::string))
-            return std::any_cast<std::string>(e1) == std::any_cast<std::string>(e2);
-        return false;
-    }
-
+class BasicArgument{
 public:
-    /**
-     * @brief Argument Exception Type
-     * 
-     */
+    enum class BaseType{
+        TYPE_BOOL,
+        TYPE_CHAR,
+        TYPE_INT,
+        TYPE_LONG_LONG,
+        TYPE_DOUBLE,
+        TYPE_STRING,
+        TYPE_ERROR
+    };
+
     class Exception : public std::exception{
         std::string _msg = "";
     public:
-        Exception(Argument* arg,std::string msg = ""){
-            _msg = arg->tag() + "(" + arg->arg_typename() + ") : " + std::string(msg);
+        Exception(BasicArgument* arg,std::string msg = ""){
+          _msg = arg->tag() + " (" + arg->type_name() + ") : " + std::string(msg);
         }
 
         Exception(std::string msg = ""){
@@ -96,47 +69,85 @@ public:
         }
 
     };
+    
+    template <typename T>
+    void init(){
+        base_type_ = std::is_same<bool,T>::value ? BaseType::TYPE_BOOL :
+                     std::is_same<char,T>::value ? BaseType::TYPE_CHAR :
+                     std::is_same<int,T>::value ? BaseType::TYPE_INT :
+                     std::is_same<long long,T>::value ? BaseType::TYPE_LONG_LONG :
+                     std::is_same<double,T>::value ? BaseType::TYPE_DOUBLE :
+                     std::is_same<std::string,T>::value ? BaseType::TYPE_STRING :
+                     BaseType::TYPE_ERROR;
+        if(base_type_ == BaseType::TYPE_ERROR)
+            throw std::runtime_error("unsupported type " + std::string(typeid(T).name()));
+    }
 
+    BaseType base_type() const{ return base_type_;}
+    std::string type_name() {
+        switch(base_type_){
+            case BaseType::TYPE_BOOL: return "bool";
+            case BaseType::TYPE_CHAR: return "char";
+            case BaseType::TYPE_INT: return "int";
+            case BaseType::TYPE_LONG_LONG: return "long long";
+            case BaseType::TYPE_DOUBLE: return "double";
+            case BaseType::TYPE_STRING: return "string";
+            default: return "error";
+        }
+    }
 
+    std::string tag() { return _tag;}
+    std::string name() { return _name;}
+    std::string help() { return _help;}
+    void set_tag(std::string tag) { _tag = tag;}
+    void set_name(std::string name) { _name = name;}
+    void set_help(std::string help) { _help = help;}
+
+    virtual void add_value(std::string val_str = ""){}
+    virtual void argument_assert(){}
+
+protected:
+    BaseType      base_type_;               // base type
+    bool          _required   = false;      // required flag
+    int           _n_args     = 0;          // arg-number tag (0: *, 1: ?, 2: +)
+    std::string   _help = "";               // help-info string
+    std::string   _tag = "", _name = "";    // tag-names
+};
+
+/**
+ * @brief Argument Type
+ * 
+ */
+template <typename T>
+class Argument : public BasicArgument{
+    T               _default;     // default value
+    std::vector<T>  _values;      // values from input(console)
+    std::set<T>     _choices;     // relative choices
+
+public:
     /**
      * @brief Construct a new Argument object
      * 
-     * @tparam T type of argument
      */
-    template<typename T>
-    Argument& init(){
-        if(std::is_same<bool,T>::value      ||
-           std::is_same<int,T>::value       || 
-           std::is_same<long long,T>::value ||
-           std::is_same<double,T>::value    || 
-           std::is_same<char,T>::value      ||
-           std::is_same<std::string,T>::value
-        ){
-            _default.emplace<T>();  // set default type
-        }else
-            throw Exception("unsupported type " + std::string(typeid(T).name()));   
-        return *this;
+    Argument() {
+        init<T>();
+        _default = T(); 
     }
 
 
     /**
      * @brief set relatice choices
      * 
-     * @tparam T 
      * @param choice_values 
      * @return Argument& 
      */
-    template<typename T>
     Argument& choices(std::vector<T> choice_values){
-        if(_default.type() != typeid(T))
-            throw Exception(this,"mismatched type in choices") ;
         if(choice_values.size() == 0)
-            throw Exception("no choices given");
+            throw BasicArgument::Exception("no choices given");
 
         _choices.clear();
         for(auto& it:choice_values)
-            _choices.emplace_back(it);
-        _default.emplace<T>(choice_values[0]);
+            _choices.insert(it);
         return *this;
     }
     
@@ -144,13 +155,11 @@ public:
     /**
      * @brief set default value
      * 
-     * @tparam T 
      * @param default_value 
      * @return Argument& 
      */
-    template<typename T>
     Argument& default_(T default_value){
-        _default.emplace<T>(default_value);
+        _default = default_value;
         return *this;
     }
     
@@ -174,15 +183,14 @@ public:
      * @return Argument& 
      */
     Argument& nArgs(const char ch){
-        if(_default.type() == typeid(bool) && ch == '+')
-            throw Exception(this,"n-arg funciton is not available on bool args");
+        if(std::is_same<bool,T>::value && ch == '+')
+            throw BasicArgument::Exception(this,"n-arg funciton is not available on bool args");
 
-        if(ch == '?' || ch == '+' || ch == '*')
-            _n_args = ch;
-        else
-            throw Exception(this,"unknown n-arg tag '" + std::to_string(ch) + "'");
-        
-        
+        if(ch == '*') _n_args = 0;
+        else if(ch == '?') _n_args = 1;
+        else if(ch == '+') _n_args = 2;
+        else throw BasicArgument::Exception(this,"unknown n-arg tag '" + std::to_string(ch) + "'");
+    
         return *this;
     }
 
@@ -193,8 +201,8 @@ public:
      * @param str 
      * @return Argument& 
      */
-    Argument& help(const char* str){
-        _help = std::string(str);
+    Argument& help(std::string str){
+        _help = str;
         return *this;
     }
 
@@ -202,39 +210,53 @@ public:
     /**
      * @brief get one argument value (parameter)
      * 
-     * @tparam T 
      * @param index 
      * @return T 
      */
-    template<typename T>
     T value(int index = 0){
         if(_values.size() > 0){
-            if(index < 0)
-                index = _values.size() + index;
-            return std::any_cast<T>(_values[index]);
+            if(index < 0) index = _values.size() + index;
+            if(index < 0 || index >= _values.size())
+                throw std::out_of_range("invalid index of values");
+            return _values[index];
         }else{
-            if(index == 0)
-                return std::any_cast<T>(_default);
+            return _default;
         }
-        throw std::out_of_range("invalid index of values");
     }
 
 
     /**
      * @brief get argument values (parameters)
      * 
-     * @tparam T 
      * @return std::vector<T> 
      */
-    template<typename T>
     std::vector<T> values(){
         if(_values.size() > 0){
-            std::vector<T> cast_values;
-            for(auto& it:_values)
-                cast_values.emplace_back(std::any_cast<T>(it));
-            return cast_values;
+            return _values;
         }else{
-            return std::vector<T>(std::any_cast<T>(_default));
+            return std::vector<T>(1,_default);
+        }
+    }
+
+    /**
+     * @brief argument_assert value type
+     * @param str
+     * @return
+     */
+    bool value_argument_assert(std::string str) {
+        try{
+            switch(base_type_){
+                case BaseType::TYPE_BOOL: break;
+                case BaseType::TYPE_CHAR: return str.length() == 1;
+                case BaseType::TYPE_INT: {volatile int t = std::stoi(str); break;}
+                case BaseType::TYPE_LONG_LONG: {volatile long long t = std::stoll(str); break;}
+                case BaseType::TYPE_DOUBLE: {volatile double t = std::stod(str); break;}
+                case BaseType::TYPE_STRING: break;
+                default: return false;
+            }
+            return true;
+        }catch (std::exception& e){
+            return false;
         }
     }
 
@@ -245,125 +267,47 @@ public:
      * @param str 
      * @return Argument& 
      */
-    Argument& add_value(const char* str = nullptr){
-        if(_default.type() == typeid(bool))
-            _values.resize(1,true);
+    void add_value(std::string str) override{
+        if(std::is_same<bool,T>::value){
+            str = "1";
+        } else if(str.length() == 0) return;
 
-        if(str == nullptr)
-            return *this;
-        
-        if(_n_args == '?' && _values.size() >= 1)
-            throw Exception(this,"too many arg values");
-
-        else if(_default.type() == typeid(int))
-            _values.emplace_back(std::stoi(str));
-        else if(_default.type() == typeid(long long))
-            _values.emplace_back(std::stoll(str));
-        else if(_default.type() == typeid(double))
-            _values.emplace_back(std::stod(str));
-        else if(_default.type() == typeid(char)){
-            if(strlen(str) > 1)
-                throw Exception(this,"too many characters");
-            _values.emplace_back(str[0]);
-        }
-        else if(_default.type() == typeid(std::string))
-            _values.emplace_back(std::string(str));
-        else
-            throw std::bad_typeid();
-        return *this;
+        if(_n_args == 1 && _values.size() >= 1)
+            throw BasicArgument::Exception(this,"too many arg values");
+        std::string str_(str);
+        if(!value_argument_assert(str_))
+            throw BasicArgument::Exception(this,"mistyped value '" + str_ + "'");
+        std::istringstream iss(str_);
+        T value;
+        iss >> value;
+        _values.emplace_back(value);
     }
 
     
     /**
-     * @brief assert read parameters
+     * @brief argument_assert read parameters
      * 
      */
-    void argument_assert(){
-        std::string tag = _full_tag.length() > 0 ? _full_tag : _short_tag;
-        /* assert require */
+    void argument_assert() override{
+        /* argument_assert require */
         if(_required && _values.size() == 0)
-            throw Exception(this,"argument required");
+            throw BasicArgument::Exception(this,"argument required");
 
-        /* assert numbers */
-        if(_n_args == '+' && _values.size() == 0)
-            throw Exception(this,"too few parameters");
+        /* argument_assert numbers */
+        if(_n_args == 2 && _values.size() == 0)
+            throw BasicArgument::Exception(this,"too few parameters");
 
-        if(_n_args == '?' && _values.size() > 1)        
-            throw Exception(this,"too many parameters");
+        if(_n_args == 1 && _values.size() > 1)        
+            throw BasicArgument::Exception(this,"too many parameters");
         
-        /* assert choices */
+        /* argument_assert choices */
         if(_choices.size() > 0){
-            for(auto& it:_values){
-                bool match = false;
-                for(auto& it2:_choices)
-                    if(_is_equal(it,it2))
-                        {match = true; break;}
-                if(!match)  throw Exception(this,"not found in choices");    
+            for(int i = 0; i < _values.size(); i++){
+                if(_choices.find(_values[i]) == _choices.end())
+                    throw BasicArgument::Exception(this,"not found in choices");
             }
         }
     }
-
-
-    /**
-     * @brief Set the Tag object
-     * 
-     * @param name 
-     * @return Argument& 
-     */
-    Argument& setTag(std::string name){
-        if(name.length() > 0)
-            _short_tag = std::string(name);
-        return *this;
-    }
-
-    /**
-     * @brief Set the Name object
-     * 
-     * @param name 
-     * @return Argument& 
-     */
-    Argument& setName(std::string name){
-        if(name.length() > 0)
-            _full_tag = std::string(name);
-        return *this;
-    }
-
-    /**
-     * @brief get tag (shot-tag)
-     * 
-     * @return std::string 
-     */
-    std::string tag(){
-        return _short_tag;
-    }
-
-    /**
-     * @brief get name (full-tag)
-     * 
-     * @return std::string 
-     */
-    std::string name(){
-        return _full_tag;
-    }
-
-    /**
-     * @brief get argument type name
-     * 
-     * @return std::string 
-     */
-    std::string arg_typename(){
-        return std::string(_default.type().name());
-    }
-
-    /**
-     * @brief Get the help info
-     * 
-     * @return std::string 
-     */
-    std::string get_help(){
-        return _help;
-    }
-
 };
 
 
@@ -379,26 +323,24 @@ class ArgumentParser{
     std::string                         _file_name = "command";     // filename
     bool                                _positional_flag = true;    // available flag for adding positional args
     int                                 _positional_num = 0;        // number of positional args
-    int                                 _size = 0;                  // size of arguments
-    std::unordered_map<std::string,int> _arg_map_s;                 // mapping short string to pos of argument-structure
-    std::unordered_map<std::string,int> _arg_map_l;                 // mapping long string to pos of argument-structure
-    std::vector<Argument>               _args;                      // argument-structure list
+    std::unordered_map<std::string,int> _tag_map;                   // mapping short string to pos of argument-structure
+    std::unordered_map<std::string,int> _name_map;                  // mapping long string to pos of argument-structure
+    std::vector<BasicArgument*>         _args;                      // argument-structure list
 
     // filter prefix of '-'
-    int _filter(std::string& name){
-        if(name.size() == 0)
-            return -1;
+    int _filter(std::string input, std::string& output){
+        output = "";
+        if(input.size() == 0) return -1;
         int p;
-        for(p = 0;p < name.length() && name[p] == '-';p++);
-        name = (p > 2 ? "" : name.substr(p));
+        for(p = 0; p < input.length() && input[p] == '-'; p++);
+        output = (p > 2 ? "" : input.substr(p));
         return p;
     }
 
     // calc prefix of '-'
-    int _argname_assert(std::string name){
+    int _argname_argument_assert(std::string name){
         if(name.length() == 0 || name.find(' ') != std::string::npos)
             return -1;
-        
         int p;
         for(p = 0;p < name.length() && name[p] == '-';p++);
         return p <= 2 ? p : -1;
@@ -410,10 +352,13 @@ class ArgumentParser{
      * @param index 
      * @return Argument* 
      */
-    Argument* _get_argument(std::string index, bool is_short = true){
-        int pos = is_short ? (_arg_map_s.find(index) == _arg_map_s.end() ? -1 : _arg_map_s[index])
-                           : (_arg_map_l.find(index) == _arg_map_l.end() ? -1 : _arg_map_l[index]);
-        return pos == -1 ? nullptr : &_args[pos];
+    BasicArgument* _get_argument(std::string index){
+        std::string name;
+        int p = _filter(index,name);
+        if(p != 1 && p != 2) return nullptr;
+        int pos = p == 1 ? (_tag_map.find(name) == _tag_map.end() ? -1 : _tag_map[name]) :
+                           (_name_map.find(name) == _name_map.end() ? -1 : _name_map[name]);
+        return pos == -1 ? nullptr : _args[pos]; 
     }
 
 public:
@@ -427,36 +372,33 @@ public:
      * @return Argument& 
      */
     template<typename T>
-    Argument& add_argument(std::string name_or_flag, std::string full_argname = ""){
-        /* assertion */
-        int tag_type[2] = {_argname_assert(name_or_flag), _argname_assert(full_argname)};
+    Argument<T>& add_argument(std::string tag, std::string name = ""){
+        /* argument_assertion */
+        int tag_type[2] = {_argname_argument_assert(tag), _argname_argument_assert(name)};
         if((tag_type[0] != 0 && tag_type[0] != 1)           || 
-           (full_argname.length() > 0 && tag_type[1] != 2)  ||
+           (name.length() > 0 && tag_type[1] != 2)  ||
            (tag_type[0] == 0 && tag_type[1] > 0))
         {
-            throw Argument::Exception("invalid argument format");
+            throw std::runtime_error("invalid argument format");
         }
 
-        _size++;
-
         /* consturct new argument and initialize */
-        _args.emplace_back(Argument());
-        Argument* new_arg = &_args[_args.size() - 1];
-        (*new_arg).init<T>();
+        std::string tag_f, name_f;
+        _filter(tag,tag_f);
+        _filter(name,name_f);
 
-        /* do tag assertion*/
-        _filter(name_or_flag);
-        _filter(full_argname);
-        std::string tag = name_or_flag, name = full_argname;
-        if(tag == "h" || tag == "help")
-            throw Argument::Exception("reserved keyword");
-        
-        (*new_arg).setTag(tag).setName(name);
+        if(tag_f == "h" || tag_f == "help" || name_f == "help")
+            throw BasicArgument::Exception("reserved keyword");
+        /* do tag argument_assertion*/
+        Argument<T>* new_arg = new Argument<T>();
+        new_arg->set_tag(tag_f);
+        new_arg->set_name(name_f);
+        _args.emplace_back(new_arg);
 
         if(tag_type[0] == 0){
             /* positional arguments */
             if(!_positional_flag)
-                throw Argument::Exception("positional args should be set before optional args");
+                throw BasicArgument::Exception("positional args should be set before optional args");
             _positional_num++;
             (*new_arg).required().nArgs('?'); // set positional arg
         }else{
@@ -465,12 +407,13 @@ public:
         }
         
         /* insert into parser */
-        if(_arg_map_s.find(tag) != _arg_map_s.end() || _arg_map_l.find(name) != _arg_map_l.end())
-            throw Argument::Exception("duplicated argument");
-            
-        _arg_map_s[tag] = _args.size() - 1;
-        if(full_argname.length() > 0)
-            _arg_map_l[name] = _args.size() - 1;
+        if(_tag_map.find(tag_f) != _tag_map.end() ||
+            _name_map.find(name_f) != _name_map.end())
+            throw BasicArgument::Exception("duplicated argument");
+
+        _tag_map[tag_f] = _args.size() - 1;
+        if(name.length() > 0)
+            _name_map[name_f] = _args.size() - 1;
         
         return *new_arg;
     }
@@ -485,10 +428,10 @@ public:
      */
     template<typename T>
     T get_value(const char* index){
-        auto iter = _arg_map_s.find(index);
-        if(iter == _arg_map_s.end()) iter = _arg_map_l.find(index);
-        if(iter == _arg_map_s.end() || iter == _arg_map_l.end())  return T();
-        return _args[(*iter).second].value<T>();
+        auto iter = _tag_map.find(index);
+        if(iter == _tag_map.end()) iter = _name_map.find(index);
+        if(iter == _tag_map.end() || iter == _name_map.end())  return T();
+        return (dynamic_cast<Argument<T>*>(_args[(*iter).second]))->value();
     }
 
 
@@ -501,7 +444,7 @@ public:
      */
     template<typename T>
     T get_value(int index){
-        return _args[index].value<T>();
+        return dynamic_cast<Argument<T>*>(_args[index])->value();
     }
 
 
@@ -514,11 +457,10 @@ public:
      */
     template<typename T>
     std::vector<T> get_values(std::string index){
-        auto iter = _arg_map_s.find(index);
-        if(iter == _arg_map_s.end()) iter = _arg_map_l.find(index);
-        if(iter == _arg_map_s.end() || iter == _arg_map_l.end())  return std::vector<T>();
-            
-        return _args[(*iter).second].values<T>();
+        auto iter = _tag_map.find(index);
+        if(iter == _tag_map.end()) iter = _name_map.find(index);
+        if(iter == _tag_map.end() || iter == _name_map.end())  return std::vector<T>();
+        return dynamic_cast<Argument<T>*>(_args[(*iter).second])->values();
     }
 
 
@@ -531,7 +473,7 @@ public:
      */
     template<typename T>
     std::vector<T> get_values(int index){
-        return _args[index].values<T>();
+        return dynamic_cast<Argument<T>*>(_args[index])->values();
     }
 
 
@@ -543,7 +485,7 @@ public:
      */
     void parse_args(int argc, char** argv){
         if(argc <= 0 || argv == nullptr)
-            throw Argument::Exception("no args");
+            throw std::runtime_error("no args");
 
         /* help info */
         for(int i = 1; i < argc; i++){
@@ -557,30 +499,25 @@ public:
         int ptr = 1;
         /* read positional args */
         for(int i = 0; ptr < argc && i < _positional_num; i++){
-            _args[i].add_value(argv[ptr++]);
+            _args[i]->add_value(argv[ptr++]);
         }
 
         /* process optional args */
         while(ptr < argc){
-            Argument* arg_ptr = nullptr;
-            std::string arg_name(argv[ptr++]);
-            std::string arg_name_origin = arg_name;
-            int type = _filter(arg_name);
-            if(type == 1 || type == 2){
-                arg_ptr = _get_argument(arg_name, type == 1);
-            }
+            std::string arg_str(argv[ptr++]);
+            BasicArgument* arg_ptr = _get_argument(arg_str);
             if(arg_ptr == nullptr)
-                throw Argument::Exception("unknown argument '" + arg_name_origin + "'");
+                throw std::runtime_error("unknown argument '" + arg_str + "'");
             
             arg_ptr->add_value();
-            while(ptr < argc && _argname_assert(std::string(argv[ptr])) == 0){
+            while(ptr < argc && _argname_argument_assert(std::string(argv[ptr])) == 0){
                 arg_ptr->add_value(argv[ptr++]);
             }
         }
 
-        /* assertion */
-        for(auto& it:_args)
-            it.argument_assert();
+        /* argument_assertion */
+        for(auto it:_args)
+            it->argument_assert();
     }
 
 
@@ -591,24 +528,24 @@ public:
     void show_help(){
         std::cout << "usage: " << _file_name << " ";
         for(int i = 0; i < _positional_num; i++)
-            std::cout << _args[i].tag() << " ";
-        for(int i = _positional_num; i < _size; i++)
-            std::cout << "[-" << _args[i].tag() << "] ";
+            std::cout << _args[i]->tag() << " ";
+        for(int i = _positional_num; i < _args.size(); i++)
+            std::cout << "[-" << _args[i]->tag() << "] ";
 
         /* positional */
         std::cout << "\n\npositional arguments:\n";
         for(int i = 0; i < _positional_num; i++)
-            std::cout << "  " << _args[i].tag() << "\t" << _args[i].get_help() << std::endl;
+            std::cout << "  " << _args[i]->tag() << "\t" << _args[i]->help() << std::endl;
         
         /* optional */
         std::cout << "\noptional arguments:\n";
         std::cout << "  -h, --help\tshow help message\n";
-        for(int i = _positional_num; i < _size; i++){
-            std::cout << "  -" << _args[i].tag();
-            if(_args[i].name().length() > 0)
-                std::cout << ", --" << _args[i].name();
+        for(int i = _positional_num; i < _args.size(); i++){
+            std::cout << "  -" << _args[i]->tag();
+            if(_args[i]->name().length() > 0)
+                std::cout << ", --" << _args[i]->name();
             else std::cout << "\t";
-            std::cout << "\t" << _args[i].get_help() << std::endl;
+            std::cout << "\t" << _args[i]->help() << std::endl;
         }
     }
 
