@@ -7,75 +7,77 @@
 #include "symbol_table.h"
 
 namespace ast{
-/* **************** just for test **************** */
-// static FILE* OUTPUT_DST = stdout;
-static FILE* OUTPUT_DST = fopen("../scripts/json/output/max.c", "w");
 
+/* **************** standard output **************** */
+extern FILE* astout;
 #define PRINT(format, ...)\
   do {\
-    fprintf(OUTPUT_DST, format, ##__VA_ARGS__);\
+    fprintf(astout, format, ##__VA_ARGS__);\
   } while (0);
 
-/* **************** just for test **************** */
 
+/* **************** basic node **************** */
+/**
+ * @brief Basic Node class
+ */
 class Node {
  public:
-  Node();
-  ~Node();
+  // constructor
+  Node() : parent_(nullptr) {};
+  ~Node() {};
 
+  // static creator
   static Node* Create(std::string node_name, int sub_type = 0, int other_type = 0);
   static Node* Create(nlohmann::json& json_node);
-
-  void set_parent(Node* parent);
-  void append_child(Node* child);
-  Node* parent();
-  std::vector<Node*> child_list();
-
   // type cast
   template <typename T> T* StaticCast() { return dynamic_cast<T*>(this); }
   template <typename T> T* DynamicCast() { return dynamic_cast<T*>(this); }
-
-  void TransCodeAt(int);
+  // getter and setter functions
+  void set_parent(Node* parent) { parent_ = parent;}
+  Node* parent() { return parent_; }
+  // append child
+  void append_child(Node* child) {
+    child->set_parent(this);
+    child_list_.emplace_back(child);
+  }
+  // trans code
+  void TransCodeAt(int pos) { return child_list_[pos]->TransCode(); }
+  virtual void TransCode(){ for(auto child : child_list_) child->TransCode(); }
+  // load from json file
   void LoadFromJson(const nlohmann::json&);
 
-  virtual void TransCode(){
-      for(auto child : child_list_) child->TransCode();
-  };
-
  protected:
-  Node* parent_;
-  std::vector<Node*> child_list_;
- private:
-  
+  Node* parent_;                    // parent node pointer
+  std::vector<Node*> child_list_;   // child pointer list
 };
 
 
+/**
+ * @brief AST class
+ */
 class AST {
  public:
-//  AST() {}
-//  ~AST() {}
-
-  Node* root();
-  void set_root(Node* root);
-  symbol_table::TableSet* symbol_table() { return symbol_table_;}
+  // getter and setter functions
+  Node* root() { return root_;}
+  void set_root(Node* root) { root_ = root;}
+  // load from json
   void LoadFromJson(std::string file_name);
 
-  void Print() {
-    if(root_ != nullptr) root_->TransCode();
-    fclose(OUTPUT_DST);
-  }
+  /**
+   * @brief print AST
+   * @param file_name, default nullptr, print to stdout
+   */
+  void Print(const char* file_name = nullptr);
 
 private:
-  Node* root_;
-  symbol_table::TableSet* symbol_table_;
-
+  Node* root_;  // root node pointer
 };
 
 
-
-
-
-// Leaf Node including id, num, letter ...
+/* **************** inherited node **************** */
+/**
+ * Leaf Node including id, num, letter ...
+ */
 class LeafNode : public Node {
  public:
   enum class LEAF_TYPE {
@@ -94,29 +96,28 @@ class LeafNode : public Node {
   // identifier or operation
   LeafNode(std::string id, bool is_op = false) : name_(id) { leaf_type_ = (is_op ? LEAF_TYPE::OPERATION : LEAF_TYPE::IDENTIFIER);}
 
+  // getter functions
   LEAF_TYPE leaf_type() {return leaf_type_;}
   const pascal_symbol::ConstValue* value() { return &value_; }
   const std::string id() { return is_ref_ ? "(*" + name_ + ")" : name_;}
   const std::string origin_id() { return name_;}
-
+  // setter functions
   void set_id(std::string name) { leaf_type_ = LEAF_TYPE::IDENTIFIER; name_ = name;}
   void set_op(std::string op_str) { leaf_type_ = LEAF_TYPE::OPERATION; name_ = op_str;}
   void set_value(pascal_symbol::ConstValue value) { leaf_type_ = LEAF_TYPE::CONST_VALUE; value_ = value; }
   void set_ref(bool ref) { is_ref_ = ref; }
 
-  template <typename T> T value() {
-    return value_.get<T>();
-  }
-
+  // template value getter
+  template <typename T> T value() { return value_.get<T>(); }
+  // Analyze reference
   bool AnalyzeReference(symbol_table::TableSet* ts, pascal_symbol::FunctionSymbol* fn);
   void TransCode() override;
 
 private:
-  LEAF_TYPE leaf_type_;
-  std::string name_;
-  pascal_symbol::ConstValue value_;
-  bool is_ref_ = false;
-
+  LEAF_TYPE leaf_type_;   // leaf type
+  std::string name_;      // name
+  pascal_symbol::ConstValue value_; // const values
+  bool is_ref_ = false;   // is referenced
 };
 
 class ProgramNode : public Node {

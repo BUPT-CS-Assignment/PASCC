@@ -1,42 +1,30 @@
 #include "ast.h"
+#include "log.h"
 
 using std::vector;
 using std::string;
-using namespace symbol_table;
 using json = nlohmann::json;
+using namespace symbol_table;
 using namespace pascal_symbol;
 
 namespace ast {
+/* **************** standard output **************** */
+FILE* astout = stdout;
 
-Node::Node() : parent_(nullptr) {
-
+/* **************** ast output **************** */
+void AST::Print(const char *file_name) {
+  if(file_name != nullptr) {
+    astout = fopen(file_name, "w");
+    if(astout == nullptr) {
+      log_fatal("failed to open file %s", file_name);
+      abort();
+    }
+    log_info("out stream for ast redirected : %s", file_name);
+  }
+  if(root_ != nullptr) root_->TransCode();
+  log_info("ast format success");
+  fclose(astout);
 }
-
-Node::~Node() {
-
-}
-
-Node* Node::parent(){
-  return parent_;
-}
-
-std::vector<Node*> Node::child_list() {
-  return child_list_;
-}
-
-void Node::set_parent(Node* parent) {
-  parent_ = parent;
-}
-
-void Node::append_child(Node* child) {
-  child->set_parent(this);
-  child_list_.emplace_back(child);
-}
-
-void Node::TransCodeAt(int pos) {
-  return child_list_[pos]->TransCode();
-}
-
 
 //////////////////////////////
 
