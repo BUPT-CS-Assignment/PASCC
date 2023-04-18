@@ -1,11 +1,8 @@
-#include "symbol_table.h"
 #include "type.h"
-#include "symbol.h"
+#include "log.h"
 
 using std::vector;
 using std::string;
-using namespace symbol_table;
-using namespace pascal_symbol;
 
 namespace pascal_type {
 
@@ -16,9 +13,7 @@ bool TypeTemplate::ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::st
       *result_type = operation_map[Operation(type1, type2, op)];
     }
     return true;
-  } else {
-    return false;
-  }
+  } else return false;
 }
 
 bool TypeTemplate::TypeEqual(TypeTemplate* type1, TypeTemplate* type2) {
@@ -44,17 +39,11 @@ bool TypeTemplate::TypeEqual(TypeTemplate* type1, TypeTemplate* type2) {
 
 
 bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate **type) {
-  if (index_types.size() != bound_types_.size()) {
-    return false;
-  }
+  if (index_types.size() != bound_types_.size()) return false;
   for (int i = 0; i < index_types.size(); i++) {
-    if (index_types[i] != bound_types_[i]) {
-      return false;
-    }
+    if (index_types[i] != bound_types_[i]) return false;
   }
-  if(type != nullptr)
-    *type = type_;
-
+  if(type != nullptr) *type = type_;
   return true;
 }
 
@@ -66,17 +55,12 @@ void RecordType::InsertType(std::string name, TypeTemplate* type) {
 
 TypeTemplate* RecordType::Find(std::string name) {
   auto ptr = types_map_.find(name);
-  if(ptr != types_map_.end()) {
-    return (*ptr).second;
-  } else {
-    return nullptr;
-  }
+  if(ptr != types_map_.end()) return (*ptr).second;
+  else return nullptr;
 }
 
 
-/////////////////////
-// global initialize
-
+/* **************** global initialize **************** */
 BasicType* TYPE_INT;
 BasicType* TYPE_REAL;
 BasicType* TYPE_BOOL;
@@ -84,6 +68,8 @@ BasicType* TYPE_CHAR;
 OperationMap operation_map;
 
 void TypeInit() {
+  log_info("initializing pascal_type ...");
+
   TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
   TYPE_CHAR = new BasicType(BasicType::BASIC_TYPE::LETTER);
   TYPE_INT = new BasicType(BasicType::BASIC_TYPE::INT);
@@ -151,6 +137,7 @@ void TypeInit() {
   operation_map[Operation(TYPE_INT, TYPE_REAL, ">=")] = TYPE_BOOL;
   operation_map[Operation(TYPE_INT, TYPE_REAL, "<=")] = TYPE_BOOL;
   operation_map[Operation(TYPE_INT, TYPE_REAL, "<")] = TYPE_BOOL;
-
 }
+int _ = (TypeInit(), 0);
+
 } // namespace pascal_type

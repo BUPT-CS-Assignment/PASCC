@@ -57,7 +57,6 @@ class BasicType : public TypeTemplate {
  private:
    BASIC_TYPE basic_type_;
 };
-
 extern BasicType* TYPE_INT;
 extern BasicType* TYPE_REAL;
 extern BasicType* TYPE_BOOL;
@@ -129,7 +128,6 @@ struct OperationHash {
 
 typedef std::unordered_map<Operation, TypeTemplate*, OperationHash> OperationMap;
 extern OperationMap operation_map;
-void TypeInit();
 
 }; // namespace pascal_type
 
