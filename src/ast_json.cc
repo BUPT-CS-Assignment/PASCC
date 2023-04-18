@@ -2,6 +2,7 @@
 // Created by jianxff on 2023/4/17.
 //
 #include "ast.h"
+#include "log.h"
 #include <fstream>
 
 using std::vector;
@@ -123,14 +124,16 @@ void AST::LoadFromJson(std::string file_name) {
   std::ifstream ifs(file_name);
 
   if (!ifs.is_open()) {
-    std::cout << "open file failed" << std::endl;
-    return;
+    log_error("failed to open file : %s", file_name.c_str());
+    exit(-1);
   }
 
   json ast_json;
   ifs >> ast_json;
   ifs.close();
-  printf("load json success\n");
+
+  log_info("successly load ast from json : %s", file_name.c_str());
+
   root_ = new ProgramNode();
   root_->LoadFromJson(ast_json);
 }
@@ -144,8 +147,6 @@ void Node::LoadFromJson(const nlohmann::json & node_json) {
     int sub_type = 0, other_type = 0;
     if(item.contains("sub_type")) sub_type = item.at("sub_type");
     if(item.contains("other_type")) other_type = item.at("other_type");
-
-//    printf("%s-%d-%d\n",type_name.c_str(),sub_type,other_type);
 
     Node* node = Node::Create(type_name, sub_type, other_type);
     if(type_name == "leaf") {
@@ -188,6 +189,9 @@ void Node::LoadFromJson(const nlohmann::json & node_json) {
       TypeNode* tn = node->StaticCast<TypeNode>();
       if(!item.contains("base_type")) {
         tn->set_base_type_node(tn);
+      } else {
+        Node* base_node = Node::Create(item.at("base_type"));
+        tn->set_base_type_node(base_node->DynamicCast<TypeNode>());
       }
     }
 
