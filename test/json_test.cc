@@ -2,7 +2,7 @@
 // Created by jianxff on 2023/4/18.
 //
 
-#include "ast.h"
+#include "compiler.h"
 #include "argparse.hpp"
 using std::string;
 
@@ -12,7 +12,7 @@ int main(int argc, char** argv){
   parser.add_argument<string>("-i","--input").help("input json files")
         .default_("../scripts/json/max.json");
   // add optional argument 'output file'
-  parser.add_argument<string>("-o","--output").help("output c files")
+  parser.add_argument<string>("-o","--output").default_("stdout").help("output c files")
         .default_("output.c");
 
   // argument parse
@@ -20,10 +20,15 @@ int main(int argc, char** argv){
   // get argument value
   string input = parser.get_value<string>("i");
   string output = parser.get_value<string>("o");
+  const char* out_str = (output == "stdout" ? nullptr : output.c_str());
 
   // load ast
   ast::AST ast;
   ast.LoadFromJson(input);
-  ast.Format(output.c_str());
+
+  // compile
+  Compiler compiler;
+  compiler.Compile(&ast,out_str);
+
   return 0;
 }
