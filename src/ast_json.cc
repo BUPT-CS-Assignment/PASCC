@@ -82,9 +82,9 @@ Node* Node::Create(std::string node_name, int sub_type, int other_type) {
   } else if (node_name == "id_varpart") {
     return new IDVarPartNode((IDVarPartNode::GrammarType)sub_type);
   } else if (node_name == "branch_list") {
-    return new BranchListNode((BranchListNode::GrammarType)sub_type);
+    return new BranchListNode();
   } else if (node_name == "case_body") {
-    return new CaseBodyNode((CaseBodyNode::GrammarType)sub_type);
+    return new CaseBodyNode();
   } else if (node_name == "branch") {
     return new BranchNode();
   } else if (node_name == "const_list") {
