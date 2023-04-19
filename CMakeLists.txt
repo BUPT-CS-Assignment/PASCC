@@ -6,6 +6,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
 include_directories("include")
 include_directories("thirdparty")
+file(COPY "thirdparty/clang-format.exe" DESTINATION ${CMAKE_BINARY_DIR}/../bin/)
 
 file(GLOB_RECURSE include "include/*.h" "thirdparty/*.h" "thirdparty/*.hpp")
 file(GLOB_RECURSE src "src/*.cc")
@@ -24,3 +25,4 @@ add_executable(PASCC_TEST
         ${src}
         ${test}
         )
+
