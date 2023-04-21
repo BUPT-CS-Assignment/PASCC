@@ -2555,14 +2555,14 @@ void yyerror(ast::AST* real_ast,char *msg){
     //fprintf(stderr,"error:%s\n",s);
 }
 
-int main(){
-    AST *real_ast = new AST();
-    if(!yyparse(real_ast)){
-        printf("successful analysis");
-        Compiler compiler;
-        compiler.Compile(real_ast,"basic_test");
-    }
-}
+//int main(){
+//    AST *real_ast = new AST();
+//    if(!yyparse(real_ast)){
+//        printf("successful analysis");
+//        Compiler compiler;
+//        compiler.Compile(real_ast,"basic_test");
+//    }
+//}
 
 int yywrap(){
     return 1;
