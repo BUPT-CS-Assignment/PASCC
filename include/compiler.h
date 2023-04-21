@@ -6,10 +6,14 @@
 #define PASCC_COMPILER_H
 
 #include "ast.h"
+extern FILE* yyin;
+const std::string stdout_ = "";
+const std::string stdin_ = "";
+
+void yyinput(const char* in);
 
 class Compiler {
  public:
-   constexpr static const char *stdout_ = nullptr;
    enum class CODE_STYLE {
      NONE,
      LLVM,
@@ -22,9 +26,9 @@ class Compiler {
   Compiler(){DirAssert();};
   ~Compiler(){};
 
-  int Compile(const char* in, const char* out = stdout_, CODE_STYLE st = CODE_STYLE::GOOGLE);
-  int Compile(ast::AST* in, const char* out = stdout_, CODE_STYLE st = CODE_STYLE::GOOGLE);
-  void CodeExecute(const char* in, const char* out = stdout_);
+  int Compile(std::string in, std::string out = stdout_, CODE_STYLE st = CODE_STYLE::GOOGLE);
+  int Compile(ast::AST* in, std::string out = stdout_, CODE_STYLE st = CODE_STYLE::GOOGLE);
+  void CodeExecute(std::string in, std::string out = stdout_);
   void SetGCCFmt(const char* fmt){gcc_fmt = std::string(fmt);}
   const char* tmp_file(int pos);
   void Clear();
@@ -35,8 +39,8 @@ class Compiler {
   std::string gcc_fmt = "gcc $IN -o $OUT";
 
   void DirAssert();
-  void CodeFormat(const char* file, CODE_STYLE st);
-  void CodePrint(const char* file,FILE* dst);
+  void CodeFormat(std::string file, CODE_STYLE st);
+  void CodePrint(std::string file,FILE* dst);
 
 };
 

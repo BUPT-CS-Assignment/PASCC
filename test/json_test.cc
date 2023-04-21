@@ -3,6 +3,8 @@
 //
 
 #include "compiler.h"
+#include "parser.h"
+#include "parser.tab.h"
 #include "argparse.hpp"
 using std::string;
 
@@ -10,7 +12,7 @@ int main(int argc, char** argv){
   ArgumentParser parser;
   // add optional argument 'input json file' to set input json file
   parser.add_argument<string>("-i","--input").nArgs('?').help("input json file")
-        .default_("../scripts/json/max.json");
+        .default_("test.pas");
   // add optional argument 'output file' to set output c file
   parser.add_argument<string>("-o","--output").nArgs('?').help("output c file")
         .default_("");
@@ -24,24 +26,18 @@ int main(int argc, char** argv){
   parser.parse_args(argc, argv);
   // get argument value
   // get input source file
-  string input = parser.get_value<string>("i");
+  string in = parser.get_value<string>("i");
   // get output destination
   string out = parser.get_value<string>("o");
-  const char* output = (out.length() == 0 ? Compiler::stdout_ : out.c_str());
 
   Compiler compiler;
-  int p;
+  int p = compiler.Compile(in,out);
 
-  ///// JSON TEST /////
-  ast::AST ast;
-  ast.LoadFromJson(input);  // load ast
-  p = compiler.Compile(&ast,output);
 
   // optional test execute
   if(parser.is_call("t")) {
     string test_out = parser.get_value<string>("t");
-    const char* test = (test_out.length() == 0 ? Compiler::stdout_ : test_out.c_str());
-    compiler.CodeExecute(compiler.tmp_file(p),test);
+    compiler.CodeExecute(compiler.tmp_file(p),test_out);
   }
 
   // optional reserve cache
