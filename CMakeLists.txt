@@ -3,6 +3,7 @@ project(PASCC)
 
 find_package(FLEX)
 find_package(BISON)
+
 if(FLEX_FOUND AND BISON_FOUND)
   BISON_TARGET(Parser scripts/parser.y src/parser.tab.cc DEFINES_FILE include/parser.tab.h)
   FLEX_TARGET(Lexer scripts/lex.l src/lex.yy.cc)
