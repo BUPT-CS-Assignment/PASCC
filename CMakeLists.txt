@@ -3,9 +3,10 @@ project(PASCC)
 
 find_package(FLEX)
 find_package(BISON)
-
-BISON_TARGET(Parser scripts/parser.y src/parser.tab.cc DEFINES_FILE include/parser.tab.h)
-FLEX_TARGET(Lexer scripts/lex.l src/lex.yy.cc)
+if(FLEX_FOUND AND BISON_FOUND)
+  BISON_TARGET(Parser scripts/parser.y src/parser.tab.cc DEFINES_FILE include/parser.tab.h)
+  FLEX_TARGET(Lexer scripts/lex.l src/lex.yy.cc)
+endif()
 # command>  cmake --build . --target PASCC -j 6
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
@@ -13,7 +14,7 @@ include_directories("include")
 include_directories("thirdparty")
 # Windows下的编译指令
 if(WIN32)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_WIN32")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_WIN32")
   file(COPY "thirdparty/clang-format.exe" DESTINATION ${CMAKE_BINARY_DIR}/../bin/)
 # Linux下的编译指令
 elseif(UNIX)
@@ -37,6 +38,8 @@ add_executable(PASCC
 add_executable(PASCC_TEST
         ${tools}
         ${src}
+        src/lex.yy.cc
+        src/parser.tab.cc
         ${test}
         )
 
