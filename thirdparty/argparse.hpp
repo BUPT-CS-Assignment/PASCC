@@ -40,8 +40,9 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include <vector>
-
+class ArgumentParser;
 class BasicArgument{
+  friend class ArgumentParser;
 public:
   enum class BaseType{
     TYPE_BOOL,
@@ -71,9 +72,15 @@ public:
 
   };
 
+protected:
+  /**
+   * @brief type assertion
+   * @tparam T
+   * @return
+   */
   template <typename T>
   bool type_assert(){
-    switch(base_type_){
+    switch(_base_type){
     case BaseType::TYPE_BOOL: return std::is_same<bool,T>::value;
     case BaseType::TYPE_CHAR: return std::is_same<char,T>::value;
     case BaseType::TYPE_INT: return std::is_same<int,T>::value;
@@ -84,22 +91,26 @@ public:
     }
   }
 
+  /**
+   * @brief init base_type
+   * @tparam T
+   */
   template <typename T>
   void init(){
-    base_type_ = std::is_same<bool,T>::value ? BaseType::TYPE_BOOL :
+    _base_type = std::is_same<bool,T>::value ? BaseType::TYPE_BOOL :
                  std::is_same<char,T>::value ? BaseType::TYPE_CHAR :
                  std::is_same<int,T>::value ? BaseType::TYPE_INT :
                  std::is_same<long long,T>::value ? BaseType::TYPE_LONG_LONG :
                  std::is_same<double,T>::value ? BaseType::TYPE_DOUBLE :
                  std::is_same<std::string,T>::value ? BaseType::TYPE_STRING :
                                                      BaseType::TYPE_ERROR;
-    if(base_type_ == BaseType::TYPE_ERROR)
+    if(_base_type == BaseType::TYPE_ERROR)
       throw std::runtime_error("init(): unsupported type " + std::string(typeid(T).name()));
   }
 
-  BaseType base_type() const{ return base_type_;}
+  BaseType base_type() const{ return _base_type;}
   std::string type_name() {
-    switch(base_type_){
+    switch(_base_type){
     case BaseType::TYPE_BOOL: return "bool";
     case BaseType::TYPE_CHAR: return "char";
     case BaseType::TYPE_INT: return "int";
@@ -113,20 +124,31 @@ public:
   std::string tag() { return _tag;}
   std::string name() { return _name;}
   std::string help() { return _help;}
+  char nargs() { return _n_args == 0 ? '*' : _n_args == 1 ? '?' : '+';}
+  bool call_() { return _call;}
+  std::set<std::string>& conflicts() { return _conflicts;}
+
   void set_tag(std::string tag) { _tag = tag;}
   void set_name(std::string name) { _name = name;}
   void set_help(std::string help) { _help = help;}
+  void set_call(bool call) {_call = call;}
+  void append_conflict(std::string str) { _conflicts.insert(str); }
 
   virtual void add_value(std::string val_str = ""){}
   virtual void argument_assert(){}
 
 protected:
-  BaseType      base_type_;               // base type
+  bool          _call = false;            // if called
+  BaseType      _base_type;               // base type
   bool          _required   = false;      // required flag
   int           _n_args     = 1;          // arg-number tag (0: *, 1: ?, 2: +)
   std::string   _help = "";               // help-info string
   std::string   _tag = "", _name = "";    // tag-names
+  std::set<std::string> _conflicts;       // conflict params
+
 };
+
+
 
 /**
 * @brief Argument Type
@@ -166,7 +188,6 @@ public:
     return *this;
   }
 
-
   /**
     * @brief set default value
     *
@@ -193,7 +214,6 @@ public:
     _required = required_value;
     return *this;
   }
-
 
   /**
     * @brief set n-arg number-tag
@@ -222,6 +242,16 @@ public:
    */
   Argument& help(std::string str){
     _help = str;
+    return *this;
+  }
+
+  /**
+   * @brief add conflict params
+   * @param str
+   * @return
+   */
+  Argument& conflict(std::string str) {
+    append_conflict(str);
     return *this;
   }
 
@@ -257,6 +287,7 @@ public:
     }
   }
 
+protected:
   /**
     * @brief assert value type
     * @param str
@@ -264,14 +295,14 @@ public:
    */
   bool value_assert(std::string str) {
     try{
-      switch(base_type_){
-      case BaseType::TYPE_BOOL: break;
-      case BaseType::TYPE_CHAR: return str.length() == 1;
-      case BaseType::TYPE_INT: {volatile int t = std::stoi(str); break;}
-      case BaseType::TYPE_LONG_LONG: {volatile long long t = std::stoll(str); break;}
-      case BaseType::TYPE_DOUBLE: {volatile double t = std::stod(str); break;}
-      case BaseType::TYPE_STRING: break;
-      default: return false;
+      switch(_base_type){
+        case BaseType::TYPE_BOOL: break;
+        case BaseType::TYPE_CHAR: return str.length() == 1;
+        case BaseType::TYPE_INT: {volatile int t = std::stoi(str); break;}
+        case BaseType::TYPE_LONG_LONG: {volatile long long t = std::stoll(str); break;}
+        case BaseType::TYPE_DOUBLE: {volatile double t = std::stod(str); break;}
+        case BaseType::TYPE_STRING: break;
+        default: return false;
       }
       return true;
     }catch (std::exception& e){
@@ -287,9 +318,9 @@ public:
     * @return Argument&
    */
   void add_value(std::string str) override{
-    if(std::is_same<bool,T>::value){
-      str = "1";
-    } else if(str.length() == 0) return;
+    if(std::is_same<bool,T>::value || str.length() == 0) {
+      return;
+    }
 
     if(_n_args == 1 && _values.size() >= 1)
       throw BasicArgument::Exception(this,"add_value(): too many arg values");
@@ -450,7 +481,9 @@ public:
   T get_value(const char* index){
     auto iter = _tag_map.find(index);
     if(iter == _tag_map.end()) iter = _name_map.find(index);
-    if(iter == _tag_map.end() || iter == _name_map.end())  return T();
+    if(iter == _tag_map.end() || iter == _name_map.end())
+      throw BasicArgument::Exception("get_value(): argument not found: " + std::string(index));
+
     BasicArgument* arg = _args[(*iter).second];
     if(!arg->type_assert<T>())
       throw BasicArgument::Exception(arg,"get_value(): invalid cast <" + std::string(typeid(T).name()) + ">");
@@ -486,7 +519,9 @@ public:
   std::vector<T> get_values(std::string index){
     auto iter = _tag_map.find(index);
     if(iter == _tag_map.end()) iter = _name_map.find(index);
-    if(iter == _tag_map.end() || iter == _name_map.end())  return std::vector<T>();
+    if(iter == _tag_map.end() || iter == _name_map.end())
+      throw BasicArgument::Exception("get_value(): argument not found: " + std::string(index));
+
     BasicArgument* arg = _args[(*iter).second];
     if(!arg->type_assert<T>())
       throw BasicArgument::Exception(arg,"get_value(): invalid cast <" + std::string(typeid(T).name()) + ">");
@@ -508,6 +543,20 @@ public:
     if(!arg->type_assert<T>())
       throw BasicArgument::Exception(arg,"get_value(): invalid cast <" + std::string(typeid(T).name()) + ">");
     return dynamic_cast<Argument<T>*>(arg)->values();
+  }
+
+  bool is_call(std::string index){
+    auto iter = _tag_map.find(index);
+    if(iter == _tag_map.end()) iter = _name_map.find(index);
+    if(iter == _tag_map.end() || iter == _name_map.end())  return false;
+    BasicArgument* arg = _args[(*iter).second];
+    return arg->call_();
+  }
+
+  bool is_call(int index){
+    if(index < 0) index += _args.size();
+    BasicArgument* arg = _args[index];
+    return arg->call_();
   }
 
 
@@ -542,7 +591,7 @@ public:
       BasicArgument* arg_ptr = _get_argument(arg_str);
       if(arg_ptr == nullptr)
         throw std::runtime_error("parse_args(): unknown argument '" + arg_str + "'");
-
+      arg_ptr->set_call(true);
       arg_ptr->add_value();
       while(ptr < argc && _argname_assert(std::string(argv[ptr])) == 0){
         arg_ptr->add_value(argv[ptr++]);
@@ -550,8 +599,16 @@ public:
     }
 
     /* assertion */
-    for(auto it:_args)
+    for(auto it:_args) {
       it->argument_assert();
+      if(it->call_()){
+        auto clist = it->conflicts();
+        for(auto it2 = clist.begin(); it2 != clist.end(); it2++){
+          if(is_call(*it2))
+            throw BasicArgument::Exception(it,"conflicts(): conflict against '" + *it2 + "'");
+        }
+      }
+    }
   }
 
 
@@ -573,12 +630,14 @@ public:
 
     /* optional */
     std::cout << "\noptional arguments:\n";
-    std::cout << "  -h, --help\tshow help message\n";
+    std::cout << " tag  name\tn-args\tnote\n";
+    std::cout << "  -h, --help\t  - \tshow help message\n";
     for(int i = _positional_num; i < _args.size(); i++){
       std::cout << "  -" << _args[i]->tag();
       if(_args[i]->name().length() > 0)
         std::cout << ", --" << _args[i]->name();
       else std::cout << "\t";
+      std::cout << "\t [" << _args[i]->nargs() << "] ";
       std::cout << "\t" << _args[i]->help() << std::endl;
     }
   }

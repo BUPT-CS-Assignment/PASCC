@@ -7,16 +7,21 @@
 #include <fstream>
 using std::string;
 
-void Compiler::Compile(const char *in, const char *out, Compiler::CODE_STYLE st) {
+int Compiler::Compile(const char *in, const char *out, Compiler::CODE_STYLE st) {
+  if(in == nullptr)
+    return -1;
   // TODO: compile from input pascal-s file
+  ast::AST* ast = nullptr;
+  // ast format
+  return Compile(ast,out,st);
 }
 
-void Compiler::Compile(ast::AST *in, const char *out, Compiler::CODE_STYLE st) {
+int Compiler::Compile(ast::AST *in, const char *out, Compiler::CODE_STYLE st) {
   if(in == nullptr)
-    return;
+    return -1;
   // filename check
   string outs;
-  if(out != nullptr) {
+  if(out != stdout_) {
     outs = string(out);
     size_t len = outs.length();
     if(len < 2 || (outs[len - 2] != '.' && outs[len - 1] != 'c'))
@@ -25,7 +30,9 @@ void Compiler::Compile(ast::AST *in, const char *out, Compiler::CODE_STYLE st) {
   }
   // temp-file create
   time_t stamp = time(nullptr);
-  string tmpfile = std::to_string(stamp) + string(format_tmp_file);
+  string tmpfile = string(format_tmp_file_);
+  tmpfile.replace(tmpfile.rfind("$TIME"),5,std::to_string(stamp));
+  temp_files_.push_back(tmpfile);
   const char* tfp = tmpfile.c_str();
 
   // ast-format
@@ -33,11 +40,10 @@ void Compiler::Compile(ast::AST *in, const char *out, Compiler::CODE_STYLE st) {
   // code-format
   CodeFormat(tfp,st);
   // print
-  CodePrint(tfp, (out == nullptr) ? stdout : (fopen(outs.c_str(),"w")));
-  // remove
-  string cmd = "del " + tmpfile;
-  system(cmd.c_str());
+  CodePrint(tfp, (out == stdout_) ? stdout : (fopen(outs.c_str(),"w")));
+  return temp_files_.size() -1;
 }
+
 
 void Compiler::CodePrint(const char* file,FILE* dst) {
   std::filebuf fbuf;
@@ -56,6 +62,7 @@ void Compiler::CodePrint(const char* file,FILE* dst) {
   fbuf.close();
 }
 
+
 void Compiler::CodeFormat(const char* file, Compiler::CODE_STYLE st) {
   if(st == CODE_STYLE::NONE) return;
   string style;
@@ -67,6 +74,71 @@ void Compiler::CodeFormat(const char* file, Compiler::CODE_STYLE st) {
     case CODE_STYLE::WEBKIT:    style="webkit";break;
     default:return;
   }
-  string cmd = "clang-format.exe -style=" + style + " -i " + string(file);
+
+#ifdef WIN32
+  string formatter = "clang-format.exe";
+#else
+  string formatter = "clang-format";
+#endif
+
+  string cmd = formatter + " -style=" + style + " -i " + string(file);
   system(cmd.c_str());
+}
+
+void Compiler::Clear() {
+#ifdef WIN32
+  string rm = "del ";
+#else
+  string rm = "rm ";
+#endif
+  log_info("compiler: clean cache files");
+  for(auto& f : temp_files_) {
+    f.replace(0,5,"");
+    string cmd = "cd .tmp && " + rm + f + " && " + rm + f + ".exe";
+    system(cmd.c_str());
+  }
+  temp_files_.clear();
+}
+
+
+
+void Compiler::CodeExecute(const char *in, const char *out) {
+  if(in == nullptr)
+    return;
+
+  string file = string(in);
+#ifdef WIN32
+  string file_out = file + ".exe";
+#else
+  string file_out = file + ".out";
+#endif
+
+  // compile
+  string cmd = gcc_fmt;
+  cmd.replace(cmd.find("$IN"),3,file);
+  cmd.replace(cmd.find("$OUT"),4,file_out);
+  log_info("exec: compile command : %s",cmd.c_str());
+  system(cmd.c_str());
+
+  // execute
+  cmd = "cd .tmp && " + file_out.replace(0,5,"");
+  if(out != stdout_){
+    string out_dst = string(out);
+    cmd += " > " + out_dst;
+  }
+  log_info("exec: exec command :  %s",cmd.c_str());
+  system(cmd.c_str());
+
+}
+
+
+const char* Compiler::tmp_file(int pos) {
+  if(temp_files_.size() == 0) return nullptr;
+  if(pos < 0) pos = temp_files_.size() + pos;
+  if(pos < 0 || pos >= temp_files_.size()) return nullptr;
+  return temp_files_[pos].c_str();
+}
+
+void Compiler::DirAssert() {
+  system("mkdir .tmp");
 }
