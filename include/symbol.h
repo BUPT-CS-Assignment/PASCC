@@ -109,6 +109,7 @@ public:
   FunctionSymbol() {}
   FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line,
                  const std::vector<Parameter>& params);
+  FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line);
 
   // get parameters size
   int param_size() { return params_.size(); }

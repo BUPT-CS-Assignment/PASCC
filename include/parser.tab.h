@@ -63,34 +63,35 @@ extern int yydebug;
     ARRAY = 264,                   /* ARRAY  */
     VAR = 265,                     /* VAR  */
     TYPE = 266,                    /* TYPE  */
-    BASIC_TYPE = 267,              /* BASIC_TYPE  */
-    INT_NUM = 268,                 /* INT_NUM  */
-    REAL_NUM = 269,                /* REAL_NUM  */
-    CHAR = 270,                    /* CHAR  */
-    CONST = 271,                   /* CONST  */
-    RECORD = 272,                  /* RECORD  */
-    IF = 273,                      /* IF  */
-    THEN = 274,                    /* THEN  */
-    ELSE = 275,                    /* ELSE  */
-    CASE = 276,                    /* CASE  */
-    OF = 277,                      /* OF  */
-    WHILE = 278,                   /* WHILE  */
-    DO = 279,                      /* DO  */
-    FOR = 280,                     /* FOR  */
-    REPEAT = 281,                  /* REPEAT  */
-    UNTIL = 282,                   /* UNTIL  */
-    BEGIN_ = 283,                  /* BEGIN_  */
-    END = 284,                     /* END  */
-    RELOP = 285,                   /* RELOP  */
-    ADDOP = 286,                   /* ADDOP  */
-    MULOP = 287,                   /* MULOP  */
-    NOT = 288,                     /* NOT  */
-    PLUS = 289,                    /* PLUS  */
-    UMINUS = 290,                  /* UMINUS  */
-    ASSIGNOP = 291,                /* ASSIGNOP  */
-    TRUE = 292,                    /* TRUE  */
-    FALSE = 293,                   /* FALSE  */
-    ID = 294                       /* ID  */
+    CONST = 267,                   /* CONST  */
+    RECORD = 268,                  /* RECORD  */
+    IF = 269,                      /* IF  */
+    THEN = 270,                    /* THEN  */
+    ELSE = 271,                    /* ELSE  */
+    CASE = 272,                    /* CASE  */
+    OF = 273,                      /* OF  */
+    WHILE = 274,                   /* WHILE  */
+    DO = 275,                      /* DO  */
+    FOR = 276,                     /* FOR  */
+    REPEAT = 277,                  /* REPEAT  */
+    UNTIL = 278,                   /* UNTIL  */
+    BEGIN_ = 279,                  /* BEGIN_  */
+    END = 280,                     /* END  */
+    ADDOP = 281,                   /* ADDOP  */
+    NOT = 282,                     /* NOT  */
+    PLUS = 283,                    /* PLUS  */
+    UMINUS = 284,                  /* UMINUS  */
+    ASSIGNOP = 285,                /* ASSIGNOP  */
+    TRUE = 286,                    /* TRUE  */
+    FALSE = 287,                   /* FALSE  */
+    CONSTASSIGNOP = 288,           /* CONSTASSIGNOP  */
+    ID = 289,                      /* ID  */
+    CHAR = 290,                    /* CHAR  */
+    INT_NUM = 291,                 /* INT_NUM  */
+    REAL_NUM = 292,                /* REAL_NUM  */
+    BASIC_TYPE = 293,              /* BASIC_TYPE  */
+    RELOP = 294,                   /* RELOP  */
+    MULOP = 295                    /* MULOP  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -99,22 +100,59 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 39 "scripts/parser.y"
+#line 47 "scripts/parser.y"
 
     Token token_info;
+    IdListAttr id_list_node_info;
+    ValueAttr value_node_info;
+    TypeAttr type_node_info;
+    StandardTypeAttr standared_type_node_info;
+    PeriodsAttr periods_node_info;
+    PeriodAttr period_node_info;
+    RecordAttr record_node_info;
+    FormalParameterAttr formal_parameter_node_info;
+    ParameterListsAttr parameter_lists_node_info;
+    ParameterListAttr parameter_list_node_info;
+    VarParameterAttr var_parameter_node_info;
+    ValueParameterAttr value_parameter_node_info;
+
+    VariableDeclarationAttr variable_declaration_node_info;
+    VariableAttr variable_node_info;
+    ExpressionAttr expression_node_info;
+    SimpleExpressionAttr simple_expression_node_info;
+    TermAttr term_node_info;
+    FactorAttr factor_node_info;
+    UnsignedConstantVarAttr unsigned_constant_var_node_info;
+    IDVarpartsAttr id_varparts_node_info;
+    IDVarpartAttr id_varpart_node_info;
+    ExpressionListAttr expression_list_node_info;
+    CaseBodyAttr case_body_node_info;
+    BranchListAttr branch_list_node_info;
+    BranchAttr branch_node_info;
+    ConstListAttr const_list_node_info;
+
     ast::ProgramNode* program_node;
     ast::ProgramHeadNode* program_head_node;
     ast::ProgramBodyNode* program_body_node;
-    ast::IdListNode* id_list_node;
     ast::ConstDeclarationsNode* const_declarations_node;
+    ast::ConstDeclarationNode* const_declaration_node;
     ast::TypeDeclarationsNode* type_declarations_node;
+    ast::TypeDeclarationNode* type_declaration_node;
+    ast::BasicTypeNode* basic_type_node;
     ast::VariableDeclarationsNode* variable_declarations_node;
     ast::SubprogramDeclarationsNode* subprogram_declarations_node;
+    ast::SubprogramDeclarationNode* subprogram_declaration_node;
+    ast::SubprogramHeadNode* subprogram_head_node;
+    ast::SubprogramBodyNode* subprogram_body_node;
     ast::CompoundStatementNode* compound_statement_node;
     ast::StatementListNode* statement_list_node;
     ast::StatementNode* statement_node;
+    ast::ElseNode* else_node;
+    ast::UpdownNode* updown_node;
+    ast::ProcedureCallNode* procedure_call_node;
 
-#line 118 "include/parser.tab.h"
+
+#line 156 "include/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -18,7 +18,7 @@ int Compiler::Compile(string in, string out, Compiler::CODE_STYLE st) {
 }
 
 int Compiler::Compile(ast::AST *in, string out, Compiler::CODE_STYLE st) {
-  if(in == nullptr)
+  if(in == nullptr || !in->root())
     return -1;
   // filename check
   size_t len = out.length();

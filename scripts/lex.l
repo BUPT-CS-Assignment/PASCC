@@ -80,7 +80,8 @@ ID                      {letter}({letter}|{digit})*
 CHAR                    ('{letter}')
 
 /* 运算符 */
-RELOP                   ("="|"<>"|"<"|"<="|">"|">=")      
+CONSTASSIGNOP           "="
+RELOP                   ("<>"|"<"|"<="|">"|">=")      
 ADDOP                   "or"
 MULOP                   ("*"|"/"|"div"|"mod"|"and")
 ASSIGNOP                ":="
@@ -99,6 +100,7 @@ SUBCATALOG              ".."
 {TYPE}                  { cache_line(); to_str(); return TYPE; }
 
 {ARRAY}                 { cache_line(); to_str(); return ARRAY; }
+{RECORD}                { cache_line(); to_str(); return RECORD;}
 {OF}                    { cache_line(); to_str(); return OF; }
 {VAR}                   { cache_line(); to_str(); return VAR; }
 {FUNCTION}              { cache_line(); to_str(); return FUNCTION; }
@@ -139,6 +141,7 @@ SUBCATALOG              ".."
 
 {ID}                    { cache_line(); to_str(); return ID; }
 
+{CONSTASSIGNOP}         { cache_line(); to_str(); return yytext[0]; }
 {SEP}                   { cache_line(); to_str(); return yytext[0]; }
 {SUBCATALOG}            { cache_line(); to_str(); return SUBCATALOG; }
 
@@ -172,16 +175,18 @@ void process_anno()
 void cache_line()
 {
     buf += yytext;
+    //std::cout<<"buf is "<<buf<<std::endl;
 
 }
 
 void to_str()
 {
-    yylval.token_info.value.m_OTHERS = yytext;
+    //yylval.token_info.value.m_OTHERS = yytext;
+    strcpy(yylval.token_info.value.m_OTHERS, yytext);
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
-    //printf("to_str is ok\n");
+    //printf("to_str is ok:%s\n",yylval.token_info.value.m_OTHERS);
 }
 
 void to_int()

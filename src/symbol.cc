@@ -19,6 +19,9 @@ FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_
   }
 }
 
+FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line)
+    : ObjectSymbol(name, return_type, decl_line) {}
+
 bool FunctionSymbol::InsertParam(Parameter &p) {
   auto ptr = param_map_.find(p.first);
   if(ptr == param_map_.end()) {
