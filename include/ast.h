@@ -387,7 +387,9 @@ class StatementNode : public Node {
     IF_STATEMENT,         //statement → if expression then statement else_part
     FOR_STATEMENT,        //statement → for id assignop expression downto expression do statement
     READ_STATEMENT,       //statement → read ( variable_list )
+    READLN_STATEMENT,     //statement → readln ( variable_list )
     WRITE_STATEMENT,      //statement → write ( expression_list )
+    WRITELN_STATEMENT,    //statement → writeln ( expression_list )
     CASE_STATEMET,        //statement → case expression of case_body end
     WHILE_STATEMENT,      //statement → while expression do statement
     REPEAT_STATEMENT      //statement → repeat statement_list until expression
@@ -407,8 +409,12 @@ class VariableListNode : public Node {
   };
 
   VariableListNode(GrammarType gt) : grammar_type_(gt) {}
+  std::string FormatString();
   void Format(FILE* dst) override;
+  void Format(bool ref, FILE* dst);
  private:
+  //TODO get basic_type ptr lists
+  std::vector<pascal_type::BasicType*> basic_types;
   GrammarType grammar_type_;
 
 };
@@ -416,6 +422,7 @@ class VariableListNode : public Node {
 class VariableNode : public Node {
   //variable → id id_varparts
  public:
+  void Format(bool ref, FILE* dst);
 };
 
 class IDVarPartsNode : public Node {
@@ -523,8 +530,11 @@ class ExpressionListNode: public Node {
   };
 
   ExpressionListNode(GrammarType gt) : grammar_type_(gt) {}
+  std::string FormatString();
   void Format(FILE* dst) override;
  private:
+  //TODO get basic_type ptr lists
+  std::vector<pascal_type::BasicType*> basic_types;
   GrammarType grammar_type_;
 };
 

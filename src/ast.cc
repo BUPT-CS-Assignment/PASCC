@@ -312,24 +312,26 @@ void ValueParamNode::Format(bool ref, FILE* dst) {
 
 void StatementNode::Format(FILE* dst) {
   switch (grammar_type_) {
-    case GrammarType::EPSILON:
-      return;
-    case GrammarType::VAR_ASSIGN_OP_EXP:
+    case GrammarType::EPSILON: return;
+    case GrammarType::VAR_ASSIGN_OP_EXP: {
       FormatAt(0, dst);
       PRINT(" = ")
       FormatAt(1, dst);
       PRINT(";\n")
       break;
-    case GrammarType::FUNC_ASSIGN_OP_EXP:
+    }
+    case GrammarType::FUNC_ASSIGN_OP_EXP: {
       PRINT("return ")
       FormatAt(1, dst);
       PRINT(";\n");
       break;
+    }
     case GrammarType::PROCEDURE_CALL:
-    case GrammarType::COMPOUND_STATEMENT:
+    case GrammarType::COMPOUND_STATEMENT: {
       FormatAt(0, dst);
       break;
-    case GrammarType::IF_STATEMENT:
+    }
+    case GrammarType::IF_STATEMENT: {
       PRINT("if (")
       FormatAt(0, dst);
       PRINT(") {\n")
@@ -337,6 +339,7 @@ void StatementNode::Format(FILE* dst) {
       PRINT("}\n")
       FormatAt(2, dst);
       break;
+    }
     case GrammarType::FOR_STATEMENT: {
       auto updown_node = child_list_[2]->DynamicCast<UpdownNode>();
       bool increase = updown_node->IsIncrease();
@@ -356,42 +359,82 @@ void StatementNode::Format(FILE* dst) {
       PRINT("}\n")
       break;
     }
-    case GrammarType::READ_STATEMENT:
-      // TODO
+    case GrammarType::READ_STATEMENT: {
+      // TODO readln(...)
+      auto* vlnodes = child_list_[0]->DynamicCast<VariableListNode>();
+      PRINT("scanf(\"%s\", ", vlnodes->FormatString().c_str())
+      vlnodes->Format(true, dst);
+      PRINT(");\n")
       break;
+    }
     case GrammarType::WRITE_STATEMENT:
-      // TODO
+    case GrammarType::WRITELN_STATEMENT: {
+      auto *elnode = child_list_[0]->DynamicCast<ExpressionListNode>();
+      PRINT("printf(\"%s\", ", elnode->FormatString().c_str())
+      elnode->Format(dst);
+      if(grammar_type_ == GrammarType::WRITELN_STATEMENT) PRINT("\\n");
+      PRINT(");\n")
       break;
-    case GrammarType::CASE_STATEMET:
+    }
+    case GrammarType::CASE_STATEMET: {
       PRINT("switch (")
       FormatAt(0, dst);
       PRINT(") {\n")
       FormatAt(1, dst);
       PRINT("}\n")
       break;
-    case GrammarType::WHILE_STATEMENT:
+    }
+    case GrammarType::WHILE_STATEMENT: {
       PRINT("while (")
       FormatAt(0, dst);
       PRINT(") {\n")
       FormatAt(1, dst);
       PRINT("}\n")
       break;
-    case GrammarType::REPEAT_STATEMENT:
+    }
+    case GrammarType::REPEAT_STATEMENT: {
       PRINT("do {\n")
       FormatAt(0, dst);
       PRINT("} while (")
       FormatAt(1, dst);
       PRINT(");\n")
       break;
+    }
   }
 }
 
-void VariableListNode::Format(FILE* dst) {
-  FormatAt(0, dst);
-  if (grammar_type_ == GrammarType::VARIABLE_LIST_VARIABLE) {
-    PRINT(",")
-    FormatAt(1, dst);
+string VariableListNode::FormatString() {
+  string format = "";
+  for (int i = 0; i < basic_types.size(); i++) {
+    BasicType* type = basic_types[i];
+    string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d" :
+                   type == TYPE_STRING ? "%s" :
+                   type == TYPE_REAL ? "%.2f" :
+                   type == TYPE_CHAR ? "%c" :
+                   throw std::runtime_error("ExpressionListNode: FormatString() : error type");
+    format += chfmt + " ";
   }
+  return format;
+}
+
+void VariableListNode::Format(FILE* dst) {
+  Format(false, dst);
+}
+
+void VariableListNode::Format(bool ref, FILE *dst) {
+  if(grammar_type_ == GrammarType::VARIABLE) {
+    child_list_[0]->DynamicCast<VariableNode>()->Format(ref, dst);
+  }
+  if (grammar_type_ == GrammarType::VARIABLE_LIST_VARIABLE) {
+    child_list_[0]->DynamicCast<VariableListNode>()->Format(ref, dst);
+    PRINT(",")
+    child_list_[1]->DynamicCast<VariableNode>()->Format(ref, dst);
+  }
+}
+
+void VariableNode::Format(bool ref,FILE* dst) {
+  if(ref) PRINT("&")
+  Node::Format(dst);
 }
 
 void IDVarPartNode::Format(FILE* dst) {
@@ -439,6 +482,21 @@ void ElseNode::Format(FILE* dst) {
       GetStatement()->Format(dst);
       PRINT("}\n")
   }
+}
+
+
+string ExpressionListNode::FormatString() {
+  string format = "";
+  for (int i = 0; i < basic_types.size(); i++) {
+    BasicType* type = basic_types[i];
+    string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d" :
+                   type == TYPE_STRING ? "%s" :
+                   type == TYPE_REAL ? "%.2f" :
+                   type == TYPE_CHAR ? "%c" :
+                   throw std::runtime_error("ExpressionListNode: FormatString() : error type");
+    format += chfmt + " ";
+  }
+  return format;
 }
 
 void ExpressionListNode::Format(FILE* dst) {
