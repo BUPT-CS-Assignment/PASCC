@@ -4,3 +4,6 @@ cmake-build-*
 build
 out
 bin
+include/parser.tab.h
+src/parser.tab.cc
+src/lex.yy.cc
