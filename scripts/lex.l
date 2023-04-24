@@ -14,7 +14,7 @@ void cache_line();
 
 void to_str();
 void to_int();
-void to_double();
+void to_float();
 void to_char();
 void to_bool();
 
@@ -128,7 +128,7 @@ SUBCATALOG              ".."
 {UMINUS}                { cache_line(); to_str(); return UMINUS; }
 
 {INT_NUM}               { cache_line(); to_int(); return INT_NUM; }
-{REAL_NUM}              { cache_line(); to_double(); return REAL_NUM; }
+{REAL_NUM}              { cache_line(); to_float(); return REAL_NUM; }
 
 {ANNO}                  { cache_line(); process_anno(); }
 
@@ -181,25 +181,26 @@ void cache_line()
 
 void to_str()
 {
-    //yylval.token_info.value.m_OTHERS = yytext;
-    strcpy(yylval.token_info.value.m_OTHERS, yytext);
+    // yylval.token_info.value.m_OTHERS = yytext;
+    // strcpy(yylval.token_info.value.m_OTHERS, yytext);
+    yylval.token_info.value.set(std::string(yytext));
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
-    //printf("to_str is ok:%s\n",yylval.token_info.value.m_OTHERS);
+    // printf("to_str is ok:%s\n",yylval.token_info.value.m_OTHERS);
 }
 
 void to_int()
 {
-    yylval.token_info.value.m_INT = std::stoi(yytext);
+    yylval.token_info.value.set(std::stoi(yytext));
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
 }
 
-void to_double()
+void to_float()
 {
-    yylval.token_info.value.m_REAL = std::stod(yytext);
+    yylval.token_info.value.set(std::stof(yytext));
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
@@ -207,7 +208,7 @@ void to_double()
 
 void to_char()
 {
-    yylval.token_info.value.m_CHAR = yytext[1];
+    yylval.token_info.value.set(yytext[1]);
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
@@ -215,8 +216,9 @@ void to_char()
 
 void to_bool()
 {
-    if(yytext[0] == 'T') yylval.token_info.value.m_BOOLEAN = 1;
-    else yylval.token_info.value.m_BOOLEAN = 0;
+    // if() yylval.token_info.value.m_BOOLEAN = 1;
+    // else yylval.token_info.value.m_BOOLEAN = 0;
+    yylval.token_info.value.set(yytext[0] == 'T');
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;

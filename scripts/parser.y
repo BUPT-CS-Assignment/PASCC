@@ -3,10 +3,11 @@
 using namespace ast;
 using namespace pascal_symbol;
 using namespace pascal_type;
+using std::string;
 extern "C"			
 {					
-	void yyerror(const char *s);
-	extern int yylex(void);
+    void yyerror(const char *s);
+    extern int yylex(void);
     extern int line_count;
     extern char* yytext;
     extern int char_count;
@@ -21,7 +22,7 @@ symbol_table::TableSet* top_table_set = new symbol_table::TableSet("main",nullpt
 //table_set_queue.push(top_table_set);
 int error_flag=0;
 
-void yyerror(ast::AST* real_ast,char *msg);
+void yyerror(ast::AST* real_ast,const char *msg);
 
 void fresh_argu(){
     column = buf.size();
@@ -168,7 +169,7 @@ program :
 program_head :
     PROGRAM ID '(' id_list ')' ';' {
         $$ = new ProgramHeadNode();
-        LeafNode* leaf_node = new LeafNode($2.value.m_OTHERS,false);
+        LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($4.id_list_node);
         if(DEBUG) printf("program_head -> program id(id_list);\n");
@@ -193,17 +194,17 @@ program_body :
     };                  
 id_list :
     id_list ',' ID { 
-        $1.list_ref->push_back(std::make_pair($3.value.m_OTHERS,$3.line_num));
+        $1.list_ref->push_back(std::make_pair($3.value.get<string>(),$3.line_num));
         $$.list_ref = $1.list_ref;
         $$.id_list_node = new IdListNode(IdListNode::GrammarType::MULTIPLE_ID);
-        LeafNode* leaf_node = new LeafNode($3.value.m_OTHERS,false);
+        LeafNode* leaf_node = new LeafNode($3.value);
         $$.id_list_node->append_child($1.id_list_node);
         $$.id_list_node->append_child(leaf_node);
     } | ID {
         $$.list_ref = new std::vector<std::pair<std::string,int>>();
-        $$.list_ref->push_back(std::make_pair($1.value.m_OTHERS,$1.line_num));
+        $$.list_ref->push_back(std::make_pair($1.value.get<string>(),$1.line_num));
         $$.id_list_node = new IdListNode(IdListNode::GrammarType::SINGLE_ID);
-        LeafNode* leaf_node = new LeafNode($1.value.m_OTHERS,false);
+        LeafNode* leaf_node = new LeafNode($1.value);
         $$.id_list_node->append_child(leaf_node);
     };
 const_declarations :{
@@ -220,26 +221,15 @@ const_declaration :
     const_declaration ';' ID '=' const_variable
     {
         //TODO 插入符号表
-        pascal_symbol::ConstSymbol *symbol ;
-        if ($5.type_ptr == pascal_type::TYPE_INT){
-            symbol = new ConstSymbol($3.value.m_OTHERS,$3.line_num,$5.value.m_INT);
-        }
-        else if ($5.type_ptr == pascal_type::TYPE_REAL){
-            symbol = new ConstSymbol($3.value.m_OTHERS,$3.line_num,$5.value.m_REAL);
-        }
-        else if ($5.type_ptr == pascal_type::TYPE_CHAR){
-            symbol = new ConstSymbol($3.value.m_OTHERS,$3.line_num,$5.value.m_CHAR);
-        }else {
-            symbol = new ConstSymbol($3.value.m_OTHERS,$3.line_num,$5.value.m_BOOLEAN);
-        }
+        pascal_symbol::ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
-        if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.m_OTHERS,symbol)){
+        if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
             yyerror(real_ast,"The identifier has been declared.\n");
         } 
         else{
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION);
             $$->append_child($1);
-            LeafNode* leaf_node = new LeafNode($3.value.m_OTHERS,false);
+            LeafNode* leaf_node = new LeafNode($3.value);
             $$->append_child(leaf_node);
             $$->append_child($5.const_variable_node);
             // const_declaration -> const_declaration ; id = const_variable.
@@ -250,25 +240,14 @@ const_declaration :
     | ID '=' const_variable
     {   // const_declaration -> id = const_variable.
         //TODO 插入符号表
-        pascal_symbol::ConstSymbol *symbol ;
-        if ($3.type_ptr == pascal_type::TYPE_INT){
-            symbol = new ConstSymbol($3.value.m_OTHERS,$1.line_num,$3.value.m_INT);
-        }
-        else if ($3.type_ptr == pascal_type::TYPE_REAL){
-            symbol = new ConstSymbol($3.value.m_OTHERS,$1.line_num,$3.value.m_REAL);
-        }
-        else if ($3.type_ptr == pascal_type::TYPE_CHAR){
-            symbol = new ConstSymbol($3.value.m_OTHERS,$1.line_num,$3.value.m_CHAR);
-        }else {
-            symbol = new ConstSymbol($3.value.m_OTHERS,$1.line_num,$3.value.m_BOOLEAN);
-        }
+        pascal_symbol::ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
 
-        if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.m_OTHERS,symbol)){
+        if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
             yyerror(real_ast,"The identifier has been declared.\n");
         } 
         else {
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE);
-            LeafNode* leaf_node = new LeafNode($1.value.m_OTHERS,false);
+            LeafNode* leaf_node = new LeafNode($1.value);
             $$->append_child(leaf_node);
             $$->append_child($3.const_variable_node);
             if(DEBUG) printf("const_declaration -> id = const_variable.\n");
@@ -278,25 +257,13 @@ const_variable :
     PLUS ID
     {   
         // const_variable -> + id.
-        ConstSymbol  *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.m_OTHERS);
+        ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.\n");
         }else {
-            $$.type_ptr = symbol->type();
-            if($$.type_ptr==pascal_type::TYPE_INT){
-                $$.value.m_INT = symbol->value<int>();
-            } else if($$.type_ptr==pascal_type::TYPE_REAL){
-                $$.value.m_REAL = symbol->value<float>();
-            } else if($$.type_ptr==pascal_type::TYPE_BOOL){
-                $$.value.m_BOOLEAN = symbol->value<bool>();
-            } else {
-                $$.value.m_CHAR = symbol->value<char>();
-            }
-            //$$.const_value = symbol->value();
-            std::string s1("+");
-            std::string s2($2.value.m_OTHERS);
-            s1+=s2;
-            $$.const_variable_node = new LeafNode(s1,false);
+            $$.value = symbol->value();
+
+            $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));
             
         }
         if(DEBUG) printf("const_variable -> +id.\n");
@@ -304,25 +271,14 @@ const_variable :
     | UMINUS ID
     {
         // const_variable -> - id. todo -
-        ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.m_OTHERS);
+        ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.\n");
         }else {
-            $$.type_ptr = symbol->type();
-            if($$.type_ptr==pascal_type::TYPE_INT){
-                $$.value.m_INT = -symbol->value<int>();
-            } else if($$.type_ptr==pascal_type::TYPE_REAL){
-                $$.value.m_REAL = -symbol->value<float>();
-            } else if($$.type_ptr==pascal_type::TYPE_BOOL){
-                $$.value.m_BOOLEAN = symbol->value<bool>();// todo
-            } else {
-                $$.value.m_CHAR = -symbol->value<char>();
-            }
+            $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
-            std::string s1("-");
-            std::string s2($2.value.m_OTHERS);
-            s1+=s2;
-            $$.const_variable_node = new LeafNode(s1,false);
+
+            $$.const_variable_node = new LeafNode(ConstValue("-" + $2.value.get<string>()));
         }
         
         if(DEBUG) printf("const_variable -> -id.\n");
@@ -330,22 +286,13 @@ const_variable :
     | ID
     {
         // const_variable -> id.
-        ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.m_OTHERS);
+        ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.\n");
         }else {
-            $$.type_ptr = symbol->type();
-            if($$.type_ptr==pascal_type::TYPE_INT){
-                $$.value.m_INT = symbol->value<int>();
-            } else if($$.type_ptr==pascal_type::TYPE_REAL){
-                $$.value.m_REAL = symbol->value<float>();
-            } else if($$.type_ptr==pascal_type::TYPE_BOOL){
-                $$.value.m_BOOLEAN = symbol->value<bool>();
-            } else {
-                $$.value.m_CHAR = symbol->value<char>();
-            }
+            $$.value = symbol->value();
         }
-        $$.const_variable_node = new LeafNode($1.value.m_OTHERS,false);
+        $$.const_variable_node = new LeafNode($1.value);
         if(DEBUG) printf("const_variable -> id.\n");
     }
     |UMINUS num
@@ -353,15 +300,8 @@ const_variable :
         //TODO
         // const_variable -> - num.
         $$.type_ptr = $2.type_ptr;
-        if($2.type_ptr==pascal_type::TYPE_INT){
-            $$.value.m_INT = $2.value.m_INT*(-1);
-            //$$.const_value = new ConstValue($2.value.m_INT*(-1));
-            $$.const_variable_node = new LeafNode(-($2.value.m_INT));
-        } else {
-            $$.value.m_REAL = $2.value.m_REAL*(-1);
-            //$$.const_value = new ConstValue($2.value.m_REAL*(-1));
-            $$.const_variable_node = new LeafNode(-($2.value.m_REAL));
-        }
+        $$.value = $$.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL);
+        $$.const_variable_node = new LeafNode($2.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL));
         if(DEBUG) printf("const_variable -> -num.\n");
         
     }
@@ -370,13 +310,7 @@ const_variable :
         // const_variable -> num.
         $$.type_ptr = $1.type_ptr;
         $$.value = $1.value;
-        if($1.type_ptr==pascal_type::TYPE_INT){
-            $$.const_variable_node = new LeafNode($1.value.m_INT);
-            //$$.const_value = new ConstValue($1.value.m_INT);
-        } else {
-            $$.const_variable_node = new LeafNode($1.value.m_REAL);
-            //$$.const_value = new ConstValue($1.value.m_REAL);
-        }
+        $$.const_variable_node = new LeafNode($1.value);
         if(DEBUG) printf("const_variable -> num.\n");
     }
     |PLUS num
@@ -384,13 +318,7 @@ const_variable :
         // const_variable -> +num.
         $$.type_ptr = $2.type_ptr;
         $$.value = $2.value;
-        if($2.type_ptr==pascal_type::TYPE_INT){
-            //$$.const_value = new ConstValue($2.value.m_REAL);
-            $$.const_variable_node = new LeafNode($2.value.m_INT);
-        } else {
-            //$$.const_value = new ConstValue($2.value.m_REAL);
-            $$.const_variable_node = new LeafNode($2.value.m_REAL);
-        }
+        $$.const_variable_node = new LeafNode($2.value);
         if(DEBUG) printf("const_variable -> +num.\n");
         // $$.const_variable_node = new ConstVariableNode();
         // LeafNode* leaf_node = new LeafNode($2.value.m_INT);//?
@@ -400,12 +328,8 @@ const_variable :
     {
         // const_variable -> 'letter'.
         $$.type_ptr = pascal_type::TYPE_CHAR;
-        $$.value.m_CHAR = $1.value.m_CHAR;
-        //$$.const_value = new ConstValue($2.value.m_CHAR);
-        $$.const_variable_node = new LeafNode($1.value.m_CHAR);
-        // $$.const_variable_node = new ConstVariableNode();
-        // LeafNode* leaf_node = new LeafNode($1.value.m_CHAR);
-        // $$.const_variable_node->append_child(leaf_node);
+        $$.value = $1.value;
+        $$.const_variable_node = new LeafNode($1.value);
         if(DEBUG) printf("const_variable -> char.\n");
 
     };
@@ -415,14 +339,14 @@ num :
     {
         // num -> int_num.
         $$.type_ptr = pascal_type::TYPE_INT;
-        $$.value.m_INT = $1.value.m_INT;
+        $$.value = $1.value;
         if(DEBUG) printf("num -> int_num.\n");
     }
     | REAL_NUM
     {   
         // num -> real_num.
         $$.type_ptr = pascal_type::TYPE_REAL;
-        $$.value.m_REAL = $1.value.m_REAL;
+        $$.value = $1.value;
         if(DEBUG) printf("num -> real_num.\n");
     };
 type_declarations : {
@@ -444,29 +368,29 @@ type_declaration :
         // type_declaration -> type_declaration ; id = type.
         if ($5.main_type == TypeAttr::BASIC) {
             pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($5.type_ptr)->type());
-            if (!table_set_queue.top()->Insert<BasicType>($3.value.m_OTHERS,basic_type)){
+            if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),basic_type)){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
             pascal_type::ArrayType *array_type = new pascal_type::ArrayType($5.type_ptr,*($5.bounds));
-            if (!table_set_queue.top()->Insert<ArrayType>($3.value.m_OTHERS,array_type)){
+            if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),array_type)){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             } else {
-                $5.type_ptr = table_set_queue.top()->SearchEntry<ArrayType>($3.value.m_OTHERS);
+                $5.type_ptr = table_set_queue.top()->SearchEntry<ArrayType>($3.value.get<string>());
             }
         } else if ($5.record_info) {
             pascal_type::RecordType *record_type = new pascal_type::RecordType(*($5.record_info));
-            if (!table_set_queue.top()->Insert<RecordType>($3.value.m_OTHERS,record_type)){
+            if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),record_type)){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             } else {
-                $5.type_ptr = table_set_queue.top()->SearchEntry<RecordType>($3.value.m_OTHERS);
+                $5.type_ptr = table_set_queue.top()->SearchEntry<RecordType>($3.value.get<string>());
                 $5.array_type_ptr = $5.type_ptr;
             }
         }
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::MULTIPLE_DECL);
         $$->append_child($1);
-        LeafNode *leaf_node = new LeafNode($3.value.m_OTHERS,false);
+        LeafNode *leaf_node = new LeafNode($3.value);
         $$->append_child(leaf_node);
         $$->append_child($5.type_node);
         if(DEBUG) printf("type_declaration -> type_declaration ; id = type.\n");
@@ -477,28 +401,28 @@ type_declaration :
         // type_declaration -> id = type.
         if ($3.main_type == TypeAttr::BASIC) {
             pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($3.type_ptr)->type());
-            if (!table_set_queue.top()->Insert<BasicType>($1.value.m_OTHERS,basic_type)){
+            if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),basic_type)){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
             pascal_type::ArrayType *array_type = new pascal_type::ArrayType($3.array_type_ptr,*($3.bounds));
-            if (!table_set_queue.top()->Insert<ArrayType>($1.value.m_OTHERS,array_type)){
+            if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),array_type)){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             } else {
-                $3.type_ptr = table_set_queue.top()->SearchEntry<ArrayType>($1.value.m_OTHERS);
+                $3.type_ptr = table_set_queue.top()->SearchEntry<ArrayType>($1.value.get<string>());
             }
         } else if ($3.record_info) {
             pascal_type::RecordType *record_type = new pascal_type::RecordType(*($3.record_info));
-            if (!table_set_queue.top()->Insert<RecordType>($1.value.m_OTHERS,record_type)){
+            if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),record_type)){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             } else {
-                $3.type_ptr = table_set_queue.top()->SearchEntry<RecordType>($1.value.m_OTHERS);
+                $3.type_ptr = table_set_queue.top()->SearchEntry<RecordType>($1.value.get<string>());
                 $3.array_type_ptr = $3.type_ptr;
             }
         }
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::SINGLE_DECL);
-        LeafNode *leaf_node = new LeafNode($1.value.m_OTHERS,false);
+        LeafNode *leaf_node = new LeafNode($1.value);
         $$->append_child(leaf_node);
         $$->append_child($3.type_node);
         if(DEBUG) printf("type_declaration -> id = type.\n");
@@ -562,12 +486,13 @@ standrad_type :
     BASIC_TYPE
     {
         // standrad_type -> int|real|bool|char.
-        //std::cout<<"$1.value.m_OTHERS:"<<$1.value.m_OTHERS<<std::endl;
-        if (!strcmp($1.value.m_OTHERS,"integer")){
+        //std::cout<<"$1.value.get<string>():"<<$1.value.get<string>()<<std::endl;
+        string typestr = $1.value.get<string>();
+        if (typestr == "integer"){
             $$.type_ptr = pascal_type::TYPE_INT;
-        } else if(!strcmp($1.value.m_OTHERS,"real")){
+        } else if(typestr == "real"){
             $$.type_ptr = pascal_type::TYPE_REAL;
-        } else if(!strcmp($1.value.m_OTHERS,"Boolean")){
+        } else if(typestr == "Boolean"){
             $$.type_ptr = pascal_type::TYPE_BOOL;
         } else{
             $$.type_ptr = pascal_type::TYPE_CHAR;
@@ -603,21 +528,19 @@ period :
         // period -> const_variable .. const_variable.
         
         int arr_len;
-        if (($1.type_ptr == pascal_type::TYPE_INT)&&($3.type_ptr == pascal_type::TYPE_INT)){
-            arr_len = $3.value.m_INT - $1.value.m_INT;
-            if(arr_len < 0){
-                //ERROR
-            }
-            $$.bound = new std::pair<int, int>($1.value.m_INT, $3.value.m_INT);
-        } else if(($1.type_ptr == pascal_type::TYPE_CHAR)&&($3.type_ptr == pascal_type::TYPE_CHAR)){
-            arr_len =$3.value.m_CHAR - $1.value.m_CHAR;
-            if(arr_len < 0){
-                //ERROR
-            }
-            $$.bound = new std::pair<int, int>(int($1.value.m_CHAR), int($3.value.m_CHAR));
-        } else{
-            //ERROR
-        }
+        if ($1.type_ptr == pascal_type::TYPE_INT){
+            arr_len = ($3.value - $1.value).get<int>();
+            $$.bound = new std::pair<int, int>($1.value.get<int>(), $3.value.get<int>());
+        } else if($1.type_ptr == pascal_type::TYPE_CHAR){
+	    arr_len = (int)($3.value - $1.value).get<char>();
+	    $$.bound = new std::pair<int, int>((int)$1.value.get<char>(), (int)$3.value.get<char>());
+	} else {
+	    // ERROR
+	}
+        if(arr_len < 0){
+	    //ERROR
+	}
+
         $$.period_node =new PeriodNode();
         $$.period_node->set_len(arr_len);
         $$.period_node->append_child($1.const_variable_node);
@@ -678,7 +601,7 @@ var_declaration :
     |var_declaration ';' id_list ':' ID
     {
         $$.record_info = $1.record_info;
-        TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.m_OTHERS);
+        TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
             yyerror(real_ast,"undefined type");
         } else {
@@ -692,13 +615,13 @@ var_declaration :
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::ID);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
-        LeafNode *leaf_node = new LeafNode($5.value.m_OTHERS,false);
+        LeafNode *leaf_node = new LeafNode($5.value);
         $$.variable_declaration_node->append_child(leaf_node);
         if(DEBUG) printf("var_declaration -> var_declaration ; id_list : ID.\n");
     }
     |id_list ':' ID
     {
-        TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.m_OTHERS);
+        TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
             yyerror(real_ast,"undefined type");
         } else {
@@ -713,7 +636,7 @@ var_declaration :
 
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::ID);
         $$.variable_declaration_node->append_child($1.id_list_node);
-        LeafNode *leaf_node = new LeafNode($3.value.m_OTHERS,false);
+        LeafNode *leaf_node = new LeafNode($3.value);
         $$.variable_declaration_node->append_child(leaf_node);
         if(DEBUG) printf("var_declaration -> id_list : ID.\n");
     }
@@ -765,17 +688,17 @@ subprogram_head :
         // subprogram_head -> function id formal_parametert : standrad_type.
         FunctionSymbol* tmp ;
         if($3.parameters){
-            tmp = new FunctionSymbol($2.value.m_OTHERS, nullptr, $2.line_num, *$3.parameters);
+            tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num, *$3.parameters);
         } else {
-            tmp = new FunctionSymbol($2.value.m_OTHERS, nullptr, $2.line_num);
+            tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num);
         }
-        if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.m_OTHERS, tmp)){
+        if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
             yyerror(real_ast,"redefinition of function");
         } 
 
-        symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.m_OTHERS, table_set_queue.top());
+        symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
-        table_set_queue.top()->Insert<FunctionSymbol>($2.value.m_OTHERS, tmp);
+        table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
@@ -786,7 +709,7 @@ subprogram_head :
         }
 
         $$ = new SubprogramHeadNode(ast::SubprogramHeadNode::GrammarType::FUNCTION);
-        LeafNode *leaf_node = new LeafNode($2.value.m_OTHERS,false);
+        LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
         $$->append_child($5.standard_type_node);
@@ -800,18 +723,18 @@ subprogram_head :
         // subprogram_head -> procedure id formal_parametert.
         FunctionSymbol* tmp ;
         if($3.parameters){
-            tmp = new FunctionSymbol($2.value.m_OTHERS, nullptr, $2.line_num, *$3.parameters);
+            tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num, *$3.parameters);
         } else {
-            tmp = new FunctionSymbol($2.value.m_OTHERS, nullptr, $2.line_num);
+            tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num);
         }
         
-        if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.m_OTHERS, tmp)){
+        if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
             yyerror(real_ast,"redefinition of function");
         } 
 
-        symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.m_OTHERS,table_set_queue.top());
+        symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(),table_set_queue.top());
         table_set_queue.push(now_table_set);
-        table_set_queue.top()->Insert<FunctionSymbol>($2.value.m_OTHERS, tmp);
+        table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
@@ -823,7 +746,7 @@ subprogram_head :
         
 
         $$ = new SubprogramHeadNode(ast::SubprogramHeadNode::GrammarType::PROCEDURE);
-        LeafNode *leaf_node = new LeafNode($2.value.m_OTHERS,false);
+        LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
         if(DEBUG) printf("subprogram_head -> procedure id formal_parameter.\n");
@@ -1003,7 +926,7 @@ statement:
         //类型检查
         // statement -> for id assignop expression updown expression do statement.
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
-        LeafNode *id_node = new LeafNode($2.value.m_OTHERS,false);
+        LeafNode *id_node = new LeafNode($2.value);
         $$->append_child(id_node);
         $$->append_child($4.expression_node);
         $$->append_child($5);
@@ -1020,18 +943,18 @@ variable:
     ID id_varparts
     {
         // variable -> id id_varparts.
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.m_OTHERS);
+        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
              $$.type_ptr = nullptr;
             yyerror(real_ast,"variable not defined. this way is not allowed.");
         } else {
             //类型检查
             $$.type_ptr = tmp->type();
-            $$.name = new std::string($1.value.m_OTHERS);
+            $$.name = new std::string($1.value.get<string>());
         }
         
         $$.variable_node = new VariableNode();
-        LeafNode *id_node = new LeafNode($1.value.m_OTHERS,false);
+        LeafNode *id_node = new LeafNode($1.value);
         $$.variable_node->append_child(id_node);
         $$.variable_node->append_child($2.id_varparts_node);
         if (DEBUG) printf("variable -> id id_varparts.\n");
@@ -1078,10 +1001,10 @@ id_varpart:
         // id_varpart -> .id.
         $$.var_part= new VarParts();
         $$.var_part->flag = 1;//结构体
-        strcpy($$.var_part->name,$2.value.m_OTHERS);
+        $$.var_part->name = $2.value.get<string>();
 
         $$.id_varpart_node = new IDVarPartNode(IDVarPartNode::GrammarType::_ID);
-        LeafNode *id_node = new LeafNode($2.value.m_OTHERS,false);
+        LeafNode *id_node = new LeafNode($2.value);
         $$.id_varpart_node->append_child(id_node);
         if (DEBUG) printf("id_varpart -> .id.\n");
     };
@@ -1188,13 +1111,13 @@ call_procedure_statement:
     {
         //类型检查
         // call_procedure_statement -> id (expression_list).
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.m_OTHERS);
+        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
 
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID_EXP_LIST);
-        LeafNode *id_node = new LeafNode($1.value.m_OTHERS,false);
+        LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
         $$->append_child($3.expression_list_node);
         if (DEBUG) printf("call_procedure_statement -> id (expression_list).\n");
@@ -1202,13 +1125,13 @@ call_procedure_statement:
     | ID
     {   //类型检查
         // call_procedure_statement -> id.
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.m_OTHERS);
+        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
 
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID);
-        LeafNode *id_node = new LeafNode($1.value.m_OTHERS,false);
+        LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
         if (DEBUG) printf("call_procedure_statement -> id.\n");
     };
@@ -1246,14 +1169,14 @@ expression:
         TypeTemplate* tmp = $1.type_ptr;
         $$.type_ptr = tmp;
         
-        std::string relop = $2.value.m_OTHERS;
-        if(strcmp($2.value.m_OTHERS,"<>") == 0) {
+        std::string relop = $2.value.get<string>();
+        if($2.value.get<string>() == "<>") {
             relop = "!=";
         }
 
         $$.expression_node = new ExpressionNode();
         $$.expression_node->append_child($1.simple_expression_node);
-        LeafNode *relop_node = new LeafNode(relop,true);
+        LeafNode *relop_node = new LeafNode(ConstValue(relop));
         $$.expression_node->append_child(relop_node);
         $$.expression_node->append_child($3.simple_expression_node);
         if (DEBUG) printf("expression -> simple_expression relop simple_expression.\n");
@@ -1268,7 +1191,7 @@ expression:
 
         $$.expression_node = new ExpressionNode();
         $$.expression_node->append_child($1.simple_expression_node);
-        LeafNode *relop_node = new LeafNode("==",true);
+        LeafNode *relop_node = new LeafNode(ConstValue("=="));
         $$.expression_node->append_child(relop_node);
         $$.expression_node->append_child($3.simple_expression_node);
         if (DEBUG) printf("expression -> simple_expression relop simple_expression.\n");
@@ -1298,7 +1221,7 @@ simple_expression:
         $$.type_ptr = $2.type_ptr;
 
         $$.simple_expression_node = new SimpleExpressionNode();
-        LeafNode *plus_node = new LeafNode("+",true);
+        LeafNode *plus_node = new LeafNode(ConstValue("+"));
         $$.simple_expression_node->append_child(plus_node);
         $$.simple_expression_node->append_child($2.term_node);
         if (DEBUG) printf("simple_expression -> + term.\n");
@@ -1309,7 +1232,7 @@ simple_expression:
         $$.type_ptr = $2.type_ptr;
 
         $$.simple_expression_node = new SimpleExpressionNode();
-        LeafNode *minus_node = new LeafNode("-",true);
+        LeafNode *minus_node = new LeafNode(ConstValue("-"));
         $$.simple_expression_node->append_child(minus_node);
         $$.simple_expression_node->append_child($2.term_node);
         if (DEBUG) printf("simple_expression -> - term.\n");
@@ -1325,7 +1248,7 @@ simple_expression:
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
-        LeafNode *addop_node = new LeafNode("or",true);
+        LeafNode *addop_node = new LeafNode(ConstValue("or"));
         $$.simple_expression_node->append_child(addop_node);
         $$.simple_expression_node->append_child($3.term_node);
         if (DEBUG) printf("simple_expression -> simple_expression or term.\n");
@@ -1339,7 +1262,7 @@ simple_expression:
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
-        LeafNode *plus_node = new LeafNode("+",true);
+        LeafNode *plus_node = new LeafNode(ConstValue("+"));
         $$.simple_expression_node->append_child(plus_node);
         $$.simple_expression_node->append_child($3.term_node);
         if (DEBUG) printf("simple_expression -> simple_expression + term.\n");
@@ -1354,7 +1277,7 @@ simple_expression:
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
-        LeafNode *minus_node = new LeafNode("-",true);
+        LeafNode *minus_node = new LeafNode(ConstValue("-"));
         $$.simple_expression_node->append_child(minus_node);
         $$.simple_expression_node->append_child($3.term_node);
         if (DEBUG) printf("simple_expression -> simple_expression - term.\n");
@@ -1376,7 +1299,7 @@ term:
         TypeTemplate *tmp = $1.type_ptr;
         $$.type_ptr = tmp;
         
-        std::string mulop = $2.value.m_OTHERS;
+        std::string mulop = $2.value.get<string>();
         if(mulop == "div"){
             mulop = "/";
         } else if (mulop == "mod"){
@@ -1386,7 +1309,7 @@ term:
         }
         $$.term_node = new TermNode();
         $$.term_node->append_child($1.term_node);
-        LeafNode *mulop_node = new LeafNode(mulop,true);
+        LeafNode *mulop_node = new LeafNode(ConstValue(mulop));
         $$.term_node->append_child(mulop_node);
         $$.term_node->append_child($3.factor_node);
         if (DEBUG) printf("term -> term mulop factor.\n");
@@ -1412,13 +1335,13 @@ factor:
     {
         // factor -> id (expression_list).
         // 类型检查
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.m_OTHERS);
+        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
         $$.type_ptr = tmp->type();
         $$.factor_node = new FactorNode(FactorNode::GrammarType::ID_EXP_LIST);
-        LeafNode *id_node = new LeafNode($1.value.m_OTHERS,true);
+        LeafNode *id_node = new LeafNode($1.value);
         $$.factor_node->append_child(id_node);
         $$.factor_node->append_child($3.expression_list_node);
         if (DEBUG) printf("factor -> id (expression_list).\n");
@@ -1452,14 +1375,15 @@ unsigned_const_variable :
         // unsigned_const_variable -> num
         $$.type_ptr = $1.type_ptr;
 
-        LeafNode *num_node;
+        LeafNode *num_node = new LeafNode($1.value);
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
         //$$.unsigned_constant_var_node->append_child($1.const_variable_node);
-        if($1.type_ptr==pascal_type::TYPE_INT){
-            num_node = new LeafNode($1.value.m_INT);
-        } else {
-            num_node = new LeafNode($1.value.m_REAL);
-        }
+
+//        if($1.type_ptr==pascal_type::TYPE_INT){
+//            num_node = new LeafNode($1.value.m_INT);
+//        } else {
+//            num_node = new LeafNode($1.value.m_REAL);
+//        }
         $$.unsigned_constant_var_node->append_child(num_node);
         if (DEBUG) printf("unsigned_const_variable -> num\n");
     };
@@ -1469,7 +1393,7 @@ unsigned_const_variable :
         $$.type_ptr = pascal_type::TYPE_CHAR;
         
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
-        LeafNode *char_node = new LeafNode($1.value.m_CHAR);
+        LeafNode *char_node = new LeafNode($1.value);
         $$.unsigned_constant_var_node->append_child(char_node);
         if (DEBUG) printf("unsigned_const_variable -> 'LETTER'\n");
     }
@@ -1479,7 +1403,7 @@ unsigned_const_variable :
         $$.type_ptr = pascal_type::TYPE_BOOL;
         
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
-        LeafNode *true_node = new LeafNode(true);
+        LeafNode *true_node = new LeafNode(ConstValue(true));
         $$.unsigned_constant_var_node->append_child(true_node);
         if (DEBUG) printf("unsigned_const_variable -> true\n");
     }
@@ -1489,7 +1413,7 @@ unsigned_const_variable :
         $$.type_ptr = pascal_type::TYPE_BOOL;
         
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
-        LeafNode *false_node = new LeafNode(false);
+        LeafNode *false_node = new LeafNode(ConstValue(false));
         $$.unsigned_constant_var_node->append_child(false_node);
         if (DEBUG) printf("unsigned_const_variable -> false\n");
     };
@@ -1497,7 +1421,7 @@ unsigned_const_variable :
 %%
  
 
-void yyerror(ast::AST* real_ast,char *msg){
+void yyerror(ast::AST* real_ast,const char *msg){
     printf("%d :",line_count);
     fprintf(stderr,"error:%s\n",msg);
     error_flag = 1;
