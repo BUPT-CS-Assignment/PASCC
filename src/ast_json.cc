@@ -152,26 +152,19 @@ void Node::LoadFromJson(const nlohmann::json & node_json) {
     if(type_name == "leaf") {
       LeafNode* lf = node->StaticCast<LeafNode>();
 
-      if(sub_type == (int)LeafNode::LEAF_TYPE::IDENTIFIER) {
-        lf->set_id(item.at("value"));
-        if(item.contains("ref"))
-          lf->set_ref(item.at("ref"));
-
-      } else if(sub_type == (int)LeafNode::LEAF_TYPE::OPERATION) {
-        lf->set_op(item.at("value"));
-
-      } else {
-        string value_type = item.at("value_type");
-        if(value_type == "integer") {
-          lf->set_value(ConstValue(item.at("value").get<int>()));
-        } else if(value_type == "real") {
-          lf->set_value(ConstValue(item.at("value").get<float>()));
-        } else if(value_type == "char") {
-          lf->set_value(ConstValue(item.at("value").get<char>()));
-        } else if(value_type == "bool") {
-          lf->set_value(ConstValue(item.at("value").get<bool>()));
-        }
+      string value_type = item.at("value_type");
+      if(value_type == "integer") {
+        lf->set_value(ConstValue(item.at("value").get<int>()));
+      } else if(value_type == "real") {
+        lf->set_value(ConstValue(item.at("value").get<float>()));
+      } else if(value_type == "char") {
+        lf->set_value(ConstValue(item.at("value").get<char>()));
+      } else if(value_type == "bool") {
+        lf->set_value(ConstValue(item.at("value").get<bool>()));
+      } else if(value_type == "string") {
+        lf->set_value(ConstValue(item.at("value").get<string>()));
       }
+
     }
     else if(type_name == "basic_type") {
       BasicTypeNode* bt = node->StaticCast<BasicTypeNode>();

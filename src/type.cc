@@ -3,6 +3,97 @@
 
 using std::vector;
 using std::string;
+using namespace pascal_type;
+
+ConstValue::ConstValue(const ConstValue& other) {
+  m_Type = other.m_Type;
+  m_INT = other.m_INT;
+  m_REAL = other.m_REAL;
+  m_CHAR = other.m_CHAR;
+  m_BOOLEAN = other.m_BOOLEAN;
+  m_STRING = other.m_STRING;
+}
+
+ConstValue& ConstValue::operator=(const ConstValue& other) {
+  m_Type = other.m_Type;
+  m_INT = other.m_INT;
+  m_REAL = other.m_REAL;
+  m_CHAR = other.m_CHAR;
+  m_BOOLEAN = other.m_BOOLEAN;
+  m_STRING = other.m_STRING;
+  return *this;
+}
+
+// operation +
+ConstValue ConstValue::operator+(const ConstValue& other) {
+  if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator+ : type not match");
+  ConstValue ret;
+  if (m_Type == TYPE_INT) {
+    ret.set((int)(m_INT + other.m_INT));
+    return ret;
+  } else if (m_Type == TYPE_REAL) {
+    ret.set((float)(m_REAL + other.m_REAL));
+    return ret;
+  } else if (m_Type == pascal_type::TYPE_STRING) {
+    ret.set(m_STRING + other.m_STRING);
+    return ret;
+  } else if(m_Type == pascal_type::TYPE_CHAR){
+    ret.set((char)((int)m_CHAR + (int)other.m_CHAR));
+    return ret;
+  } else {
+    throw std::runtime_error("ConstValue : operator+ : type not supported");
+  }
+}
+
+// operation -
+ConstValue ConstValue::operator-(const ConstValue& other) {
+  if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator- : type not match");
+  ConstValue ret;
+  if (m_Type == pascal_type::TYPE_INT) {
+    ret.set((int)(m_INT - other.m_INT));
+    return ret;
+  } else if (m_Type == pascal_type::TYPE_REAL) {
+    ret.set((float)(m_REAL - other.m_REAL));
+    return ret;
+  } else if(m_Type == pascal_type::TYPE_CHAR){
+    ret.set((char)((int)m_CHAR - (int)other.m_CHAR));
+    return ret;
+  } else {
+    throw std::runtime_error("ConstValue : operator- : type not supported");
+  }
+}
+
+// operation *
+ConstValue ConstValue::operator*(const ConstValue& other) {
+  if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator* : type not match");
+  ConstValue ret;
+  if (m_Type == pascal_type::TYPE_INT) {
+    ret.set((int)(m_INT * other.m_INT));
+    return ret;
+  } else if (m_Type == pascal_type::TYPE_REAL) {
+    ret.set((float)(m_REAL * other.m_REAL));
+    return ret;
+  } else {
+    throw std::runtime_error("ConstValue : operator* : type not supported");
+  }
+}
+
+// operation /
+ConstValue ConstValue::operator/(const ConstValue& other) {
+  if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator* : type not match");
+  ConstValue ret;
+  if (m_Type == pascal_type::TYPE_INT) {
+    ret.set((int)(m_INT / other.m_INT));
+    return ret;
+  } else if (m_Type == pascal_type::TYPE_REAL) {
+    ret.set((float)(m_REAL / other.m_REAL));
+    return ret;
+  } else {
+    throw std::runtime_error("ConstValue : operator* : type not supported");
+  }
+}
+
+
 
 namespace pascal_type {
 
@@ -65,6 +156,9 @@ BasicType* TYPE_INT;
 BasicType* TYPE_REAL;
 BasicType* TYPE_BOOL;
 BasicType* TYPE_CHAR;
+BasicType* TYPE_STRING;
+BasicType* TYPE_ERROR;
+
 OperationMap operation_map;
 
 void TypeInit() {

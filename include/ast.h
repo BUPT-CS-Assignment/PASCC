@@ -5,6 +5,7 @@
 #include <vector>
 #include "json.hpp"
 #include "symbol_table.h"
+#include "pstdlib.h"
 
 namespace ast{
 
@@ -58,6 +59,7 @@ class AST {
  public:
   // getter and setter functions
   Node* root() { return root_;}
+  pstdlib::PStdLibs* libs() { return &libs_; }
   void set_root(Node* root) { root_ = root;}
   // load from json
   void LoadFromJson(std::string file_name);
@@ -70,6 +72,7 @@ class AST {
 
 private:
   Node* root_;  // root node pointer
+  pstdlib::PStdLibs libs_;
 };
 
 
@@ -79,43 +82,25 @@ private:
  */
 class LeafNode : public Node {
  public:
-  enum class LEAF_TYPE {
-     IDENTIFIER,
-     CONST_VALUE,
-     OPERATION,
-   };
 
   LeafNode() {}
-  LeafNode(LEAF_TYPE t) : leaf_type_(t) {}
   // const value
-  LeafNode(int val) : leaf_type_(LEAF_TYPE::CONST_VALUE), name_(""), value_(val) {}
-  LeafNode(float val) : leaf_type_(LEAF_TYPE::CONST_VALUE), name_(""), value_(val) {}
-  LeafNode(char val) : leaf_type_(LEAF_TYPE::CONST_VALUE), name_(""), value_(val) {}
-  LeafNode(bool val) : leaf_type_(LEAF_TYPE::CONST_VALUE), name_(""), value_(val) {}
-  // identifier or operation
-  LeafNode(std::string id, bool is_op = false) : name_(id) { leaf_type_ = (is_op ? LEAF_TYPE::OPERATION : LEAF_TYPE::IDENTIFIER);}
+  LeafNode(ConstValue val) : value_(val) {}
 
-  // getter functions
-  LEAF_TYPE leaf_type() {return leaf_type_;}
-  const pascal_symbol::ConstValue* value() { return &value_; }
-  const std::string id() { return is_ref_ ? "(*" + name_ + ")" : name_;}
-  const std::string origin_id() { return name_;}
-  // setter functions
-  void set_id(std::string name) { leaf_type_ = LEAF_TYPE::IDENTIFIER; name_ = name;}
-  void set_op(std::string op_str) { leaf_type_ = LEAF_TYPE::OPERATION; name_ = op_str;}
-  void set_value(pascal_symbol::ConstValue value) { leaf_type_ = LEAF_TYPE::CONST_VALUE; value_ = value; }
+  // getter & setter functions
+  const std::string id_ref() { return is_ref_ ? "(*" + value_.get<std::string>() + ")" : value_.get<std::string>();}
+  void set_value(ConstValue value) { value_ = value; }
   void set_ref(bool ref) { is_ref_ = ref; }
 
   // template value getter
   template <typename T> T value() { return value_.get<T>(); }
+  pascal_type::BasicType* type() { return value_.type(); }
   // Analyze reference
   bool AnalyzeReference(symbol_table::TableSet* ts, pascal_symbol::FunctionSymbol* fn);
   void Format(FILE* dst) override;
 
 private:
-  LEAF_TYPE leaf_type_;   // leaf type
-  std::string name_;      // name
-  pascal_symbol::ConstValue value_; // const values
+  ConstValue value_;      // const values
   bool is_ref_ = false;   // is referenced
 };
 
@@ -381,9 +366,6 @@ class ValueParamNode : public Node {
 class CompoundStatementNode : public Node {
  //CompoundStatement → begin StatementList end
  public:
-  void Format(FILE* dst) override;
- private:
-
 };
 
 class StatementListNode : public Node {

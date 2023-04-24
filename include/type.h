@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <string.h>
 #include <type_traits>
 #include <unordered_map>
 
@@ -61,6 +62,8 @@ extern BasicType* TYPE_INT;
 extern BasicType* TYPE_REAL;
 extern BasicType* TYPE_BOOL;
 extern BasicType* TYPE_CHAR;
+extern BasicType* TYPE_STRING;
+extern BasicType* TYPE_ERROR;
 
 
 // Array type
@@ -130,5 +133,57 @@ typedef std::unordered_map<Operation, TypeTemplate*, OperationHash> OperationMap
 extern OperationMap operation_map;
 
 }; // namespace pascal_type
+
+class ConstValue{
+public:
+  ConstValue(){}
+  ~ConstValue(){}
+  ConstValue(const ConstValue& other);
+  ConstValue(int v, bool to_float = false) {if(to_float) set((float)v); else set(v);}
+  ConstValue(float v) {set(v);}
+  ConstValue(bool v) {set(v);}
+  ConstValue(char v) {set(v);}
+  ConstValue(const char* v) {set(std::string(v));}
+  ConstValue(std::string v) {set(v); }
+
+  void set(int v) {m_Type = pascal_type::TYPE_INT; m_INT = v;}
+  void set(float v) {m_Type = pascal_type::TYPE_REAL; m_REAL = v;}
+  void set(bool v) {m_Type = pascal_type::TYPE_BOOL; m_BOOLEAN = v;}
+  void set(char v) {m_Type = pascal_type::TYPE_CHAR; m_CHAR = v;}
+  void set(std::string v) {m_Type = pascal_type::TYPE_STRING; m_STRING = v;}
+
+  pascal_type::BasicType* type() {return m_Type;}
+  template <typename T> T get() {
+    if(std::is_same<T, int>::value) return *(T*)(&m_INT);
+    else if (std::is_same<T, char>::value)  return *(T*)(&m_CHAR);
+    else if (std::is_same<T, float>::value) return *(T*)(&m_REAL);
+    else if (std::is_same<T, bool>::value)  return *(T*)(&m_BOOLEAN);
+    else if (std::is_same<T, std::string>::value) return *((T*)(&m_STRING));
+    else {
+      throw std::runtime_error("ConstValue : get() : type " + std::string(typeid(T).name()) + " not supported");
+    }
+  }
+
+  ConstValue& operator=(const ConstValue& other);
+  // operation +
+  ConstValue operator+(const ConstValue& other);
+  // operation -
+  ConstValue operator-(const ConstValue& other);
+  // operation *
+  ConstValue operator*(const ConstValue& other);
+  // operation /
+  ConstValue operator/(const ConstValue& other);
+
+private:
+  pascal_type::BasicType* m_Type = pascal_type::TYPE_ERROR;
+  union {
+    int m_INT;
+    float m_REAL;
+    char m_CHAR;
+    bool m_BOOLEAN;
+  };
+  std::string m_STRING;
+};
+
 
 #endif // PASCC_TYPE_H_

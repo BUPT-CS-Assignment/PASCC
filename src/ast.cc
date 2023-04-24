@@ -19,7 +19,10 @@ void AST::Format(const char* file_name) {
     abort();
   }
 
-  if (root_ != nullptr) root_->Format(dst);
+  if (root_ != nullptr) {
+    libs_.Format(dst);
+    root_->Format(dst);
+  }
   log_info("ast format success");
   fclose(dst);
 }
@@ -27,33 +30,31 @@ void AST::Format(const char* file_name) {
 //////////////////////////////
 
 void LeafNode::Format(FILE* dst) {
-  if (leaf_type_ != LEAF_TYPE::CONST_VALUE) {
-    PRINT(" %s ", name_.c_str())
-  } else {
-    BasicType* tp = value_.type();
-    if (tp == pascal_type::TYPE_INT) {
-      PRINT(" %d ", value_.get<int>())
-    } else if (tp == pascal_type::TYPE_REAL) {
-      PRINT(" %.2f ", value_.get<float>())
-      // fprintf(dst, "%.2f", value_.get<float>());
-    } else if (tp == pascal_type::TYPE_BOOL) {
-      PRINT(" %s ", value_.get<bool>() ? "true" : "false")
-    } else if (tp == pascal_type::TYPE_CHAR) {
-      PRINT(" '%c' ", value_.get<char>())
-    }
+  BasicType* tp = value_.type();
+  if (tp == pascal_type::TYPE_INT) {
+    PRINT(" %d ", value_.get<int>())
+  } else if (tp == pascal_type::TYPE_REAL) {
+    PRINT(" %.2f ", value_.get<float>())
+  } else if (tp == pascal_type::TYPE_BOOL) {
+    PRINT(" %s ", value_.get<bool>() ? "true" : "false")
+  } else if (tp == pascal_type::TYPE_CHAR) {
+    PRINT(" '%c' ", value_.get<char>())
+  } else if (tp == pascal_type::TYPE_STRING) {
+    PRINT(" %s ", value_.get<string>().c_str())
   }
 }
 
 bool LeafNode::AnalyzeReference(symbol_table::TableSet* ts,
                                 pascal_symbol::FunctionSymbol* fn) {
-  if (fn == nullptr || leaf_type_ != LEAF_TYPE::IDENTIFIER) return false;
+  if (fn == nullptr || value_.type() != TYPE_STRING) return false;
 
   // search table and judge if is current layer
   bool local = false;
+  std::string id = value_.get<string>();
   ObjectSymbol* entry =
-      ts->SearchEntry<pascal_symbol::ObjectSymbol>(name_, &local);
+      ts->SearchEntry<pascal_symbol::ObjectSymbol>(id, &local);
   if (entry != nullptr && local) {
-    FunctionSymbol::ParamType* pt = (*fn)[name_];
+    FunctionSymbol::ParamType* pt = (*fn)[id];
     // search param-passing mode
     if (pt != nullptr && pt->second == FunctionSymbol::PARAM_MODE::REFERENCE) {
       is_ref_ = true;
@@ -64,8 +65,7 @@ bool LeafNode::AnalyzeReference(symbol_table::TableSet* ts,
 /////////////////////////////////////////////
 
 void ProgramHeadNode::Format(FILE* dst) {
-  PRINT("#include <stdio.h>\n")
-  PRINT("//")
+  PRINT("/// Program Name : ")
   FormatAt(0, dst);
   PRINT("\n")
 }
@@ -303,17 +303,11 @@ void ValueParamNode::Format(bool ref, FILE* dst) {
   string tname = tnode->TypeName(ref);
 
   for (int i = 0; i < idlist.size(); i++) {
-    PRINT("%s %s", tname.c_str(), idlist[i]->id().c_str());
+    PRINT("%s %s", tname.c_str(), idlist[i]->id_ref().c_str());
     if (i < idlist.size() - 1) {
       PRINT(", ")
     }
   }
-}
-
-void CompoundStatementNode::Format(FILE* dst) {
-  PRINT("{\n")
-  FormatAt(0, dst);
-  PRINT("}\n")
 }
 
 void StatementNode::Format(FILE* dst) {
