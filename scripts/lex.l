@@ -13,6 +13,7 @@ void process_anno();
 void cache_line();
 
 void to_str();
+void to_str_case_sensitive();
 void to_int();
 void to_float();
 void to_char();
@@ -78,6 +79,9 @@ ID                      {letter}({letter}|{digit})*
 
 /* 字符 */
 CHAR                    ('{letter}')
+/*字符串*/
+STRING_                  (\"([^\\\"\n]|(\\.))*\")
+
 
 /* 运算符 */
 CONSTASSIGNOP           "="
@@ -133,6 +137,7 @@ SUBCATALOG              ".."
 {ANNO}                  { cache_line(); process_anno(); }
 
 {CHAR}                  { cache_line(); to_char(); return CHAR; }
+{STRING_}               { cache_line(); to_str_case_sensitive(); return STRING_; }
 
 {RELOP}                 { cache_line(); to_str(); return RELOP; }
 {ADDOP}                 { cache_line(); to_str(); return ADDOP; }
@@ -185,6 +190,16 @@ void to_str()
     // strcpy(yylval.token_info.value.m_OTHERS, yytext);
     std::string str = std::string(yytext);
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    yylval.token_info.value.set(str);
+    yylval.token_info.line_num = line_count;
+    yylval.token_info.column_num = char_count;
+    yylval.token_info.length = yyleng;
+}
+
+void to_str_case_sensitive()
+{
+    std::string str = std::string(yytext);
+    str = str.substr(1, str.length() - 2);  
     yylval.token_info.value.set(str);
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;

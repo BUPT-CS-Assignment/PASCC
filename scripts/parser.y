@@ -102,7 +102,7 @@ void yyerror_(const char *error_s){
 %token ARRAY VAR TYPE CONST RECORD
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
 %token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP
-%token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP
+%token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
 %type<periods_node_info> periods
@@ -119,6 +119,7 @@ void yyerror_(const char *error_s){
 %type<variable_node_info> variable
 %type<expression_node_info> expression
 %type<simple_expression_node_info> simple_expression
+%type<str_expression_node_info> str_expression
 %type<term_node_info> term
 %type<factor_node_info> factor
 %type<unsigned_constant_var_node_info> unsigned_const_variable
@@ -374,20 +375,15 @@ type_declaration :
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
-            pascal_type::ArrayType *array_type = new pascal_type::ArrayType($5.type_ptr,*($5.bounds));
-            if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),array_type)){
+            //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($5.type_ptr,*($5.bounds));
+            if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),dynamic_cast<ArrayType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
-            } else {
-                $5.type_ptr = table_set_queue.top()->SearchEntry<ArrayType>($3.value.get<string>());
-            }
+            } 
         } else if ($5.record_info) {
-            pascal_type::RecordType *record_type = new pascal_type::RecordType(*($5.record_info));
-            if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),record_type)){
+            //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($5.record_info));
+            if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),dynamic_cast<RecordType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
-            } else {
-                $5.type_ptr = table_set_queue.top()->SearchEntry<RecordType>($3.value.get<string>());
-                $5.array_type_ptr = $5.type_ptr;
-            }
+            } 
         }
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::MULTIPLE_DECL);
@@ -407,20 +403,15 @@ type_declaration :
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
-            pascal_type::ArrayType *array_type = new pascal_type::ArrayType($3.array_type_ptr,*($3.bounds));
-            if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),array_type)){
+            //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($3.array_type_ptr,*($3.bounds));
+            if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),dynamic_cast<ArrayType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
-            } else {
-                $3.type_ptr = table_set_queue.top()->SearchEntry<ArrayType>($1.value.get<string>());
-            }
+            } 
         } else if ($3.record_info) {
-            pascal_type::RecordType *record_type = new pascal_type::RecordType(*($3.record_info));
-            if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),record_type)){
+            //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($3.record_info));
+            if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),dynamic_cast<RecordType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
-            } else {
-                $3.type_ptr = table_set_queue.top()->SearchEntry<RecordType>($1.value.get<string>());
-                $3.array_type_ptr = $3.type_ptr;
-            }
+            } 
         }
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::SINGLE_DECL);
@@ -449,6 +440,10 @@ type :
         $$.main_type = (TypeAttr::MainType)1;
         $$.array_type_ptr = $6.array_type_ptr;
         $$.bounds = $3.bounds;
+        if ($3.bounds){
+            $$.type_ptr = new pascal_type::ArrayType($6.array_type_ptr,*($3.bounds));
+        }
+        
 
         $$.type_node = new TypeNode(TypeNode::GrammarType::ARRAY);
         $$.type_node->set_base_type_node($6.type_node);
@@ -461,6 +456,11 @@ type :
         // TODO
         $$.main_type = (TypeAttr::MainType)2;
         $$.record_info = $2.record_info;
+        if ($2.record_info){
+            $$.type_ptr = new pascal_type::RecordType(*($2.record_info));
+        } else{
+             $$.type_ptr = new pascal_type::RecordType();
+        }
         
         $$.type_node = new TypeNode(TypeNode::GrammarType::RECORD_TYPE);
         $$.type_node->append_child($2.record_body_node);
@@ -564,6 +564,7 @@ var_declarations :
         if(DEBUG) printf("var_declarations -> var var_declaration.\n");
 
         for (auto i : *($2.record_info)){
+            //std::cout<<"var_declaration:"<<i.second<<std::endl;
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
                 yyerror(real_ast,"redefinition of variable");
@@ -952,6 +953,7 @@ variable:
         } else {
             //类型检查
             $$.type_ptr = tmp->type();
+            //std::cout<<"variable type:"<<tmp->type()<<std::endl;
             $$.name = new std::string($1.value.get<string>());
         }
         
@@ -1202,17 +1204,53 @@ expression:
     {
         // expression -> simple_expression.
         $$.type_ptr = $1.type_ptr;
-
-        $$.expression_node = new ExpressionNode();
+        //std::cout<<$$.type_ptr<<std::endl;
+        if($$.type_ptr && $$.type_ptr->template_type() == pascal_type::TypeTemplate::TYPE::ARRAY) {
+            $$.expression_node = new ExpressionNode(ExpressionNode::TargetType::VAR_ARRAY);
+        } else {
+            $$.expression_node = new ExpressionNode();
+        }
+        
         $$.expression_node->append_child($1.simple_expression_node);
         if (DEBUG) printf("expression -> simple_expression.\n");
+    }| str_expression
+    {
+        // expression -> str_expression.
+        $$.type_ptr = $1.type_ptr;
+        $$.length = $1.length;
+
+        $$.expression_node = new ExpressionNode(ExpressionNode::TargetType::CONST_STRING);
+        $$.expression_node->append_child($1.str_expression_node);
+        if (DEBUG) printf("expression -> str_expression.\n");
+    };
+
+str_expression :
+    STRING_ {
+        // str_expression -> string.
+        $$.type_ptr = pascal_type::TYPE_STRING;
+        $$.length = $1.value.get<string>().length();
+
+        $$.str_expression_node = new StrExpressionNode();
+        LeafNode *string_node = new LeafNode($1.value);
+        $$.str_expression_node->append_child(string_node);
+        if (DEBUG) printf("str_expression -> string.\n");
+    } | str_expression PLUS STRING_ {
+        // str_expression -> str_expression + string.
+        $$.type_ptr = pascal_type::TYPE_STRING;
+        $$.length = $1.length + $3.value.get<string>().length();
+
+        $$.str_expression_node = new StrExpressionNode();
+        $$.str_expression_node->append_child($1.str_expression_node);
+        LeafNode *string_node = new LeafNode($3.value);
+        $$.str_expression_node->append_child(string_node);
+        if (DEBUG) printf("str_expression -> str_expression + string.\n");
     };
 simple_expression:
     term
     {   
         // simple_expression -> term.
         $$.type_ptr = $1.type_ptr;
-
+        
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.term_node);
         if (DEBUG) printf("simple_expression -> term.\n");

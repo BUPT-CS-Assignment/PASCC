@@ -92,6 +92,13 @@ struct VariableAttr {
 struct ExpressionAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::ExpressionNode* expression_node;
+  int length;
+};
+
+struct StrExpressionAttr {
+  pascal_type::TypeTemplate* type_ptr;
+  ast::StrExpressionNode* str_expression_node;
+  int length;
 };
 
 struct SimpleExpressionAttr {
@@ -184,6 +191,7 @@ struct YYSTYPE
         VariableAttr variable_node_info;
         ExpressionAttr expression_node_info;
         SimpleExpressionAttr simple_expression_node_info;
+        StrExpressionAttr str_expression_node_info;
         TermAttr term_node_info;
         FactorAttr factor_node_info;
         UnsignedConstantVarAttr unsigned_constant_var_node_info;
