@@ -4,5 +4,10 @@ var
 begin
   a := 10;
   b := 3;
-  write(a = b); 
+  writeln(a = b); 
+  writeln(a <> b); 
+  writeln(a < b); 
+  writeln(a <= b); 
+  writeln(a > b); 
+  writeln(a >= b); 
 end.
