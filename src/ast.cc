@@ -387,9 +387,10 @@ void StatementNode::Format(FILE* dst) {
     case GrammarType::WRITE_STATEMENT:
     case GrammarType::WRITELN_STATEMENT: {
       auto *elnode = child_list_[0]->DynamicCast<ExpressionListNode>();
-      PRINT("printf(\"%s\", ", elnode->FormatString().c_str())
-      elnode->Format(dst);
+      PRINT("printf(\"%s\"", elnode->FormatString().c_str())
       if(grammar_type_ == GrammarType::WRITELN_STATEMENT) PRINT("\\n");
+      PRINT(", ")
+      elnode->Format(dst);
       PRINT(");\n")
       break;
     }
