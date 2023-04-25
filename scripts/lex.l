@@ -183,11 +183,12 @@ void to_str()
 {
     // yylval.token_info.value.m_OTHERS = yytext;
     // strcpy(yylval.token_info.value.m_OTHERS, yytext);
-    yylval.token_info.value.set(std::string(yytext));
+    std::string str = std::string(yytext);
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    yylval.token_info.value.set(str);
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
-    // printf("to_str is ok:%s\n",yylval.token_info.value.m_OTHERS);
 }
 
 void to_int()

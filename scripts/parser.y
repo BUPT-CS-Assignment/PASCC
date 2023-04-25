@@ -154,8 +154,6 @@ program :
     program_head program_body '.'
     {   
         ProgramNode* node = new ProgramNode();
-        // node->append_child(dynamic_cast<ProgramHeadNode*>($1));
-        // node->append_child(dynamic_cast<ProgramBodyNode*>($2));
         node->append_child($1);
         node->append_child($2);
         if(!error_flag){
@@ -220,7 +218,6 @@ const_declarations :{
 const_declaration :
     const_declaration ';' ID '=' const_variable
     {
-        //TODO 插入符号表
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
@@ -258,11 +255,12 @@ const_variable :
     {   
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
+        $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.\n");
         }else {
             $$.value = symbol->value();
-
+            $$.type_ptr = symbol->type();
             $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));
             
         }
@@ -272,9 +270,11 @@ const_variable :
     {
         // const_variable -> - id. todo -
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
+        $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.\n");
         }else {
+            $$.type_ptr = symbol->type();
             $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
 
@@ -287,9 +287,11 @@ const_variable :
     {
         // const_variable -> id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
+        $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.\n");
         }else {
+            $$.type_ptr = symbol->type();
             $$.value = symbol->value();
         }
         $$.const_variable_node = new LeafNode($1.value);
@@ -492,7 +494,7 @@ standrad_type :
             $$.type_ptr = pascal_type::TYPE_INT;
         } else if(typestr == "real"){
             $$.type_ptr = pascal_type::TYPE_REAL;
-        } else if(typestr == "Boolean"){
+        } else if(typestr == "boolean"){
             $$.type_ptr = pascal_type::TYPE_BOOL;
         } else{
             $$.type_ptr = pascal_type::TYPE_CHAR;
@@ -527,20 +529,20 @@ period :
         // test type ID 
         // period -> const_variable .. const_variable.
         
-        int arr_len;
-        if ($1.type_ptr == pascal_type::TYPE_INT){
+        int arr_len=0;
+        $$.bound = new std::pair<int, int>(0,0);
+        if ($1.type_ptr == pascal_type::TYPE_INT&&$3.type_ptr == pascal_type::TYPE_INT){
             arr_len = ($3.value - $1.value).get<int>();
             $$.bound = new std::pair<int, int>($1.value.get<int>(), $3.value.get<int>());
-        } else if($1.type_ptr == pascal_type::TYPE_CHAR){
-	    arr_len = (int)($3.value - $1.value).get<char>();
-	    $$.bound = new std::pair<int, int>((int)$1.value.get<char>(), (int)$3.value.get<char>());
-	} else {
-	    // ERROR
-	}
+        } else if($1.type_ptr == pascal_type::TYPE_CHAR&&$3.type_ptr == pascal_type::TYPE_CHAR){
+            arr_len = (int)($3.value - $1.value).get<char>();
+            $$.bound = new std::pair<int, int>((int)$1.value.get<char>(), (int)$3.value.get<char>());
+        } else {
+            yyerror(real_ast,"array bound must be integer or char\n");
+        }
         if(arr_len < 0){
-	    //ERROR
-	}
-
+            yyerror(real_ast,"array bound must be positive\n");
+        }
         $$.period_node =new PeriodNode();
         $$.period_node->set_len(arr_len);
         $$.period_node->append_child($1.const_variable_node);
@@ -1422,8 +1424,8 @@ unsigned_const_variable :
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
-    printf("%d :",line_count);
-    fprintf(stderr,"error:%s\n",msg);
+    //printf("%d :",line_count);
+    printf("%d :error:%s",line_count,msg);
     error_flag = 1;
 }
 
