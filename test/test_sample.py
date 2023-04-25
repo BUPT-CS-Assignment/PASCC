@@ -3,10 +3,12 @@ import subprocess
 
 def run_program(input_file):
     input_file_c = input_file.replace('.txt', '.c')
-    subprocess.Popen(['../bin/PASCC_TEST', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE)
+    subprocess.Popen(['../bin/PASCC_TEST', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE).wait()
     
-    process = subprocess.Popen(['gcc', input_file_c], stdout=subprocess.PIPE)
-    output, error = process.communicate()
+    input_file_exe = input_file.replace('.txt', '')
+    process = subprocess.Popen(['gcc', '-o', input_file_exe, input_file_c], stdout=subprocess.PIPE).wait()
+   
+    output, error = subprocess.Popen([input_file_exe], stdout=subprocess.PIPE).communicate()
     return output.decode('utf-8').strip()
 
 def read_expected_output(output_file):

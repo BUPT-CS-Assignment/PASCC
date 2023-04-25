@@ -1,4 +1,4 @@
-program TestArithmetic;
+program TestArithmetic(void);
 var
   a, b: integer;
   c, d: real;
@@ -7,14 +7,5 @@ begin
   b := 3;
   c := 10.5;
   d := 2.5;
-  writeln(a + b); 
-  writeln(a - b); 
-  writeln(a * b); 
-  writeln(a / b); 
-  writeln(a div b); 
-  writeln(a mod b); 
-  writeln(c + d); 
-  writeln(c - d); 
-  writeln(c * d); 
-  writeln(c / d); 
+  write(a + b); 
 end.
