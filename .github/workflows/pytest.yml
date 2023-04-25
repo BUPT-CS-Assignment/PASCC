@@ -5,24 +5,30 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Install GCC
-        run: choco install mingw -y
-    
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Install Flex
+        run: sudo apt-get install -y flex
+
+      - name: Install Bison
+        run: sudo apt-get install -y bison
+  
       - name: Install CMake
-        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+        run: sudo apt-get install -y cmake
           
       - name: Build executable
         run: |
           mkdir build
           cd build
           cmake ..
-          cmake --build . --config Release
+          cmake --build . --target PASCC_TEST -j 6
         
       - name: Install and set up Python
         uses: actions/setup-python@v2
