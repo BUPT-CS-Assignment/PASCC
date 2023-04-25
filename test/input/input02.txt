@@ -4,5 +4,5 @@ var
 begin
   a := 10;
   b := 3;
-  writen(a = b); 
+  write(a = b); 
 end.
