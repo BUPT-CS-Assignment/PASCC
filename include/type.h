@@ -28,7 +28,8 @@ class TypeTemplate {
   TYPE template_type() { return template_type_; }
   bool ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::string op,
                    TypeTemplate** result_type = nullptr);
-  bool TypeEqual(TypeTemplate* type1, TypeTemplate* type2);
+  static bool TypeEqual(TypeTemplate* type1, TypeTemplate* type2);
+  bool StringLike();
 
  protected:
   TYPE template_type_;
@@ -79,6 +80,7 @@ class ArrayType : public TypeTemplate {
   int dimension() { return bounds_.size(); }
   std::vector<ArrayBound> *bounds() { return &bounds_; }
   bool AccessArray(std::vector<TypeTemplate*> index_types, TypeTemplate **type = nullptr);
+  bool StringLike(int access_layer = 0);
 
  private:
   TypeTemplate* type_;  // basic types or record type

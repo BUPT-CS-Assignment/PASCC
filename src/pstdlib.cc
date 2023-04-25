@@ -45,6 +45,7 @@ void PStdLibs::Format(FILE* dst){
   // format cstdlib
   fprintf(dst, "#include <stdio.h>\n");
   fprintf(dst, "#include <stdbool.h>\n");
+  fprintf(dst, "#include <string.h>\n");
   if(CheckMathLib()) {
     fprintf(dst, "#include <math.h>\n\n");
   }
