@@ -9,6 +9,15 @@
 #include <fstream>
 using std::string;
 
+void Compiler::DirAssert() {
+#ifdef WIN32
+  string cmd = "IF NOT EXIST \".tmp\" MD \".tmp\"";
+#else
+  string cmd = "if [ ! -d \".tmp\" ]; then mkdir \".tmp\"; fi";
+#endif
+  system(cmd.c_str());
+}
+
 int Compiler::Compile(string in, string out, Compiler::CODE_STYLE st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   ast::AST ast;
@@ -87,22 +96,19 @@ void Compiler::CodeFormat(string file, Compiler::CODE_STYLE st) {
 }
 
 void Compiler::Clear() {
-#ifdef WIN32
-  string rm = " del ",
-         exist = " if exist ",
-         end = " ";
-#else
-  string rm = " rm ",
-         exist = " if [ -f ",
-         end = " ] ";
-#endif
   log_info("compiler: clean cache files");
   for(auto& f : temp_files_) {
     f.replace(0,5,"");
-    string cmd = "cd .tmp && " + exist + f + end + rm + f;
+#ifdef WIN32
+    string cmd = "cd .tmp && if exist " + f + " del " + f;
+#else
+    string cmd = "cd .tmp && if [ -f " + f + " ]; then rm " + f + "; fi";
+#endif
     system(cmd.c_str());
+#ifdef WIN32
     f += ".exe";
-    cmd = "cd .tmp && " + exist + f + end + rm + f;
+    cmd = "cd .tmp && if exist " + f + " del " + f;
+#endif
     system(cmd.c_str());
   }
   temp_files_.clear();
@@ -143,10 +149,6 @@ const char* Compiler::tmp_file(int pos) {
   if(pos < 0) pos = temp_files_.size() + pos;
   if(pos < 0 || pos >= temp_files_.size()) return nullptr;
   return temp_files_[pos].c_str();
-}
-
-void Compiler::DirAssert() {
-  system("IF NOT EXIST \".tmp\" MD \".tmp\"");
 }
 
 
