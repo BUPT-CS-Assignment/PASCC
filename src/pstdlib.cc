@@ -3,6 +3,13 @@
 //
 #include "pstdlib.h"
 
+using symbol_table::SymbolTable;
+using pascal_symbol::FunctionSymbol;
+using pascal_type::TYPE_INT;
+using pascal_type::TYPE_CHAR;
+using pascal_type::TYPE_REAL;
+using pascal_type::TYPE_BOOL;
+
 namespace pstdlib{
 
 PStdLibs::PStdLibs() {
@@ -23,6 +30,54 @@ PStdLibs::PStdLibs() {
   lib_map_["arctan"] = {"arctan(x) (atan((float)x))", false};
   lib_map_["eof"] = {"eof() feof(stdin)", false};
   lib_map_["eoln"] = {"bool eoln() {\nint c = getchar();\nungetc(c,stdin);\nreturn c == '\\n' || c == EOF;\n}", false};
+}
+
+
+
+void PStdLibs::Preset(symbol_table::SymbolTable *st) {
+  using Parameter = FunctionSymbol::Parameter;
+  using ParamType = FunctionSymbol::ParamType;
+  using ParamMode = FunctionSymbol::PARAM_MODE;
+
+  struct param_struct{
+    std::string name;
+    pascal_type::BasicType* return_type;
+    pascal_type::BasicType* param_type;
+  };
+
+  std::vector<param_struct> params = {
+      {"abs", TYPE_INT, TYPE_INT},
+      {"sqr", TYPE_INT, TYPE_INT},
+      {"odd", TYPE_BOOL, TYPE_INT},
+      {"chr", TYPE_CHAR, TYPE_INT},
+      {"ord", TYPE_INT, TYPE_CHAR},
+      {"succ", TYPE_CHAR, TYPE_CHAR},
+      {"pred", TYPE_CHAR, TYPE_CHAR},
+      {"round", TYPE_INT, TYPE_REAL},
+      {"trunc", TYPE_INT, TYPE_REAL},
+      {"sin", TYPE_REAL, TYPE_REAL},
+      {"cos", TYPE_REAL, TYPE_REAL},
+      {"exp", TYPE_REAL, TYPE_REAL},
+      {"ln", TYPE_REAL, TYPE_REAL},
+      {"sqrt", TYPE_REAL, TYPE_REAL},
+      {"arctan", TYPE_REAL, TYPE_REAL},
+      {"eof", TYPE_BOOL, nullptr},
+      {"eoln", TYPE_BOOL, nullptr},
+      {"read", nullptr, nullptr},
+      {"readln", nullptr, nullptr},
+      {"write", nullptr, nullptr},
+      {"writeln", nullptr, nullptr}
+  };
+
+  for(auto& p : params){
+    std::vector<Parameter> param_list;
+    if(p.param_type != nullptr)
+      param_list.emplace_back(Parameter("x",ParamType(p.param_type, ParamMode::VALUE)));
+    st->Insert(p.name, new FunctionSymbol(p.name, p.return_type, 0, param_list));
+  }
+
+
+
 }
 
 bool PStdLibs::Call(std::string lib_name) {

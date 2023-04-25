@@ -5,6 +5,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "symbol_table.h"
+
 #ifndef PASCC_PSTDLIB_H
 #define PASCC_PSTDLIB_H
 
@@ -14,6 +16,7 @@ public:
   PStdLibs();
   ~PStdLibs(){};
   void Format(FILE* dst);
+  void Preset(symbol_table::SymbolTable* st);
   bool Call(std::string lib_name);
   bool UnCall(std::string lib_name);
 private:
