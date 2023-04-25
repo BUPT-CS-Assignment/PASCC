@@ -108,6 +108,9 @@ void Compiler::Clear() {
 #ifdef WIN32
     f += ".exe";
     cmd = "cd .tmp && if exist " + f + " del " + f;
+#else
+    f += ".out";
+    cmd = "cd .tmp && if [ -f " + f + " ]; then rm " + f + "; fi";
 #endif
     system(cmd.c_str());
   }
