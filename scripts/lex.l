@@ -60,6 +60,7 @@ DOWNTO                  "downto"
 DO                      "do"
 READ                    "read"
 WRITE                   "write"
+WRITELN                 "writeln"
 NOT                     "not"
 BASIC_TYPE              ("integer"|"real"|"Boolean"|"char")
 TRUE                    "true"
@@ -122,7 +123,9 @@ SUBCATALOG              ".."
 {TO}                    { cache_line(); to_str(); return TO; }
 {DOWNTO}                { cache_line(); to_str(); return DOWNTO; }
 {DO}                    { cache_line(); to_str(); return DO; }
-
+{WRITE}                 { cache_line(); to_str(); return WRITE;}
+{WRITELN}               { cache_line(); to_str(); return WRITELN;}
+{READ}                  { cache_line(); to_str(); return READ;}
 
 {NOT}                   { cache_line(); to_str(); return NOT; }
 {BASIC_TYPE}            { cache_line(); to_str(); return BASIC_TYPE; }

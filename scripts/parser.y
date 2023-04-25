@@ -40,7 +40,7 @@ void yyerror_(const char *error_s){
     error_flag=1;
 }
 
-#define DEBUG 0
+#define DEBUG 1
 
 %}
 
@@ -101,7 +101,7 @@ void yyerror_(const char *error_s){
 %token PROGRAM FUNCTION PROCEDURE TO DOWNTO SUBCATALOG
 %token ARRAY VAR TYPE CONST RECORD
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
-%token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP
+%token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP READ WRITE WRITELN
 %token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
@@ -117,6 +117,7 @@ void yyerror_(const char *error_s){
 %type<var_parameter_node_info> var_parameter
 %type<value_parameter_node_info> value_parameter
 %type<variable_node_info> variable
+%type<variable_list_node_info> variable_list
 %type<expression_node_info> expression
 %type<simple_expression_node_info> simple_expression
 %type<str_expression_node_info> str_expression
@@ -940,8 +941,43 @@ statement:
         // statement -> empty.
         $$ = new StatementNode(StatementNode::GrammarType::EPSILON);
         if (DEBUG) printf("statement -> empty.\n");
+    }|READ '(' variable_list ')'{
+        $3.variable_list_node->GetType($3.basic_types);
+        $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
+        $$->append_child($3.variable_list_node);
+        if (DEBUG) printf("statement -> read ( variable_list ).\n");
+    }|WRITE '(' expression_list ')'{
+        $3.expression_list_node->GetType($3.type_ptr_list);
+        $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
+        $$->append_child($3.expression_list_node);
+        if (DEBUG) printf("statement -> write ( expression_list ).\n");
+    }|WRITELN'(' expression_list ')'{
+        $3.expression_list_node->GetType($3.type_ptr_list);
+        $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
+        $$->append_child($3.expression_list_node);
+        if (DEBUG) printf("statement -> write ( expression_list ).\n");
     };
 
+variable_list :
+    variable{ 
+        $$.basic_types = new std::vector<BasicType*>();
+        if($1.type_ptr != nullptr){
+            $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
+        }
+        
+        $$.variable_list_node = new VariableListNode(VariableListNode::GrammarType::VARIABLE);
+        $$.variable_list_node->append_child($1.variable_node);
+        if (DEBUG) printf("variable_list -> variable.\n");
+    } | variable_list ',' variable{
+        $$.basic_types = $1.basic_types;
+        if($3.type_ptr != nullptr){
+            $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
+        }
+        $$.variable_list_node = new VariableListNode(VariableListNode::GrammarType::VARIABLE_LIST_VARIABLE);
+        $$.variable_list_node->append_child($1.variable_list_node);
+        $$.variable_list_node->append_child($3.variable_node);
+        if (DEBUG) printf("variable_list -> variable_list , variable.\n");
+    };
 variable:
     ID id_varparts
     {
@@ -1117,7 +1153,7 @@ call_procedure_statement:
         // call_procedure_statement -> id (expression_list).
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure");
+            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
 
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID_EXP_LIST);

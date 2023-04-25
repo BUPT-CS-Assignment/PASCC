@@ -415,6 +415,7 @@ class VariableListNode : public Node {
   std::string FormatString();
   void Format(FILE* dst) override;
   void Format(bool ref, FILE* dst);
+  void GetType(std::vector<pascal_type::BasicType*> *type_list);
  private:
   //TODO get basic_type ptr lists
   std::vector<pascal_type::BasicType*> basic_types;
@@ -535,6 +536,7 @@ class ExpressionListNode: public Node {
   ExpressionListNode(GrammarType gt) : grammar_type_(gt) {}
   std::string FormatString();
   void Format(FILE* dst) override;
+  void GetType(std::vector<pascal_type::TypeTemplate*>* type_list);
  private:
   //TODO get basic_type ptr lists
   std::vector<pascal_type::BasicType*> basic_types;
@@ -558,7 +560,6 @@ class ExpressionNode : public Node {
   };
   ExpressionNode() : target_type_(TargetType::EXPRESSION) {}
   ExpressionNode(TargetType tg) : target_type_(tg) {}
-  // TODO set target-type
   void set_expression_type(TargetType tg) { target_type_ = tg; }
   TargetType target_type() { return target_type_; }
  private:
@@ -568,7 +569,6 @@ class ExpressionNode : public Node {
 class StrExpressionNode : public Node {
  // str_expression -> str_ ## [leaf]
  // str_expression -> str_expression + str_
- // TODO support str expression
  public:
   void Format(FILE* dst) override;
 };

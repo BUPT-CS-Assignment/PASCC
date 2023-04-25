@@ -89,6 +89,11 @@ struct VariableAttr {
   std::string* name;
 };
 
+struct VariableListAttr {
+  std::vector<pascal_type::BasicType*>* basic_types;
+  ast::VariableListNode* variable_list_node;
+};
+
 struct ExpressionAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::ExpressionNode* expression_node;
@@ -189,6 +194,7 @@ struct YYSTYPE
 
         VariableDeclarationAttr variable_declaration_node_info;
         VariableAttr variable_node_info;
+        VariableListAttr variable_list_node_info;
         ExpressionAttr expression_node_info;
         SimpleExpressionAttr simple_expression_node_info;
         StrExpressionAttr str_expression_node_info;

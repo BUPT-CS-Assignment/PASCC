@@ -12,7 +12,9 @@ using std::string;
 int Compiler::Compile(string in, string out, Compiler::CODE_STYLE st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   ast::AST ast;
-  yyparse(&ast);
+  if(!yyparse(&ast)){
+    log_info("successful parse");
+  }
   // ast format
   return Compile(&ast,out,st);
 }
