@@ -1,0 +1,39 @@
+name: Build and Test
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install GCC
+        run: choco install mingw -y
+    
+      - name: Install CMake
+        run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          
+      - name: Build executable
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release
+        
+      - name: Install and set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      
+      - name: Install pytest
+        run: pip install pytest
+      
+      - name: Run tests
+        run: |
+          cd test
+          pytest
+          
