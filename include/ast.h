@@ -41,7 +41,10 @@ class Node {
   }
   
   // generate
-  void FormatAt(int pos, FILE* dst) { return child_list_[pos]->Format(dst); }
+  void FormatAt(int pos, FILE* dst) {
+    // pos < 0, from tail
+    return child_list_[pos < 0 ? pos + child_list_.size() : pos]->Format(dst);
+  }
   virtual void Format(FILE* dst){ for(auto child : child_list_) child->Format(dst); }
   // load from json file
   void LoadFromJson(const nlohmann::json&);
@@ -540,12 +543,36 @@ class ExpressionListNode: public Node {
 
 
 class ExpressionNode : public Node {
- public:
 //  enum class GrammarType {
-//    S_EXP,              //expression → simple_expression
-//    S_EXP_ADDOP_TERM,   //expression → simple_expression relop simple_expression
+//    S_STR,              // expression → str_expression
+        // str_expression -> str_
+        // str_expression -> str_expression + str_
+//    S_EXP,              // expression → simple_expression
+//    S_EXP_ADDOP_TERM,   // expression → simple_expression relop simple_expression
 //  };
+ public:
+  enum class TargetType{
+    EXPRESSION,
+    VAR_ARRAY,
+    CONST_STRING,
+  };
+  ExpressionNode() : target_type_(TargetType::EXPRESSION) {}
+  ExpressionNode(TargetType tg) : target_type_(tg) {}
+  // TODO set target-type
+  void set_expression_type(TargetType tg) { target_type_ = tg; }
+  TargetType target_type() { return target_type_; }
+ private:
+  TargetType target_type_;
 };
+
+class StrExpressionNode : public Node {
+ // str_expression -> str_ ## [leaf]
+ // str_expression -> str_expression + str_
+ // TODO support str expression
+ public:
+  void Format(FILE* dst) override;
+};
+
 
 
 class SimpleExpressionNode : public Node {

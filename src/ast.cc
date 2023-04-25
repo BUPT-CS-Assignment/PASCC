@@ -314,9 +314,26 @@ void StatementNode::Format(FILE* dst) {
   switch (grammar_type_) {
     case GrammarType::EPSILON: return;
     case GrammarType::VAR_ASSIGN_OP_EXP: {
-      FormatAt(0, dst);
-      PRINT(" = ")
-      FormatAt(1, dst);
+      auto exp = child_list_[1]->DynamicCast<ExpressionNode>();
+      switch(exp->target_type()) {
+        case ExpressionNode::TargetType::EXPRESSION:{ // other expression
+          FormatAt(0, dst); PRINT(" = "); FormatAt(1, dst);
+          break;
+        }
+        case ExpressionNode::TargetType::VAR_ARRAY: { // array-list
+          PRINT("memcpy(");   FormatAt(0, dst);
+          PRINT(", ");        FormatAt(1, dst);
+          PRINT(", sizeof("); FormatAt(0, dst);
+          PRINT("))")
+          break;
+        }
+        case ExpressionNode::TargetType::CONST_STRING: { // const-string
+          PRINT("strcpy("); FormatAt(0, dst);
+          PRINT(", ");      FormatAt(1, dst);
+          PRINT(")")
+          break;
+        }
+      }
       PRINT(";\n")
       break;
     }
@@ -506,6 +523,15 @@ void ExpressionListNode::Format(FILE* dst) {
       PRINT(", ")
     }
   }
+}
+
+void StrExpressionNode::Format(FILE *dst) {
+  if(child_list_.size() == 2){
+    FormatAt(0, dst);
+  }
+  PRINT("\"")
+  FormatAt(-1, dst);
+  PRINT("\"")
 }
 
 void FactorNode::Format(FILE* dst) {

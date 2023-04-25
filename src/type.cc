@@ -128,6 +128,19 @@ bool TypeTemplate::TypeEqual(TypeTemplate* type1, TypeTemplate* type2) {
   } else return false;
 }
 
+bool TypeTemplate::StringLike() {
+  if(template_type_ == TYPE::ARRAY) {
+    auto array = DynamicCast<ArrayType>();
+    return array->StringLike();
+  }
+  return false;
+}
+
+bool ArrayType::StringLike(int access_layer) {
+  if (type_ != pascal_type::TYPE_CHAR) return false;
+  if (bounds_.size() != access_layer + 1) return false;
+  return true;
+}
 
 bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate **type) {
   if (index_types.size() != bound_types_.size()) return false;
