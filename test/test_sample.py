@@ -3,7 +3,7 @@ import subprocess
 
 def run_program(input_file):
     input_file_c = input_file.replace('.txt', '.c')
-    subprocess.run(['../build/Release/Actions_Test.exe', '-I', input_file, input_file_c], check=True)
+    subprocess.Popen(['../bin/PASCC_TEST', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE)
     
     process = subprocess.Popen(['gcc', input_file_c], stdout=subprocess.PIPE)
     output, error = process.communicate()
