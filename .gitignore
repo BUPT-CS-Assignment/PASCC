@@ -8,3 +8,4 @@ include/parser.tab.h
 src/parser.tab.cc
 src/lex.yy.cc
 test/input/*.c
+test/.pascc.*
