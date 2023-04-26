@@ -81,14 +81,35 @@ protected:
   template <typename T>
   bool type_assert(){
     switch(_base_type){
-    case BaseType::TYPE_BOOL: return std::is_same<bool,T>::value;
-    case BaseType::TYPE_CHAR: return std::is_same<char,T>::value;
-    case BaseType::TYPE_INT: return std::is_same<int,T>::value;
-    case BaseType::TYPE_LONG_LONG: return std::is_same<long long,T>::value;
-    case BaseType::TYPE_DOUBLE: return std::is_same<double,T>::value;
-    case BaseType::TYPE_STRING: return std::is_same<std::string,T>::value;
-    default: return false;
+      case BaseType::TYPE_BOOL: return std::is_same<bool,T>::value;
+      case BaseType::TYPE_CHAR: return std::is_same<char,T>::value;
+      case BaseType::TYPE_INT: return std::is_same<int,T>::value;
+      case BaseType::TYPE_LONG_LONG: return std::is_same<long long,T>::value;
+      case BaseType::TYPE_DOUBLE: return std::is_same<double,T>::value;
+      case BaseType::TYPE_STRING: return std::is_same<std::string,T>::value;
+      default: return false;
     }
+  }
+
+  /**
+   * @brief value cast
+   * @tparam T
+   * @param str
+   * @return
+   */
+  template<typename T> T value_cast(std::string str){
+    if(std::is_same<bool,T>::value) {
+      bool val = (str == "1" || str == "true" || str == "True" || str == "TRUE");
+      return *(T*)(&val);
+    }else if(std::is_same<char,T>::value){
+      return *(T*)(&str[0]);
+    }else if(std::is_same<std::string,T>::value){
+      return *(T*)(&str);
+    }
+    std::stringstream ss(str);
+    T val;
+    ss >> val;
+    return val;
   }
 
   /**
@@ -147,7 +168,6 @@ protected:
   std::set<std::string> _conflicts;       // conflict params
 
 };
-
 
 
 /**
@@ -327,10 +347,7 @@ protected:
     std::string str_(str);
     if(!value_assert(str_))
       throw BasicArgument::Exception(this,"add_value(): mistyped value '" + str_ + "'");
-    std::istringstream iss(str_);
-    T value;
-    iss >> value;
-    _values.emplace_back(value);
+    _values.emplace_back(value_cast<T>(str));
   }
 
 
@@ -389,8 +406,7 @@ class ArgumentParser{
 
   // calc prefix of '-'
   int _argname_assert(std::string name){
-    if(name.length() == 0 || name.find(' ') != std::string::npos)
-      return -1;
+    if(name.length() == 0) return -1;
     int p;
     for(p = 0;p < name.length() && name[p] == '-';p++);
     return p <= 2 ? p : -1;
@@ -592,7 +608,6 @@ public:
       if(arg_ptr == nullptr)
         throw std::runtime_error("parse_args(): unknown argument '" + arg_str + "'");
       arg_ptr->set_call(true);
-      arg_ptr->add_value();
       while(ptr < argc && _argname_assert(std::string(argv[ptr])) == 0){
         arg_ptr->add_value(argv[ptr++]);
       }
