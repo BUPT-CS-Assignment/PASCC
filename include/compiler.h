@@ -23,24 +23,25 @@ class Compiler {
      WEBKIT,
    };
 
-  Compiler(){DirAssert();};
-  ~Compiler(){};
-
   int Compile(std::string in, std::string out = stdout_, CODE_STYLE st = CODE_STYLE::GOOGLE);
   int Compile(ast::AST* in, std::string out = stdout_, CODE_STYLE st = CODE_STYLE::GOOGLE);
-  void CodeExecute(std::string in, std::string out = stdout_);
-  void SetGCCFmt(const char* fmt){gcc_fmt = std::string(fmt);}
+  void CodeExecute(std::string file_name, std::string args = "");
   const char* tmp_file(int pos);
   void Clear();
 
  private:
-  constexpr static const char* format_tmp_file_ = ".tmp/runtime.pascc.$TIME.c";
-  std::vector<std::string> temp_files_;
-  std::string gcc_fmt = "gcc $IN -o $OUT";
+  constexpr static const char* TMP_FILE_FORMAT = ".pascc.tf";
+#ifdef WIN32
+  constexpr static const char* EXECUTE_FORMAT = "gcc \"%s.c\" -o \"%s.exe\" && \"%s.exe\" ";
+  constexpr static const char* CLANG_FORMAT = "clang-format.exe -style=%s -i \"%s\"";
+#else
+  constexpr static const char* EXECUTE_FORMAT = "gcc %s.c -o %s.out && ./%s.out ";
+  constexpr static const char* CLANG_FORMAT = "./clang-format -style=%s -i %s";
+#endif
 
-  void DirAssert();
-  void CodeFormat(std::string file, CODE_STYLE st);
-  void CodePrint(std::string file,FILE* dst);
+  std::vector<std::string> temp_files_;
+  void CodeFormat(std::string file_name, CODE_STYLE st);
+  void CodePrint(std::string file_name,FILE* dst);
 
 };
 

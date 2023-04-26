@@ -16,8 +16,8 @@ int main(int argc, char** argv){
   // add optional argument 'output file' to set output c file
   parser.add_argument<string>("-o","--output").nArgs('?').help("output c file")
         .default_("");
-  // add optional argument 'test' to run test and set test output
-  parser.add_argument<string>("-t","--test").nArgs('?').help("test output c file")
+  // add optional argument 'test' to run test and set test args
+  parser.add_argument<string>("-t","--test").nArgs('?').help("test output c file, optional test args")
         .default_("");
   // add optional argument 'remove cache' to auto-clear cache files
   parser.add_argument<bool>("-r","--reserve").help("reserve cache files");
@@ -36,8 +36,8 @@ int main(int argc, char** argv){
 
   // optional test execute
   if(parser.is_call("t")) {
-    string test_out = parser.get_value<string>("t");
-    compiler.CodeExecute(compiler.tmp_file(p),test_out);
+    string test_args = parser.get_value<string>("t");
+    compiler.CodeExecute(compiler.tmp_file(p),test_args);
   }
 
   // optional reserve cache

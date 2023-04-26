@@ -12,10 +12,10 @@ namespace ast {
 /* **************** standard output **************** */
 
 /* **************** ast output **************** */
-void AST::Format(const char* file_name) {
-  FILE* dst = fopen(file_name, "w");
+void AST::Format(string file_name) {
+  FILE* dst = fopen(file_name.c_str(), "w");
   if (dst == nullptr) {
-    log_fatal("failed to open file %s", file_name);
+    log_fatal("failed to open file %s", file_name.c_str());
     abort();
   }
 
