@@ -7,5 +7,7 @@ bin
 include/parser.tab.h
 src/parser.tab.cc
 src/lex.yy.cc
-test/input/*.c
+test/input/*
+!test/input/*.txt
+test/__pycache__
 test/.pascc.*
