@@ -38,9 +38,9 @@ class TypeTemplate {
 // basic type including INT, REAL, CHAR, BOOL
 class BasicType : public TypeTemplate {
  public:
-  enum class BASIC_TYPE { INT, REAL, BOOL, LETTER, VOID};
+  enum class BASIC_TYPE { INT, REAL, BOOL, CHAR, NONE};
 
-  BasicType() : TypeTemplate(TYPE::BASIC), basic_type_(BASIC_TYPE::VOID) {}
+  BasicType() : TypeTemplate(TYPE::BASIC), basic_type_(BASIC_TYPE::NONE) {}
   BasicType(BASIC_TYPE basic_type) : TypeTemplate(TYPE::BASIC), basic_type_(basic_type) {}
 
   ~BasicType() {}
@@ -51,7 +51,7 @@ class BasicType : public TypeTemplate {
       case BASIC_TYPE::INT: return "int";
       case BASIC_TYPE::REAL: return "float";
       case BASIC_TYPE::BOOL: return "bool";
-      case BASIC_TYPE::LETTER: return "char";
+      case BASIC_TYPE::CHAR: return "char";
       default: return "void";
     }
   }
@@ -63,8 +63,8 @@ extern BasicType* TYPE_INT;
 extern BasicType* TYPE_REAL;
 extern BasicType* TYPE_BOOL;
 extern BasicType* TYPE_CHAR;
-extern BasicType* TYPE_STRING;
-extern BasicType* TYPE_ERROR;
+extern BasicType* TYPE_NONE;
+extern BasicType* TYPE_STRINGLIKE;
 
 
 // Array type
@@ -152,7 +152,7 @@ public:
   void set(float v) {m_Type = pascal_type::TYPE_REAL; m_REAL = v;}
   void set(bool v) {m_Type = pascal_type::TYPE_BOOL; m_BOOLEAN = v;}
   void set(char v) {m_Type = pascal_type::TYPE_CHAR; m_CHAR = v;}
-  void set(std::string v) {m_Type = pascal_type::TYPE_STRING; m_STRING = v;}
+  void set(std::string v) {m_Type = pascal_type::TYPE_STRINGLIKE; m_STRING = v;}
 
   pascal_type::BasicType* type() {return m_Type;}
   template <typename T> T get() {
@@ -177,7 +177,7 @@ public:
   ConstValue operator/(const ConstValue& other);
 
 private:
-  pascal_type::BasicType* m_Type = pascal_type::TYPE_ERROR;
+  pascal_type::BasicType* m_Type = nullptr;
   union {
     int m_INT;
     float m_REAL;

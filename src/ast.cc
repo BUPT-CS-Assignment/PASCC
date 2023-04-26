@@ -39,20 +39,17 @@ void LeafNode::Format(FILE* dst) {
     PRINT(" %s ", value_.get<bool>() ? "true" : "false")
   } else if (tp == pascal_type::TYPE_CHAR) {
     PRINT(" '%c' ", value_.get<char>())
-  } else if (tp == pascal_type::TYPE_STRING) {
+  } else if (tp == pascal_type::TYPE_STRINGLIKE) {
     PRINT(" %s ", value_.get<string>().c_str())
   }
 }
 
-bool LeafNode::AnalyzeReference(symbol_table::TableSet* ts,
-                                pascal_symbol::FunctionSymbol* fn) {
-  if (fn == nullptr || value_.type() != TYPE_STRING) return false;
-
+bool LeafNode::AnalyzeReference(TableSet* ts, FunctionSymbol* fn) {
+  if (fn == nullptr) return false;
   // search table and judge if is current layer
   bool local = false;
-  std::string id = value_.get<string>();
-  ObjectSymbol* entry =
-      ts->SearchEntry<pascal_symbol::ObjectSymbol>(id, &local);
+  string id = value_.get<string>();
+  auto* entry = ts->SearchEntry<ObjectSymbol>(id, &local);
   if (entry != nullptr && local) {
     FunctionSymbol::ParamType* pt = (*fn)[id];
     // search param-passing mode
@@ -429,7 +426,7 @@ string VariableListNode::FormatString() {
   for (int i = 0; i < basic_types.size(); i++) {
     BasicType* type = basic_types[i];
     string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d" :
-                   type == TYPE_STRING ? "%s" :
+                   type == TYPE_STRINGLIKE ? "%s" :
                    type == TYPE_REAL ? "%.2f" :
                    type == TYPE_CHAR ? "%c" :
                    throw std::runtime_error("ExpressionListNode: FormatString() : error type");
@@ -515,7 +512,7 @@ string ExpressionListNode::FormatString() {
   for (int i = 0; i < basic_types.size(); i++) {
     BasicType* type = basic_types[i];
     string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d" :
-                   type == TYPE_STRING ? "%s" :
+                   type == TYPE_STRINGLIKE ? "%s" :
                    type == TYPE_REAL ? "%.2f" :
                    type == TYPE_CHAR ? "%c" :
                    throw std::runtime_error("ExpressionListNode: FormatString() : error type");

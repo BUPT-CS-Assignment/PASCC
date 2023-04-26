@@ -1262,7 +1262,7 @@ expression:
 str_expression :
     STRING_ {
         // str_expression -> string.
-        $$.type_ptr = pascal_type::TYPE_STRING;
+        $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
         $$.length = $1.value.get<string>().length();
 
         $$.str_expression_node = new StrExpressionNode();
@@ -1271,7 +1271,7 @@ str_expression :
         if (DEBUG) printf("str_expression -> string.\n");
     } | str_expression PLUS STRING_ {
         // str_expression -> str_expression + string.
-        $$.type_ptr = pascal_type::TYPE_STRING;
+        $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
         $$.length = $1.length + $3.value.get<string>().length();
 
         $$.str_expression_node = new StrExpressionNode();

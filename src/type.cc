@@ -34,10 +34,10 @@ ConstValue ConstValue::operator+(const ConstValue& other) {
   } else if (m_Type == TYPE_REAL) {
     ret.set((float)(m_REAL + other.m_REAL));
     return ret;
-  } else if (m_Type == pascal_type::TYPE_STRING) {
+  } else if (m_Type == TYPE_STRINGLIKE) {
     ret.set(m_STRING + other.m_STRING);
     return ret;
-  } else if(m_Type == pascal_type::TYPE_CHAR){
+  } else if(m_Type == TYPE_CHAR){
     ret.set((char)((int)m_CHAR + (int)other.m_CHAR));
     return ret;
   } else {
@@ -169,8 +169,11 @@ BasicType* TYPE_INT;
 BasicType* TYPE_REAL;
 BasicType* TYPE_BOOL;
 BasicType* TYPE_CHAR;
-BasicType* TYPE_STRING;
-BasicType* TYPE_ERROR;
+BasicType* TYPE_NONE;
+BasicType* TYPE_STRINGLIKE;
+
+
+
 
 OperationMap operation_map;
 
@@ -178,9 +181,12 @@ void TypeInit() {
   log_info("initializing pascal_type ...");
 
   TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
-  TYPE_CHAR = new BasicType(BasicType::BASIC_TYPE::LETTER);
+  TYPE_CHAR = new BasicType(BasicType::BASIC_TYPE::CHAR);
   TYPE_INT = new BasicType(BasicType::BASIC_TYPE::INT);
   TYPE_REAL = new BasicType(BasicType::BASIC_TYPE::REAL);
+  TYPE_NONE = new BasicType(BasicType::BASIC_TYPE::NONE);
+  TYPE_STRINGLIKE = new BasicType(BasicType::BASIC_TYPE::CHAR);
+
 
   //bool
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "and")] = TYPE_BOOL;

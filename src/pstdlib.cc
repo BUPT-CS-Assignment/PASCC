@@ -9,6 +9,7 @@ using pascal_type::TYPE_INT;
 using pascal_type::TYPE_CHAR;
 using pascal_type::TYPE_REAL;
 using pascal_type::TYPE_BOOL;
+using pascal_type::TYPE_NONE;
 
 namespace pstdlib{
 
@@ -63,10 +64,10 @@ void PStdLibs::Preset(symbol_table::SymbolTable *st) {
       {"arctan", TYPE_REAL, TYPE_REAL},
       {"eof", TYPE_BOOL, nullptr},
       {"eoln", TYPE_BOOL, nullptr},
-      {"read", nullptr, nullptr},
-      {"readln", nullptr, nullptr},
-      {"write", nullptr, nullptr},
-      {"writeln", nullptr, nullptr}
+      {"read", TYPE_NONE, nullptr},
+      {"readln", TYPE_NONE, nullptr},
+      {"write", TYPE_NONE, nullptr},
+      {"writeln", TYPE_NONE, nullptr}
   };
 
   for(auto& p : params){
