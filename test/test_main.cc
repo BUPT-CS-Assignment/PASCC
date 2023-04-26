@@ -8,6 +8,25 @@
 #include "argparse.hpp"
 using std::string;
 
+/*  test command examples
+ *  - arguments list
+ *    usage: ${PASCC_TEST} [-i] [-o] [-t] [-r]
+ *    optional arguments:
+ *    tag  name      n-args  note
+ *     -h, --help      -     show help message
+ *     -i, --input    [?]    input json file
+ *     -o, --output   [?]    output c file
+ *     -t, --test     [?]    test output c file, optional test args
+ *     -r, --reserve  [?]    reserve cache files
+ *
+ *  - set input and print result to screen
+ *      ${PASCC_TEST} -i input/input01.txt
+ *
+ *  - set input and output destination, run c files generated and set running arguments, finally
+ *      ${PASCC_TEST} -i input/input01.txt -o output/output01.c -t "> test.out" -r
+ *
+ */
+
 int main(int argc, char** argv){
   ArgumentParser parser;
   // add optional argument 'input json file' to set input json file
