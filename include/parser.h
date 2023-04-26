@@ -8,6 +8,8 @@
 #include "compiler.h"
 #include "type.h"
 
+#define YYPARSE_DEBUG 0
+
 struct Token {
   ConstValue value;
   int length;
