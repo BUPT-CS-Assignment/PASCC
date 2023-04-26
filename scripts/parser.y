@@ -565,7 +565,6 @@ var_declarations :
         if(DEBUG) printf("var_declarations -> var var_declaration.\n");
 
         for (auto i : *($2.record_info)){
-            //std::cout<<"var_declaration:"<<i.second<<std::endl;
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
                 yyerror(real_ast,"redefinition of variable");
@@ -985,10 +984,10 @@ variable:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
              $$.type_ptr = nullptr;
-            yyerror(real_ast,"variable not defined. this way is not allowed.");
+            yyerror(real_ast,"variable not defined\n");
         } else {
             //类型检查
-            $$.type_ptr = tmp->type();
+            $$.type_ptr = tmp->type();//TODO
             //std::cout<<"variable type:"<<tmp->type()<<std::endl;
             $$.name = new std::string($1.value.get<string>());
         }
@@ -1324,7 +1323,7 @@ simple_expression:
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
-        LeafNode *addop_node = new LeafNode(ConstValue("or"));
+        LeafNode *addop_node = new LeafNode(ConstValue("||"));
         $$.simple_expression_node->append_child(addop_node);
         $$.simple_expression_node->append_child($3.term_node);
         if (DEBUG) printf("simple_expression -> simple_expression or term.\n");

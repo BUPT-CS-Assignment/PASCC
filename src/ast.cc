@@ -387,8 +387,11 @@ void StatementNode::Format(FILE* dst) {
     case GrammarType::WRITE_STATEMENT:
     case GrammarType::WRITELN_STATEMENT: {
       auto *elnode = child_list_[0]->DynamicCast<ExpressionListNode>();
-      PRINT("printf(\"%s\"", elnode->FormatString().c_str())
-      if(grammar_type_ == GrammarType::WRITELN_STATEMENT) PRINT("\\n");
+      if(grammar_type_ == GrammarType::WRITELN_STATEMENT){
+        PRINT("printf(\"%s\\n\"", elnode->FormatString().c_str())
+      } else {
+        PRINT("printf(\"%s\"", elnode->FormatString().c_str())
+      }
       PRINT(", ")
       elnode->Format(dst);
       PRINT(");\n")
@@ -516,7 +519,7 @@ string ExpressionListNode::FormatString() {
                    type == TYPE_REAL ? "%.2f" :
                    type == TYPE_CHAR ? "%c" :
                    throw std::runtime_error("ExpressionListNode: FormatString() : error type");
-    format += chfmt + " ";
+    format += chfmt;
   }
   return format;
 }
