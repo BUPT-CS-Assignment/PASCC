@@ -30,14 +30,17 @@ void fresh_argu(){
 }
 
 void yyerror_(const char *error_s){
-    fprintf(stderr,"%d:%d:\033[01;31m \terror\033[0m : %s\n", line_count, column, error_s);
+    // fprintf(stderr,"%d:%d:\033[01;31m \terror\033[0m : %s\n", line_count, column, error_s);
+    fprintf(stderr,"%d:%d:\terror: %s\n", line_count, 4, error_s);
     memset(my_buffer,'\0',1024);
     memset(my_buffer,' ',column-len);
     my_buffer[column-len]='^';
     memset(my_buffer+column-len+1,'~',len-1);
-    std::cout<<"  "<<line_count<<"\t|\t"<<buf<<std::endl;
-    fprintf(stderr,"\t|\t\033[01;31m%s\033[0m\n",my_buffer);
-    error_flag=1;
+    fprintf(stderr,"  %d\t|\t%s\n",line_count,buf.c_str());
+    // std::cout<<"  "<<line_count<<"\t|\t"<<buf<<std::endl;
+    // fprintf(stderr,"\t|\t\033[01;31m%s\033[0m\n",my_buffer);
+    fprintf(stderr,"\t|\t%s\n",my_buffer);
+    error_flag=1;   
 }
 
 %}
@@ -153,10 +156,10 @@ void yyerror_(const char *error_s){
 program : 
     program_head program_body '.'
     {   
-        ProgramNode* node = new ProgramNode();
-        node->append_child($1);
-        node->append_child($2);
         if(!error_flag){
+            ProgramNode* node = new ProgramNode();
+            node->append_child($1);
+            node->append_child($2);
             real_ast->set_root(node);
         } else {
             real_ast->set_root(nullptr); 
@@ -166,6 +169,8 @@ program :
     };
 program_head :
     PROGRAM ID '(' id_list ')' ';' {
+        if(error_flag)
+            break;
         $$ = new ProgramHeadNode();
         LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
@@ -182,6 +187,8 @@ program_head :
 program_body :
     const_declarations type_declarations var_declarations 
     subprogram_declarations compound_statement {
+        if(error_flag)
+            break;
         $$ = new ProgramBodyNode();
         $$->append_child($1);
         $$->append_child($2);
@@ -192,6 +199,8 @@ program_body :
     };                  
 id_list :
     id_list ',' ID { 
+        if(error_flag)
+            break;
         $1.list_ref->push_back(std::make_pair($3.value.get<string>(),$3.line_num));
         $$.list_ref = $1.list_ref;
         $$.id_list_node = new IdListNode(IdListNode::GrammarType::MULTIPLE_ID);
@@ -199,6 +208,8 @@ id_list :
         $$.id_list_node->append_child($1.id_list_node);
         $$.id_list_node->append_child(leaf_node);
     } | ID {
+        if(error_flag)
+            break;
         $$.list_ref = new std::vector<std::pair<std::string,int>>();
         $$.list_ref->push_back(std::make_pair($1.value.get<string>(),$1.line_num));
         $$.id_list_node = new IdListNode(IdListNode::GrammarType::SINGLE_ID);
@@ -206,10 +217,14 @@ id_list :
         $$.id_list_node->append_child(leaf_node);
     };
 const_declarations :{
+        if(error_flag)
+            break;
         $$ = new ConstDeclarationsNode();
     }
     | CONST const_declaration ';'
     {   
+        if(error_flag)
+            break;
         // const_declarations -> const const_declaration
         $$ = new ConstDeclarationsNode(); 
         $$->append_child($2);
@@ -224,6 +239,8 @@ const_declaration :
             yyerror(real_ast,"The identifier has been declared.\n");
         } 
         else{
+            if(error_flag)
+                break;
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION);
             $$->append_child($1);
             LeafNode* leaf_node = new LeafNode($3.value);
@@ -235,7 +252,9 @@ const_declaration :
         
     }
     | ID '=' const_variable
-    {   // const_declaration -> id = const_variable.
+    {   
+        
+        // const_declaration -> id = const_variable.
         //TODO 插入符号表
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
 
@@ -243,6 +262,8 @@ const_declaration :
             yyerror(real_ast,"The identifier has been declared.\n");
         } 
         else {
+            if(error_flag)
+                break;
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE);
             LeafNode* leaf_node = new LeafNode($1.value);
             $$->append_child(leaf_node);
@@ -253,6 +274,7 @@ const_declaration :
 const_variable :
     PLUS ID
     {   
+        
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = nullptr;
@@ -261,6 +283,8 @@ const_variable :
         }else {
             $$.value = symbol->value();
             $$.type_ptr = symbol->type();
+            if(error_flag)
+                break;
             $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));
             
         }
@@ -277,7 +301,8 @@ const_variable :
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
-
+            if(error_flag)
+                break;
             $$.const_variable_node = new LeafNode(ConstValue("-" + $2.value.get<string>()));
         }
         
@@ -294,11 +319,15 @@ const_variable :
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
         }
+        if(error_flag)
+            break;
         $$.const_variable_node = new LeafNode($1.value);
         if(YYPARSE_DEBUG) printf("const_variable -> id.\n");
     }
     |UMINUS num
-    {   
+    {  
+        if(error_flag)
+            break; 
         //TODO
         // const_variable -> - num.
         $$.type_ptr = $2.type_ptr;
@@ -309,6 +338,8 @@ const_variable :
     }
     | num
     {   
+        if(error_flag)
+            break;
         // const_variable -> num.
         $$.type_ptr = $1.type_ptr;
         $$.value = $1.value;
@@ -317,6 +348,8 @@ const_variable :
     }
     |PLUS num
     {  
+        if(error_flag)
+            break;
         // const_variable -> +num.
         $$.type_ptr = $2.type_ptr;
         $$.value = $2.value;
@@ -328,6 +361,8 @@ const_variable :
     }
     | CHAR
     {
+        if(error_flag)
+            break;
         // const_variable -> 'letter'.
         $$.type_ptr = pascal_type::TYPE_CHAR;
         $$.value = $1.value;
@@ -339,6 +374,8 @@ const_variable :
 num :
     INT_NUM
     {
+        if(error_flag)
+            break;
         // num -> int_num.
         $$.type_ptr = pascal_type::TYPE_INT;
         $$.value = $1.value;
@@ -346,18 +383,25 @@ num :
     }
     | REAL_NUM
     {   
+        if(error_flag)
+            break;
         // num -> real_num.
         $$.type_ptr = pascal_type::TYPE_REAL;
         $$.value = $1.value;
         if(YYPARSE_DEBUG) printf("num -> real_num.\n");
     };
-type_declarations : {
+type_declarations : 
+    {
+    if(error_flag)
+            break;
         // type_declarations -> empty.
         $$ = new TypeDeclarationsNode();
         if(YYPARSE_DEBUG) printf("type_declarations -> empty.\n");
     }
     | TYPE type_declaration ';'
     {
+        if(error_flag)
+            break;
         $$ = new TypeDeclarationsNode();
         $$->append_child($2);
         // type_declarations -> type type_declaration.
@@ -366,6 +410,7 @@ type_declarations : {
 type_declaration :
     type_declaration ';' ID '=' type
     {
+        
         // TODO
         // type_declaration -> type_declaration ; id = type.
         if ($5.main_type == TypeAttr::BASIC) {
@@ -384,6 +429,9 @@ type_declaration :
                 yyerror(real_ast,"Error: redefinition of type %s.\n");
             } 
         }
+
+        if(error_flag)
+            break;
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::MULTIPLE_DECL);
         $$->append_child($1);
@@ -413,6 +461,8 @@ type_declaration :
             } 
         }
 
+        if(error_flag)
+            break;
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::SINGLE_DECL);
         LeafNode *leaf_node = new LeafNode($1.value);
         $$->append_child(leaf_node);
@@ -422,6 +472,8 @@ type_declaration :
 type :
     standrad_type
     {
+        if(error_flag)
+            break;
         // type -> standrad_type.
         $$.main_type = (TypeAttr::MainType)0;
         $$.type_ptr = $1.type_ptr;
@@ -434,6 +486,8 @@ type :
     }
     | ARRAY '[' periods ']' OF type
     {
+        if(error_flag)
+            break;
         // TODO
         // type -> array [periods] of stype.
         $$.main_type = (TypeAttr::MainType)1;
@@ -452,6 +506,8 @@ type :
     }
     | RECORD record_body END
     {
+        if(error_flag)
+            break;
         // TODO
         $$.main_type = (TypeAttr::MainType)2;
         $$.record_info = $2.record_info;
@@ -469,6 +525,8 @@ type :
     };
 record_body :
     {
+        if(error_flag)
+            break;
         // record_body -> empty.
         $$.record_info = nullptr;
         $$.record_body_node = new RecordBodyNode();
@@ -476,6 +534,8 @@ record_body :
     }
     | var_declaration
     {
+        if(error_flag)
+            break;
         // record_body -> var_declaration.
         $$.record_info = $1.record_info;
 
@@ -486,6 +546,8 @@ record_body :
 standrad_type :
     BASIC_TYPE
     {
+        if(error_flag)
+            break;
         // standrad_type -> int|real|bool|char.
         //std::cout<<"$1.value.get<string>():"<<$1.value.get<string>()<<std::endl;
         string typestr = $1.value.get<string>();
@@ -504,6 +566,8 @@ standrad_type :
 periods :
     periods ',' period
     {
+        if(error_flag)
+            break;
         // periods -> periods,period.
         $$.bounds = $1.bounds;
         $$.bounds->push_back(*($3.bound));
@@ -515,6 +579,8 @@ periods :
     }
     | period
     {
+        if(error_flag)
+            break;
         // periods -> period.
         $$.bounds = new std::vector<std::pair<int, int>>();
         $$.bounds->push_back(*($1.bound));
@@ -525,6 +591,8 @@ periods :
 period :
     const_variable SUBCATALOG const_variable
     {
+        if(error_flag)
+            break;
         // test type ID 
         // period -> const_variable .. const_variable.
         
@@ -551,27 +619,31 @@ period :
 var_declarations : 
 
     {
+        if(error_flag)
+            break;
         // var_declarations -> empty.
         $$ = new VariableDeclarationsNode();
         if(YYPARSE_DEBUG) printf("var_declarations -> empty.\n");
     }
     | VAR var_declaration ';'
     {
-        // var_declarations -> var var_declaration.
-        $$ = new VariableDeclarationsNode();
-        $$->append_child($2.variable_declaration_node);
-        if(YYPARSE_DEBUG) printf("var_declarations -> var var_declaration.\n");
-
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
                 yyerror(real_ast,"redefinition of variable");
             }
         }
+        if(error_flag)
+            break;
+        // var_declarations -> var var_declaration.
+        $$ = new VariableDeclarationsNode();
+        $$->append_child($2.variable_declaration_node);
+        if(YYPARSE_DEBUG) printf("var_declarations -> var var_declaration.\n");        
     };
 var_declaration :
     var_declaration ';' id_list ':' type 
     {
+        
         // var_declaration -> var_declaration ; id_list : type.
         $$.record_info = $1.record_info;
         for (auto i : *($3.list_ref)){
@@ -579,6 +651,8 @@ var_declaration :
             if (!res.second){
              yyerror(real_ast,"redefinition of variable");}
         }
+        if(error_flag)
+            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -587,6 +661,8 @@ var_declaration :
     }
     | id_list ':' type 
     {
+        if(error_flag)
+            break;
         $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
         for (auto i : *($1.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
@@ -613,7 +689,9 @@ var_declaration :
                 }
             }
         }  
-        $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::ID);
+        if(error_flag)
+            break;
+        $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
         LeafNode *leaf_node = new LeafNode($5.value);
@@ -634,25 +712,31 @@ var_declaration :
                 }
             }
         }
-
+        if(error_flag)
+            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::ID);
         $$.variable_declaration_node->append_child($1.id_list_node);
         LeafNode *leaf_node = new LeafNode($3.value);
         $$.variable_declaration_node->append_child(leaf_node);
         if(YYPARSE_DEBUG) printf("var_declaration -> id_list : ID.\n");
     }
-    | {column = buf.size(); len = strlen(yytext);} error ';'
+    | {column = buf.size(); len = strlen(yytext);} ':' error type
     {
         yyerror_("An identifier is expected.");
         // if ( YYPARSE_DEBUG ) printf("An identifier is expected.\n");
     };
-subprogram_declarations : {
+subprogram_declarations : 
+    {
+        if(error_flag)
+            break;
         // subprogram_declarations -> empty.
         $$ = new SubprogramDeclarationsNode();
         if (YYPARSE_DEBUG) printf("subprogram_declarations -> empty.\n");
     }
     | subprogram_declarations subprogram_declaration ';'
     {
+        if(error_flag)
+            break;
         // subprogram_declarations -> subprogram_declarations subprogram_declaration.
         $$ = new SubprogramDeclarationsNode();
         $$->append_child($1);
@@ -664,6 +748,8 @@ subprogram_declarations : {
 subprogram_declaration :
     subprogram_head subprogram_body
     {
+        if(error_flag)
+            break;
         // subprogram_declaration -> subprogram_head program_body.
         $$ = new SubprogramDeclarationNode();
         $$->append_child($1);
@@ -673,6 +759,8 @@ subprogram_declaration :
 subprogram_body :
     const_declarations type_declarations var_declarations compound_statement
     {
+        if(error_flag)
+            break;
         $$ = new SubprogramBodyNode();
         $$->append_child($1);
         $$->append_child($2);
@@ -683,6 +771,7 @@ subprogram_body :
 subprogram_head :
     FUNCTION ID formal_parameter ':' standrad_type ';'
     {
+        
         // TODO插入符号表
         // x = new FunctionSymbol(ID.name,$5,ID.decline,$3);
         // insert(ID.name,x)
@@ -697,6 +786,7 @@ subprogram_head :
             yyerror(real_ast,"redefinition of function");
         } 
 
+        
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
@@ -708,7 +798,8 @@ subprogram_head :
                 }
             }
         }
-
+        if(error_flag)
+            break;
         $$ = new SubprogramHeadNode(ast::SubprogramHeadNode::GrammarType::FUNCTION);
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
@@ -718,6 +809,7 @@ subprogram_head :
     }
     | PROCEDURE ID formal_parameter ';'
     {
+        
         // TODO插入符号表
         // x = new FunctionSymbol(ID.name,NULL,ID.decline,$3);
         // insert(ID.name,x)
@@ -745,7 +837,8 @@ subprogram_head :
             }
         }
         
-
+        if(error_flag)
+            break;
         $$ = new SubprogramHeadNode(ast::SubprogramHeadNode::GrammarType::PROCEDURE);
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
@@ -754,6 +847,8 @@ subprogram_head :
     };
 formal_parameter :
     {   
+        if(error_flag)
+            break;
         // formal_parameter -> empty.
         $$.parameters = nullptr;
         $$.formal_parameter_node = new FormalParamNode();
@@ -761,6 +856,8 @@ formal_parameter :
     }
     | '(' parameter_lists ')'
     {
+        if(error_flag)
+            break;
         // formal_parameter -> (parameter_lists).
         $$.parameters = $2.parameters;
         $$.formal_parameter_node = new FormalParamNode();
@@ -769,6 +866,8 @@ formal_parameter :
 parameter_lists :
     parameter_lists ';' parameter_list
     {   
+        if(error_flag)
+            break;
         // parameter_lists -> parameter_lists ; parameter_list.
         $$.parameters = $1.parameters;
         $$.parameters->insert($$.parameters->end(), $3.parameters->begin(), $3.parameters->end());
@@ -779,6 +878,8 @@ parameter_lists :
     }
     | parameter_list
     {  
+        if(error_flag)
+            break;
         // parameter_lists -> parameter_list.
         $$.parameters = $1.parameters;
 
@@ -789,6 +890,8 @@ parameter_lists :
 parameter_list :
     var_parameter
     {   
+        if(error_flag)
+            break;
         // parameter_list -> var_parameter.
         $$.parameters = $1.parameters;
 
@@ -798,6 +901,8 @@ parameter_list :
     }
     | value_parameter
     {   
+        if(error_flag)
+            break;
         // parameter_list -> value_parameter.
         $$.parameters = $1.parameters;
 
@@ -808,6 +913,8 @@ parameter_list :
 var_parameter :
     VAR value_parameter
     {   
+        if(error_flag)
+            break;
         // var_parameter -> var value_parameter.
         int para_len = $2.parameters->size();
         for (int i = 0; i < para_len; i++){
@@ -821,6 +928,8 @@ var_parameter :
 value_parameter :
     id_list ':' standrad_type
     {   
+        if(error_flag)
+            break;
         // value_parameter -> id_list : standrad_type.
         $$.parameters = new std::vector<std::pair<std::string, std::pair<BasicType*,FunctionSymbol::PARAM_MODE>>>();
         std::pair<BasicType*,FunctionSymbol::PARAM_MODE> tmp($3.type_ptr,FunctionSymbol::PARAM_MODE::VALUE);
@@ -837,6 +946,8 @@ value_parameter :
     };
 compound_statement :
     BEGIN_ statement_list END {
+        if(error_flag)
+            break;
         // compound_statement -> begin statement_list end.
         $$ = new CompoundStatementNode();
         $$->append_child($2);
@@ -845,6 +956,8 @@ compound_statement :
 statement_list :
     statement_list ';' statement
     {
+        if(error_flag)
+            break;
         // statement_list -> statement_list ; statement.
         $$ = new StatementListNode();
         $$->append_child($1);
@@ -852,13 +965,18 @@ statement_list :
         if (YYPARSE_DEBUG) printf("statement_list -> statement_list ; statement.\n");
     } | statement
     {
+        if(error_flag)
+            break;
         // statement_list -> statement.
         $$ = new StatementListNode();
         $$->append_child($1);
     };
 statement:
     variable ASSIGNOP expression
-    {   // 类型检查 指针为type_ptr
+    {   
+        if(error_flag)
+            break;
+        // 类型检查 指针为type_ptr
         // statement -> variable assigbop expression.
         std::string func_name = table_set_queue.top()->tag();
         if(func_name == *$1.name){
@@ -872,6 +990,8 @@ statement:
     }
     | call_procedure_statement
     {
+        if(error_flag)
+            break;
         // statement -> call_procedure_statement.
         // TODO check
         $$ = new StatementNode(StatementNode::GrammarType::PROCEDURE_CALL);
@@ -880,6 +1000,8 @@ statement:
     }
     | compound_statement
     {
+        if(error_flag)
+            break;
         // statement -> compound_statement.
         $$ = new StatementNode(StatementNode::GrammarType::COMPOUND_STATEMENT);
         $$->append_child($1);
@@ -887,6 +1009,8 @@ statement:
     }
     | IF expression THEN statement else_part
     {   
+        if(error_flag)
+            break;
         //类型检查
         // statement -> if expression then statement else_part.
         $$ = new StatementNode(StatementNode::GrammarType::IF_STATEMENT);
@@ -897,6 +1021,8 @@ statement:
     }
     | CASE expression OF case_body END
     {
+        if(error_flag)
+            break;
         //类型检查
         // statement -> case expression of case_body end.
         $$ = new StatementNode(StatementNode::GrammarType::CASE_STATEMET);
@@ -905,6 +1031,8 @@ statement:
     }
     | WHILE expression DO statement
     {
+        if(error_flag)
+            break;
         //类型检查
         // statement -> while expression do if_statement_1.
         $$ = new StatementNode(StatementNode::GrammarType::WHILE_STATEMENT);
@@ -915,6 +1043,8 @@ statement:
     } 
     | REPEAT statement_list UNTIL expression
     {
+        if(error_flag)
+            break;
         //类型检查
         // statement -> repeat statement_list until expression.
         $$ = new StatementNode(StatementNode::GrammarType::REPEAT_STATEMENT);
@@ -924,6 +1054,8 @@ statement:
     }
     | FOR ID ASSIGNOP expression updown expression DO statement
     {
+        if(error_flag)
+            break;
         //类型检查
         // statement -> for id assignop expression updown expression do statement.
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
@@ -934,21 +1066,37 @@ statement:
         $$->append_child($6.expression_node);
         $$->append_child($8);
         if (YYPARSE_DEBUG) printf("statement -> for id assignop expression updown expression do statement.\n");
-    } | {
+    } 
+    | 
+    {
+        if(error_flag)
+            break;
         // statement -> empty.
         $$ = new StatementNode(StatementNode::GrammarType::EPSILON);
         if (YYPARSE_DEBUG) printf("statement -> empty.\n");
-    }|READ '(' variable_list ')'{
+    }
+    |READ '(' variable_list ')'
+    {
+        if(error_flag)
+            break;
         $3.variable_list_node->GetType($3.basic_types);
         $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
         $$->append_child($3.variable_list_node);
         if (YYPARSE_DEBUG) printf("statement -> read ( variable_list ).\n");
-    }|WRITE '(' expression_list ')'{
+    }
+    |WRITE '(' expression_list ')'
+    {
+        if(error_flag)
+            break;
         $3.expression_list_node->GetType($3.type_ptr_list);
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
         $$->append_child($3.expression_list_node);
         if (YYPARSE_DEBUG) printf("statement -> write ( expression_list ).\n");
-    }|WRITELN'(' expression_list ')'{
+    }
+    |WRITELN'(' expression_list ')'
+    {
+        if(error_flag)
+            break;
         $3.expression_list_node->GetType($3.type_ptr_list);
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
         $$->append_child($3.expression_list_node);
@@ -956,7 +1104,10 @@ statement:
     };
 
 variable_list :
-    variable{ 
+    variable
+    { 
+        if(error_flag)
+            break;
         $$.basic_types = new std::vector<BasicType*>();
         if($1.type_ptr != nullptr){
             $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
@@ -966,6 +1117,8 @@ variable_list :
         $$.variable_list_node->append_child($1.variable_node);
         if (YYPARSE_DEBUG) printf("variable_list -> variable.\n");
     } | variable_list ',' variable{
+        if(error_flag)
+            break;
         $$.basic_types = $1.basic_types;
         if($3.type_ptr != nullptr){
             $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
@@ -989,7 +1142,8 @@ variable:
             //std::cout<<"variable type:"<<tmp->type()<<std::endl;
             $$.name = new std::string($1.value.get<string>());
         }
-        
+        if(error_flag)
+            break;
         $$.variable_node = new VariableNode();
         LeafNode *id_node = new LeafNode($1.value);
         $$.variable_node->append_child(id_node);
@@ -999,6 +1153,8 @@ variable:
 
 id_varparts:
     {
+        if(error_flag)
+            break;
         // id_varparts -> empty.
         $$.var_parts = nullptr;
         $$.id_varparts_node = new IDVarPartsNode();
@@ -1006,6 +1162,8 @@ id_varparts:
     }
     | id_varparts id_varpart
     {
+        if(error_flag)
+            break;
         // id_varparts -> id_varparts id_varpart.
         if($$.var_parts){
             $$.var_parts = $1.var_parts;
@@ -1024,6 +1182,8 @@ id_varparts:
 id_varpart:
     '[' expression_list ']'
     {   
+        if(error_flag)
+            break;
         // id_varpart -> [expression_list].
         $$.var_part= new VarParts();
         $$.var_part->flag = 0;//数组
@@ -1035,6 +1195,8 @@ id_varpart:
     }
     | '.' ID
     {
+        if(error_flag)
+            break;
         // id_varpart -> .id.
         $$.var_part= new VarParts();
         $$.var_part->flag = 1;//结构体
@@ -1047,12 +1209,16 @@ id_varpart:
     };
 else_part:
     {
+        if(error_flag)
+            break;
         // else_part -> empty.
         $$ = new ElseNode(ElseNode::GrammarType::EPSILON);
         if (YYPARSE_DEBUG) printf("else_part -> empty.\n");
     }
     | ELSE statement 
     {
+        if(error_flag)
+            break;
         // else_part -> else statement.
         $$ = new ElseNode(ElseNode::GrammarType::ELSE_STATEMENT);
         $$->append_child($2);
@@ -1060,6 +1226,8 @@ else_part:
     } ;
 case_body:
     {
+        if(error_flag)
+            break;
         // case_body -> empty.
         $$.type_ptr_list = nullptr;
         $$.case_body_node = new CaseBodyNode();
@@ -1067,6 +1235,8 @@ case_body:
     }
     | branch_list
     {
+        if(error_flag)
+            break;
         // case_body -> branch_list.
         $$.type_ptr_list = $1.type_ptr_list;
         $$.case_body_node = new CaseBodyNode();
@@ -1076,6 +1246,8 @@ case_body:
 branch_list:
     branch_list ';' branch
     {
+        if(error_flag)
+            break;
         // branch_list -> branch_list branch.
         $$.type_ptr_list = $1.type_ptr_list;
         $$.type_ptr_list->push_back($3.type_ptr);
@@ -1088,6 +1260,8 @@ branch_list:
     }
     | branch
     {
+        if(error_flag)
+            break;
         // branch_list -> branch.
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
@@ -1099,6 +1273,8 @@ branch_list:
 branch:
     const_list ':' statement
     {
+        if(error_flag)
+            break;
         // branch -> const_list : statement.
         $$.type_ptr = $1.type_ptr;
 
@@ -1110,6 +1286,8 @@ branch:
 const_list:
     const_list ',' const_variable
     {
+        if(error_flag)
+            break;
         // const_list -> const_list , const_variable.
         if($1.type_ptr != $3.type_ptr) {
            yyerror(real_ast,"const_list type not match");
@@ -1123,6 +1301,8 @@ const_list:
     }
     | const_variable
     {
+        if(error_flag)
+            break;
         // const_list -> const_variable.
         $$.type_ptr = $1.type_ptr;
 
@@ -1133,12 +1313,16 @@ const_list:
 updown:
     TO
     {
+        if(error_flag)
+            break;
         // updown -> to.
         $$ = new UpdownNode(true);
         if (YYPARSE_DEBUG) printf("updown -> to.\n");
     }
     | DOWNTO
     {
+        if(error_flag)
+            break;
         // updown -> downto.
         $$ = new UpdownNode(false);
         if (YYPARSE_DEBUG) printf("updown -> downto.\n");
@@ -1152,7 +1336,8 @@ call_procedure_statement:
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
-
+        if(error_flag)
+            break;
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID_EXP_LIST);
         LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
@@ -1160,13 +1345,15 @@ call_procedure_statement:
         if (YYPARSE_DEBUG) printf("call_procedure_statement -> id (expression_list).\n");
     };
     | ID
-    {   //类型检查
+    {   
+        //类型检查
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
-
+        if(error_flag)
+            break;
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID);
         LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
@@ -1175,6 +1362,8 @@ call_procedure_statement:
 expression_list:
     expression_list ',' expression
     {
+        if(error_flag)
+            break;
         //类型检查 检查是否为INT or CHAR???
         $$.type_ptr_list = $1.type_ptr_list;
         $$.type_ptr_list->push_back($3.type_ptr);
@@ -1187,6 +1376,8 @@ expression_list:
     }
     | expression
     {
+        if(error_flag)
+            break;
         //类型检查 检查是否为INT or CHAR  ???  
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
@@ -1199,6 +1390,8 @@ expression_list:
 expression:
     simple_expression RELOP simple_expression
     {
+        if(error_flag)
+            break;
         // 类型检查
         // 类型强转 为 *tmp
         // 先暂定 tmp = $1.type_ptr
@@ -1220,6 +1413,8 @@ expression:
     }
     | simple_expression '=' simple_expression
     {
+        if(error_flag)
+            break;
         // 类型检查
         // 类型强转 为 *tmp
         // 先暂定 tmp = $1.type_ptr
@@ -1235,6 +1430,8 @@ expression:
     }
     | simple_expression
     {
+        if(error_flag)
+            break;
         // expression -> simple_expression.
         $$.type_ptr = $1.type_ptr;
         //std::cout<<$$.type_ptr<<std::endl;
@@ -1248,6 +1445,8 @@ expression:
         if (YYPARSE_DEBUG) printf("expression -> simple_expression.\n");
     }| str_expression
     {
+        if(error_flag)
+            break;
         // expression -> str_expression.
         $$.type_ptr = $1.type_ptr;
         $$.length = $1.length;
@@ -1259,6 +1458,8 @@ expression:
 
 str_expression :
     STRING_ {
+        if(error_flag)
+            break;
         // str_expression -> string.
         $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
         $$.length = $1.value.get<string>().length();
@@ -1268,6 +1469,8 @@ str_expression :
         $$.str_expression_node->append_child(string_node);
         if (YYPARSE_DEBUG) printf("str_expression -> string.\n");
     } | str_expression PLUS STRING_ {
+        if(error_flag)
+            break;
         // str_expression -> str_expression + string.
         $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
         $$.length = $1.length + $3.value.get<string>().length();
@@ -1281,6 +1484,8 @@ str_expression :
 simple_expression:
     term
     {   
+        if(error_flag)
+            break;
         // simple_expression -> term.
         $$.type_ptr = $1.type_ptr;
         
@@ -1290,6 +1495,8 @@ simple_expression:
     }
     |PLUS term
     {
+        if(error_flag)
+            break;
         // simple_expression -> + term.
         $$.type_ptr = $2.type_ptr;
 
@@ -1301,6 +1508,8 @@ simple_expression:
     }
     |UMINUS term
     {
+        if(error_flag)
+            break;
         // simple_expression -> - term.
         $$.type_ptr = $2.type_ptr;
 
@@ -1312,6 +1521,8 @@ simple_expression:
     }
     | simple_expression ADDOP term
     {
+        if(error_flag)
+            break;
         // simple_expression -> simple_expression or term.
         // 类型检查
         // 类型强转 为 *tmp
@@ -1328,6 +1539,8 @@ simple_expression:
     }
     | simple_expression PLUS term
     { 
+        if(error_flag)
+            break;
         // 类型检查
         // simple_expression -> simple_expression + term.
         TypeTemplate* tmp = $1.type_ptr;
@@ -1342,6 +1555,8 @@ simple_expression:
     }
     | simple_expression UMINUS term
     {
+        if(error_flag)
+            break;
         // 类型检查
         // 类型强转 为 *tmp
         // simple_expression -> simple_expression - term.
@@ -1357,7 +1572,10 @@ simple_expression:
     };
 term:
     factor
-    {   // term -> factor.
+    {   
+        if(error_flag)
+            break;
+        // term -> factor.
         $$.type_ptr = $1.type_ptr;
         
         $$.term_node = new TermNode();
@@ -1365,7 +1583,9 @@ term:
         if (YYPARSE_DEBUG) printf("term -> factor.\n");
     }
     | term MULOP factor
-    {   
+    {  
+        if(error_flag)
+            break; 
         // term -> term mulop factor.
         // 类型检查
         // 类型强转 为 *tmp
@@ -1389,7 +1609,10 @@ term:
     };
 factor:
     unsigned_const_variable
-    {   // factor -> unsigned_const_variable.
+    {   
+        if(error_flag)
+            break;
+        // factor -> unsigned_const_variable.
         $$.type_ptr = $1.type_ptr;
         
         $$.factor_node = new FactorNode(FactorNode::GrammarType::UCONST_VAR);
@@ -1397,7 +1620,10 @@ factor:
         if (YYPARSE_DEBUG) printf("factor -> unsigned_const_variable.\n");
     }
     | variable
-    {   // factor -> variable.
+    {   
+        if(error_flag)
+            break;
+        // factor -> variable.
         $$.type_ptr = $1.type_ptr;
         
         $$.factor_node = new FactorNode(FactorNode::GrammarType::VARIABLE);
@@ -1413,6 +1639,8 @@ factor:
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
         $$.type_ptr = tmp->type();
+        if(error_flag)
+            break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::ID_EXP_LIST);
         LeafNode *id_node = new LeafNode($1.value);
         $$.factor_node->append_child(id_node);
@@ -1422,6 +1650,8 @@ factor:
     }
     | '(' expression ')'
     {
+        if(error_flag)
+            break;
         // factor -> (expression).
         $$.type_ptr = $2.type_ptr;
         
@@ -1431,10 +1661,15 @@ factor:
     }
     | '(' expression {column = buf.size();len = strlen(yytext);}error ';'
     {
+        if(error_flag)
+            break;
         yyerror_("A closing parenthesis is expected.\n");
     }
     | NOT factor
-    {   // factor -> not factor.
+    {   
+        if(error_flag)
+            break;
+        // factor -> not factor.
         // 类型检查
         $$.type_ptr = $2.type_ptr;
         
@@ -1445,6 +1680,8 @@ factor:
 unsigned_const_variable :
     num
     {
+        if(error_flag)
+            break;
         // unsigned_const_variable -> num
         $$.type_ptr = $1.type_ptr;
 
@@ -1462,6 +1699,8 @@ unsigned_const_variable :
     };
     | CHAR
     {
+        if(error_flag)
+            break;
         // unsigned_const_variable -> 'LETTER'
         $$.type_ptr = pascal_type::TYPE_CHAR;
         
@@ -1472,6 +1711,8 @@ unsigned_const_variable :
     }
     |TRUE
     {
+        if(error_flag)
+            break;
         // unsigned_const_variable -> true
         $$.type_ptr = pascal_type::TYPE_BOOL;
         
@@ -1482,6 +1723,8 @@ unsigned_const_variable :
     }
     | FALSE
     {   
+        if(error_flag)
+            break;
         // unsigned_const_variable -> false
         $$.type_ptr = pascal_type::TYPE_BOOL;
         
@@ -1496,13 +1739,13 @@ unsigned_const_variable :
 
 void yyerror(ast::AST* real_ast,const char *msg){
     //printf("%d :",line_count);
-    printf("%d :error:%s",line_count,msg);
+    printf("%d :error:%s\n",line_count,msg);
     error_flag = 1;
 }
 
 // int main(){
 //     AST *real_ast = new AST();
-//     if(!yyparse(real_ast)&&!error_flag){
+//     if(!yyparse(real_ast)&&error_flag){
 //         printf("successful analysis\n");
 //         Compiler compiler;
 //         compiler.Compile(real_ast,"basic_test");
