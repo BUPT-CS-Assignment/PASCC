@@ -94,38 +94,76 @@ ConstValue ConstValue::operator/(const ConstValue& other) {
 }
 
 
-
 namespace pascal_type {
-
-bool TypeTemplate::ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::string op,
-                               TypeTemplate** result_type) {
-  if (operation_map.find(Operation(type1, type2, op)) != operation_map.end()) {
-    if (result_type != nullptr) {
-      *result_type = operation_map[Operation(type1, type2, op)];
-    }
-    return true;
-  } else return false;
+ArrayType::ArrayBound& ArrayType::ArrayBound::operator=(const ArrayBound& b2) {
+  type_ = b2.type_;
+  lb_ = b2.lb_;
+  ub_ = b2.ub_;
+  return *this;
 }
 
-bool TypeTemplate::TypeEqual(TypeTemplate* type1, TypeTemplate* type2) {
-  if (type1 == type2) {
-    return true;
-  } else if (type1->template_type_ == TYPE::ARRAY && type2->template_type_ == TYPE::ARRAY) {
-    auto array1 = type1->DynamicCast<ArrayType>();
-    auto array2 = type2->DynamicCast<ArrayType>();
-    auto array1_bounds = array1->bounds();
-    auto array2_bounds = array2->bounds();
-    if(array1_bounds->size() != array2_bounds->size()) {
-      return false;
+ArrayType::ArrayType(const ArrayType& other) {
+  base_type_ = other.base_type_;
+  for(auto& b : other.bounds_) {
+    bounds_.emplace_back(b);
+  }
+}
+
+ArrayType& ArrayType::operator=(const ArrayType& other) {
+  base_type_ = other.base_type_;
+  for(auto& b : other.bounds_) {
+    bounds_.emplace_back(b);
+  }
+  return *this;
+}
+
+ArrayType ArrayType::Visit(std::vector<BasicType *> v_types) {
+  if(v_types.size() == 0 ) return *this;
+  if(v_types.size() > dims()) return ArrayType(TYPE_ERROR);
+  for(int i = 0; i < v_types.size(); i++) {
+    if(bounds_[i].type_ != v_types[i]) return ArrayType(TYPE_ERROR);
+  }
+  return Visit(v_types.size());
+}
+
+ArrayType ArrayType::Visit(unsigned int v_layer) {
+  if(v_layer == 0 ) return *this;
+  if(v_layer > dims()) return ArrayType(TYPE_ERROR);
+  // temp array
+  vector<ArrayBound> bs;
+  for(int i = dims() - v_layer; i < bounds_.size(); i++) {
+    bs.emplace_back(bounds_[i]);
+  }
+  return ArrayType(base_type_, bs);
+}
+
+bool ArrayType::operator==(const pascal_type::ArrayType &a2) const{
+  if(base_type_ != a2.base_type_) return false;
+  int dims = bounds_.size();
+  if(dims != a2.bounds_.size()) return false;
+  for(int i = 0; i < dims; i++) {
+    if(!(bounds_[i] == a2.bounds_[i])) return false;
+  }
+  return true;
+}
+
+TypeTemplate* RecordType::Visit(std::vector<std::string> names) {
+  if(names.size() == 0) return this;
+  int loop = names.size();
+  RecordType* cur_record = this;
+  while(loop){
+    TypeTemplate* t = cur_record->Find(names[loop - 1]);
+    if(t == nullptr) return nullptr;
+
+    if(t->template_type() == TYPE::RECORD) {
+      cur_record = t->DynamicCast<RecordType>();
+    } else {
+      if(loop > 1) return nullptr;
+      else return t;
     }
-    for(int i = 0; i < array1_bounds->size(); i++) {
-      if((*array1_bounds)[i].first != (*array2_bounds)[i].first ||
-         (*array1_bounds)[i].second != (*array2_bounds)[i].second) {
-        return false;
-      }
-    }
-    return TypeEqual(array1->type(), array2->type());
-  } else return false;
+    loop--;
+  }
+  return nullptr;
 }
 
 bool TypeTemplate::StringLike() {
@@ -137,24 +175,16 @@ bool TypeTemplate::StringLike() {
 }
 
 bool ArrayType::StringLike(int access_layer) {
-  if (type_ != pascal_type::TYPE_CHAR) return false;
+  if (base_type_ != pascal_type::TYPE_CHAR) return false;
   if (bounds_.size() != access_layer + 1) return false;
   return true;
 }
 
-bool ArrayType::AccessArray(vector<TypeTemplate*> index_types, TypeTemplate **type) {
-  if (index_types.size() != bound_types_.size()) return false;
-  for (int i = 0; i < index_types.size(); i++) {
-    if (index_types[i] != bound_types_[i]) return false;
-  }
-  if(type != nullptr) *type = type_;
+
+bool RecordType::add(std::string name, TypeTemplate* type) {
+  if(types_map_.find(name) != types_map_.end()) return false;
+  types_map_[name] = type;
   return true;
-}
-
-
-void RecordType::InsertType(std::string name, TypeTemplate* type) {
-  types_map_.insert(std::make_pair(name, type));
-  types_num_++;
 }
 
 TypeTemplate* RecordType::Find(std::string name) {
@@ -170,6 +200,7 @@ BasicType* TYPE_REAL;
 BasicType* TYPE_BOOL;
 BasicType* TYPE_CHAR;
 BasicType* TYPE_NONE;
+BasicType* TYPE_ERROR;
 BasicType* TYPE_STRINGLIKE;
 
 
@@ -179,6 +210,7 @@ OperationMap operation_map;
 
 void TypeInit() {
   log_info("initializing pascal_type ...");
+  TYPE_ERROR = nullptr;
 
   TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
   TYPE_CHAR = new BasicType(BasicType::BASIC_TYPE::CHAR);
@@ -186,7 +218,6 @@ void TypeInit() {
   TYPE_REAL = new BasicType(BasicType::BASIC_TYPE::REAL);
   TYPE_NONE = new BasicType(BasicType::BASIC_TYPE::NONE);
   TYPE_STRINGLIKE = new BasicType(BasicType::BASIC_TYPE::CHAR);
-
 
   //bool
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "and")] = TYPE_BOOL;

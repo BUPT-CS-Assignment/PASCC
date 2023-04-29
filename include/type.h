@@ -26,9 +26,6 @@ class TypeTemplate {
   }
 
   TYPE template_type() { return template_type_; }
-  bool ComputeType(TypeTemplate* type1, TypeTemplate* type2, std::string op,
-                   TypeTemplate** result_type = nullptr);
-  static bool TypeEqual(TypeTemplate* type1, TypeTemplate* type2);
   bool StringLike();
 
  protected:
@@ -64,75 +61,156 @@ extern BasicType* TYPE_REAL;
 extern BasicType* TYPE_BOOL;
 extern BasicType* TYPE_CHAR;
 extern BasicType* TYPE_NONE;
+extern BasicType* TYPE_ERROR;
 extern BasicType* TYPE_STRINGLIKE;
 
 
 // Array type
 class ArrayType : public TypeTemplate {
  public:
-  typedef std::pair<int, int> ArrayBound ;
-  ArrayType() : TypeTemplate(TYPE::ARRAY) {}
-  ArrayType(TypeTemplate* type, std::vector<ArrayBound> bounds)
-    : TypeTemplate(TYPE::ARRAY), type_(type), bounds_(bounds) {}
+  // Array bound
+  struct ArrayBound{
+   BasicType* type_;
+   int lb_;
+   int ub_;
+   // functions
+   ArrayBound() : type_(TYPE_NONE), lb_(0), ub_(0) {};
+   ArrayBound(const ArrayBound& b2) : type_(b2.type_), lb_(b2.lb_), ub_(b2.ub_) {};
+   ArrayBound& operator=(const ArrayBound& b2);
+   bool operator==(const ArrayBound& b2) const {
+     return type_ == b2.type_ && lb_ == b2.lb_ && ub_ == b2.ub_;
+   }
+  };
 
+  ArrayType() : TypeTemplate(TYPE::ARRAY), base_type_(TYPE_NONE) {}
+  ArrayType(TypeTemplate* type) : TypeTemplate(TYPE::ARRAY), base_type_(type) {}
+  ArrayType(TypeTemplate* type, std::vector<ArrayBound> bounds)
+    : TypeTemplate(TYPE::ARRAY), base_type_(type), bounds_(std::move(bounds)) {}
+  ArrayType(const ArrayType& a2);
   ~ArrayType() {}
-  TypeTemplate* type() { return type_; }
-  int dimension() { return bounds_.size(); }
-  std::vector<ArrayBound> *bounds() { return &bounds_; }
-  bool AccessArray(std::vector<TypeTemplate*> index_types, TypeTemplate **type = nullptr);
-  bool StringLike(int access_layer = 0);
+
+  TypeTemplate* base_type() { return base_type_; }
+  bool Valid() { return base_type_ != TYPE_NONE && base_type_ != TYPE_ERROR;}
+  size_t dims() { return bounds_.size(); }     // get dimensions
+  bool StringLike(int access_layer = 0);            // check if string-like (array of char)
+
+  ArrayType& operator=(const ArrayType& a2);
+  bool operator==(const ArrayType& a2) const;
+  ArrayType Visit(std::vector<BasicType*> v_types); // visit array
+  ArrayType Visit(unsigned int v_layer);            // visit array
 
  private:
-  TypeTemplate* type_;  // basic types or record type
+  TypeTemplate* base_type_;  // basic types or record type
   std::vector<ArrayBound> bounds_;  // multi-dims bounds
-  std::vector<TypeTemplate*> bound_types_;  // type of multi-dims
 };
 
 // Record type
 class RecordType : public TypeTemplate {
  public:
   RecordType() : TypeTemplate(TYPE::RECORD){}
-  RecordType(const std::unordered_map<std::string, TypeTemplate*>& type_map)
-    : TypeTemplate(TYPE::RECORD){
-    types_map_.insert(type_map.begin(), type_map.end());
-    types_num_ = types_map_.size();
-  }
-
+  RecordType(std::unordered_map<std::string, TypeTemplate*> types_map)
+    : TypeTemplate(TYPE::RECORD), types_map_(std::move(types_map)) {}
   ~RecordType() {}
 
-  void InsertType(std::string name, TypeTemplate* type);
+  bool add(std::string name, TypeTemplate* type);
   TypeTemplate* Find(std::string name);
-  TypeTemplate* operator[](std::string name) { return Find(name); }
+  TypeTemplate* Visit(std::vector<std::string> names);
 
  private:
   std::unordered_map<std::string, TypeTemplate*> types_map_;
-  int types_num_;
 };
 
 class Operation {
  public:
   Operation() {}
-  Operation(TypeTemplate* in_type1, TypeTemplate* in_type2, std::string op)
-    : in_type1(in_type1), in_type2(in_type2), op(op) {}
+  Operation(BasicType* in_type1, BasicType* in_type2, std::string op)
+    : in_type1(in_type1), in_type2(in_type2), op(std::move(op)) {}
   ~Operation() {}
   bool operator==(const Operation& other) const {
     return in_type1 == other.in_type1 && in_type2 == other.in_type2 && op == other.op;
   }
-  TypeTemplate* in_type1;
-  TypeTemplate* in_type2; 
+  BasicType* in_type1;
+  BasicType* in_type2;
   std::string op;
 };
-
 struct OperationHash {
   std::size_t operator()(const Operation& k) const {
-    return ((std::hash<TypeTemplate*>()(k.in_type1) ^
-            (std::hash<TypeTemplate*>()(k.in_type2) >> 1)) >> 1) ^
+    return ((std::hash<BasicType*>()(k.in_type1) ^
+            (std::hash<BasicType*>()(k.in_type2) >> 1)) >> 1) ^
             std::hash<std::string>()(k.op);
   }
 };
-
-typedef std::unordered_map<Operation, TypeTemplate*, OperationHash> OperationMap;
+typedef std::unordered_map<Operation, BasicType*, OperationHash> OperationMap;
 extern OperationMap operation_map;
+
+
+
+
+/********************************************
+  *             Type Assertion              *
+ ********************************************/
+ /**
+ * @brief compute the result type of two basic types
+ * @param type1 type 1
+ * @param type2 type 2
+ * @param op operation string
+ * @return
+ */
+static BasicType* compute(BasicType* type1, BasicType* type2, std::string op);
+
+/**
+ * @brief check if a type is basic type
+ * @param t ptr to type
+ * @return
+ */
+static bool is_basic(TypeTemplate* t);
+
+/**
+ * @brief check if two types are the same
+ * @param t1 type 1
+ * @param t2 type 2
+ * @return
+ */
+static bool is_same(TypeTemplate* t1, TypeTemplate* t2);
+
+/**
+ * @brief check if two array types with visits are the same
+ * @param t1 ptr to array 1
+ * @param vdim1 Visit dimensions 1
+ * @param t2 ptr to array 2
+ * @param vdim2 Visit dimensions 2
+ * @return
+ */
+static bool is_same(ArrayType* t1, int vdim1, ArrayType* t2, int vdim2);
+
+/**
+ * @brief Visit array and check if is the same with the input type
+ * @param t1 ptr to array
+ * @param vdim Visit dimensions
+ * @param t2 ptr to result-assertion type
+ * @return
+ */
+static bool is_same(ArrayType* t1, int vdim, BasicType* t2);
+
+/**
+ * @brief check if two record types with access are the same
+ * @param t1 ptr to record 1
+ * @param n1 Visit vector 1 with names
+ * @param t2 ptr to record 2
+ * @param n2 Visit vector 2 with names
+ * @return
+ */
+static bool is_same(RecordType* t1, std::vector<std::string> n1, RecordType* t2, std::vector<std::string> n2);
+
+/**
+ * @brief Visit record and check if is the same with the input type
+ * @param t1 ptr to record type
+ * @param n1 Visit vector with names
+ * @param t2 ptr to result-assertion type
+ * @return
+ */
+static bool is_same(RecordType* t1, std::vector<std::string> n1, TypeTemplate* t2);
+
 
 }; // namespace pascal_type
 
