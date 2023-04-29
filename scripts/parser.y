@@ -1015,6 +1015,9 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($2.type_ptr!=pascal_type::TYPE_BOOL){
+            yyerror(real_ast,"illegal type\n");
+        }
         // statement -> if expression then statement else_part.
         $$ = new StatementNode(StatementNode::GrammarType::IF_STATEMENT);
         $$->append_child($2.expression_node);
@@ -1027,6 +1030,11 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($4.type_ptr!=nullptr){
+            if(($2.type_ptr!=$4.type_ptr)||($2.type_ptr==pascal_type::TYPE_REAL)){
+                yyerror(real_ast,"illegal type\n");
+            }
+        }
         // statement -> case expression of case_body end.
         $$ = new StatementNode(StatementNode::GrammarType::CASE_STATEMET);
         $$->append_child($2.expression_node);
@@ -1037,6 +1045,9 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($2.type_ptr!=pascal_type::TYPE_BOOL){
+            yyerror(real_ast,"illegal type\n");
+        }
         // statement -> while expression do if_statement_1.
         $$ = new StatementNode(StatementNode::GrammarType::WHILE_STATEMENT);
         $$->append_child($2.expression_node);
@@ -1049,6 +1060,9 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($4.type_ptr!=pascal_type::TYPE_BOOL){
+            yyerror(real_ast,"illegal type\n");
+        }
         // statement -> repeat statement_list until expression.
         $$ = new StatementNode(StatementNode::GrammarType::REPEAT_STATEMENT);
         $$->append_child($2);
@@ -1060,6 +1074,9 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if(($4.type_ptr!=$6.type_ptr)||($2.type_ptr!=$4.type_ptr)||($4.type==pascal_type::TYPE_REAL)){
+            yyerror(real_ast,"illegal type\n");
+        }
         // statement -> for id assignop expression updown expression do statement.
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
         LeafNode *id_node = new LeafNode($2.value);
@@ -1141,6 +1158,7 @@ variable:
             yyerror(real_ast,"variable not defined\n");
         } else {
             //类型检查
+            //应该是在这里检查数组/结构体访问是否合法
             $$.type_ptr = tmp->type();//TODO
             //std::cout<<"variable type:"<<tmp->type()<<std::endl;
             $$.name = new std::string($1.value.get<string>());
@@ -1168,7 +1186,8 @@ id_varparts:
         if(error_flag)
             break;
         // id_varparts -> id_varparts id_varpart.
-        if($$.var_parts){
+        //if($$.var_parts)
+        if($1.var_parts){
             $$.var_parts = $1.var_parts;
         } else {
             $$.var_parts = new std::vector<VarParts>();
@@ -1252,9 +1271,12 @@ branch_list:
         if(error_flag)
             break;
         // branch_list -> branch_list branch.
-        $$.type_ptr_list = $1.type_ptr_list;
-        $$.type_ptr_list->push_back($3.type_ptr);
         //todo 检查类型是否一致
+        //对于某个branch_list，要求其内含的所有branch类型都一致，不需要存值
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"illegal type\n");
+        }
+        $$.type_ptr = $1.type_ptr;
 
         $$.branch_list_node = new BranchListNode();
         $$.branch_list_node->append_child($1.branch_list_node);
@@ -1266,8 +1288,7 @@ branch_list:
         if(error_flag)
             break;
         // branch_list -> branch.
-        $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
-        $$.type_ptr_list->push_back($1.type_ptr);
+        $$.type_ptr = $1.type_ptr;
         
         $$.branch_list_node = new BranchListNode();
         $$.branch_list_node->append_child($1.branch_node);
@@ -1334,6 +1355,7 @@ call_procedure_statement:
     ID '(' expression_list ')'
     {
         //类型检查
+        //TODO: 过程调用的批量检查
         // call_procedure_statement -> id (expression_list).
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
@@ -1382,6 +1404,9 @@ expression_list:
         if(error_flag)
             break;
         //类型检查 检查是否为INT or CHAR  ???  
+        if(!(($1.type_ptr==pascal_type::TYPE_INT)||($1.type_ptr==pascal_type::TYPE_CHAR))){
+            yyerror(real_ast,"illegal type\n");
+        }
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
         // expression_list -> expression.
@@ -1396,11 +1421,12 @@ expression:
         if(error_flag)
             break;
         // 类型检查
-        // 类型强转 为 *tmp
-        // 先暂定 tmp = $1.type_ptr
+        // 这里类型检查具体的规则是什么？有无特例？
         // expression -> simple_expression relop simple_expression.
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"illegal type\n");
+        }
+        $$.type_ptr = $1.type_ptr;
         
         std::string relop = $2.value.get<string>();
         if($2.value.get<string>() == "<>") {
@@ -1419,10 +1445,10 @@ expression:
         if(error_flag)
             break;
         // 类型检查
-        // 类型强转 为 *tmp
-        // 先暂定 tmp = $1.type_ptr
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"illegal type\n");
+        }
+        $$.type_ptr = $1.type_ptr;
 
         $$.expression_node = new ExpressionNode();
         $$.expression_node->append_child($1.simple_expression_node);
@@ -1527,10 +1553,10 @@ simple_expression:
         if(error_flag)
             break;
         // simple_expression -> simple_expression or term.
-        // 类型检查
-        // 类型强转 为 *tmp
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"illegal type\n");
+        }
+        $$.type_ptr = $1.type_ptr;
 
 
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1546,8 +1572,10 @@ simple_expression:
             break;
         // 类型检查
         // simple_expression -> simple_expression + term.
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"illegal type\n");
+        }
+        $$.type_ptr = $1.type_ptr;
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
@@ -1561,10 +1589,11 @@ simple_expression:
         if(error_flag)
             break;
         // 类型检查
-        // 类型强转 为 *tmp
         // simple_expression -> simple_expression - term.
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"illegal type\n");
+        }
+        $$.type_ptr = $1.type_ptr;
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
@@ -1591,9 +1620,10 @@ term:
             break; 
         // term -> term mulop factor.
         // 类型检查
-        // 类型强转 为 *tmp
-        TypeTemplate *tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"illegal type\n");
+        }
+        $$.type_ptr = $1.type_ptr;
         
         std::string mulop = $2.value.get<string>();
         if(mulop == "div"){
@@ -1637,6 +1667,7 @@ factor:
     {
         // factor -> id (expression_list).
         // 类型检查
+        //函数调用接口，最好批量实现
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
@@ -1674,6 +1705,7 @@ factor:
             break;
         // factor -> not factor.
         // 类型检查
+        //需要吗？
         $$.type_ptr = $2.type_ptr;
         
         $$.factor_node = new FactorNode(FactorNode::GrammarType::NOT);
