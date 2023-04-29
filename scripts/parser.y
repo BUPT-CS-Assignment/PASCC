@@ -582,7 +582,8 @@ periods :
         if(error_flag)
             break;
         // periods -> period.
-        $$.bounds = new std::vector<std::pair<int, int>>();
+        // TODO fix with type
+        $$.bounds = new std::vector<ArrayType::ArrayBound>();
         $$.bounds->push_back(*($1.bound));
         $$.periods_node = new PeriodsNode();
         $$.periods_node->append_child($1.period_node);
@@ -597,13 +598,15 @@ period :
         // period -> const_variable .. const_variable.
         
         int arr_len=0;
-        $$.bound = new std::pair<int, int>(0,0);
+        // $$.bound = new std::pair<int, int>(0,0);
+        // TODO fix with bound_type
+        $$.bound = new pascal_type::ArrayType::ArrayBound();
         if ($1.type_ptr == pascal_type::TYPE_INT&&$3.type_ptr == pascal_type::TYPE_INT){
             arr_len = ($3.value - $1.value).get<int>();
-            $$.bound = new std::pair<int, int>($1.value.get<int>(), $3.value.get<int>());
+            // $$.bound = new std::pair<int, int>($1.value.get<int>(), $3.value.get<int>());
         } else if($1.type_ptr == pascal_type::TYPE_CHAR&&$3.type_ptr == pascal_type::TYPE_CHAR){
             arr_len = (int)($3.value - $1.value).get<char>();
-            $$.bound = new std::pair<int, int>((int)$1.value.get<char>(), (int)$3.value.get<char>());
+            // $$.bound = new std::pair<int, int>((int)$1.value.get<char>(), (int)$3.value.get<char>());
         } else {
             yyerror(real_ast,"array bound must be integer or char\n");
         }

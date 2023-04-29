@@ -38,17 +38,20 @@ struct TypeAttr {
   pascal_type::TypeTemplate* type_ptr;
   pascal_type::TypeTemplate* array_type_ptr;
   ast::TypeNode* type_node;
-  std::vector<std::pair<int, int>>* bounds;
+  std::vector<pascal_type::ArrayType::ArrayBound>* bounds;
+  // std::vector<std::pair<int, int>>* bounds;
   std::unordered_map<std::string, pascal_type::TypeTemplate*>* record_info;
 };
 
 struct PeriodsAttr {
-  std::vector<std::pair<int, int>>* bounds;
+  std::vector<pascal_type::ArrayType::ArrayBound>* bounds;
+  // std::vector<std::pair<int, int>>* bounds;
   ast::PeriodsNode* periods_node;
 };
 
 struct PeriodAttr {
-  std::pair<int, int>* bound;
+  pascal_type::ArrayType::ArrayBound* bound;
+  // std::pair<int, int>* bound;
   ast::PeriodNode* period_node;
 };
 
