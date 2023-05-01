@@ -14,7 +14,6 @@ FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_
                                const std::vector<Parameter> &params)
     : ObjectSymbol(name, return_type, decl_line), params_(params) {
   for(int i = 0; i < params.size(); i++) {
-    params_.emplace_back(Parameter(params[i].first, params[i].second));
     param_map_[params[i].first] = i;
   }
 }
