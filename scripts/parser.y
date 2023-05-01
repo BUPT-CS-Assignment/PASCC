@@ -1014,6 +1014,7 @@ statement:
         //类型检查
         if($2.type_ptr!=pascal_type::TYPE_BOOL){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"IF expression THEN statement else_part\n");
         }
         // statement -> if expression then statement else_part.
         $$ = new StatementNode(StatementNode::GrammarType::IF_STATEMENT);
@@ -1030,6 +1031,7 @@ statement:
         if($4.type_ptr!=nullptr){
             if(($2.type_ptr!=$4.type_ptr)||($2.type_ptr==pascal_type::TYPE_REAL)){
                 yyerror(real_ast,"Type check failed\n");
+                yyerror(real_ast,"CASE expression OF case_body END\n");
             }
         }
         // statement -> case expression of case_body end.
@@ -1044,6 +1046,7 @@ statement:
         //类型检查
         if($2.type_ptr!=pascal_type::TYPE_BOOL){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"WHILE expression DO statement\n");
         }
         // statement -> while expression do if_statement_1.
         $$ = new StatementNode(StatementNode::GrammarType::WHILE_STATEMENT);
@@ -1059,6 +1062,7 @@ statement:
         //类型检查
         if($4.type_ptr!=pascal_type::TYPE_BOOL){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"REPEAT statement_list UNTIL expression\n");
         }
         // statement -> repeat statement_list until expression.
         $$ = new StatementNode(StatementNode::GrammarType::REPEAT_STATEMENT);
@@ -1074,6 +1078,7 @@ statement:
         //这里有个问题：ID要不要类型检查？
         if(($4.type_ptr!=$6.type_ptr)||($4.type_ptr==pascal_type::TYPE_REAL)){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"FOR ID ASSIGNOP expression updown expression DO statement\n");
         }
         // statement -> for id assignop expression updown expression do statement.
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
@@ -1268,6 +1273,7 @@ branch_list:
             break;        //对于某个branch_list，要求其内含的所有branch类型都一致，不需要存值
         if($1.type_ptr!=$3.type_ptr){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"branch_list -> branch_list branch.\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1390,9 +1396,11 @@ expression_list:
     | expression
     {
         //类型检查 检查是否为INT or CHAR  ???  
-        if(!(($1.type_ptr==pascal_type::TYPE_INT)||($1.type_ptr==pascal_type::TYPE_CHAR))){
-            yyerror(real_ast,"Type check failed\n");
-        }
+        //确定要做这个？
+        //if(!(($1.type_ptr==pascal_type::TYPE_INT)||($1.type_ptr==pascal_type::TYPE_CHAR))){
+        //    yyerror(real_ast,"Type check failed\n");
+        //    yyerror(real_ast,"expression_list -> expression\n");
+        //}
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
         // expression_list -> expression.
@@ -1406,12 +1414,12 @@ expression:
     simple_expression RELOP simple_expression
     {
         // 类型检查
-        // 这里类型检查具体的规则是什么？有无特例？
         // expression -> simple_expression relop simple_expression.
         if($1.type_ptr!=$3.type_ptr){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"expression -> simple_expression relop simple_expression\n");
         }
-        $$.type_ptr = $1.type_ptr;
+        $$.type_ptr = pascal_type::TYPE_BOOL;
         
         std::string relop = $2.value.get<string>();
         if($2.value.get<string>() == "<>") {
@@ -1431,8 +1439,9 @@ expression:
         // 类型检查
         if($1.type_ptr!=$3.type_ptr){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression '=' simple_expression\n");
         }
-        $$.type_ptr = $1.type_ptr;
+        $$.type_ptr = pascal_type::TYPE_BOOL;
 
         $$.expression_node = new ExpressionNode();
         $$.expression_node->append_child($1.simple_expression_node);
@@ -1531,6 +1540,7 @@ simple_expression:
         // simple_expression -> simple_expression or term.
         if($1.type_ptr!=$3.type_ptr){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> simple_expression or term\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1549,6 +1559,7 @@ simple_expression:
         // simple_expression -> simple_expression + term.
         if($1.type_ptr!=$3.type_ptr){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> simple_expression + term.\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1565,6 +1576,7 @@ simple_expression:
         // simple_expression -> simple_expression - term.
         if($1.type_ptr!=$3.type_ptr){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> simple_expression - term.\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1592,6 +1604,7 @@ term:
         // 类型检查
         if($1.type_ptr!=$3.type_ptr){
             yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"term -> term mulop factor\n");
         }
         $$.type_ptr = $1.type_ptr;
         
