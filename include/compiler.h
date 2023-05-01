@@ -36,7 +36,7 @@ class Compiler {
   constexpr static const char* CLANG_FORMAT = "clang-format.exe -style=%s -i \"%s\"";
 #else
   constexpr static const char* EXECUTE_FORMAT = "gcc %s.c -o %s.out && ./%s.out ";
-  constexpr static const char* CLANG_FORMAT = "./clang-format -style=%s -i %s";
+  constexpr static const char* CLANG_FORMAT = "clang-format -style=%s -i %s";
 #endif
 
   std::vector<std::string> temp_files_;

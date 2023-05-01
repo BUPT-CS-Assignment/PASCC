@@ -51,7 +51,7 @@ bool FunctionSymbol::IsReference(std::string name) {
   }
 }
 
-bool FunctionSymbol::AssertParams(const vector<BasicType*>& params_in){
+bool FunctionSymbol::AssertParams(const vector<TypeTemplate*>& params_in){
   if (params_in.size() != params_.size()) {
     return false;
   }

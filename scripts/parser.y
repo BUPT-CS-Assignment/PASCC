@@ -1323,7 +1323,7 @@ call_procedure_statement:
     {
         //类型检查
         // call_procedure_statement -> id (expression_list).
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
+        FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
