@@ -19,6 +19,7 @@ char my_buffer[1024];
 //symbol_table::SymbolTable *real_symbol_table = new symbol_table::SymbolTable();
 std::stack<symbol_table::TableSet*> table_set_queue;
 symbol_table::TableSet* top_table_set = new symbol_table::TableSet("main",nullptr);
+pstdlib::PStdLibs *pstdlibs = new pstdlib::PStdLibs();
 //table_set_queue.push(top_table_set);
 int error_flag=0;
 
@@ -177,6 +178,8 @@ program_head :
         $$->append_child($4.id_list_node);
         if(YYPARSE_DEBUG) printf("program_head -> program id(id_list);\n");
         table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());  
+        
     }
     | {fresh_argu();}error ';'{
         yyerror_("Every program must begin with the symbol program.\n");
@@ -629,7 +632,7 @@ var_declarations :
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
-                yyerror(real_ast,"redefinition of variable");
+                yyerror(real_ast,"redefinition of variable\n");
             }
         }
         if(error_flag)
@@ -648,7 +651,8 @@ var_declaration :
         for (auto i : *($3.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $5.type_ptr));
             if (!res.second){
-             yyerror(real_ast,"redefinition of variable");}
+             yyerror(real_ast,"redefinition of variable\n");
+            }
         }
         if(error_flag)
             break;
@@ -664,7 +668,8 @@ var_declaration :
         for (auto i : *($1.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
             if (!res.second){
-             yyerror(real_ast,"redefinition of variable");}
+             yyerror(real_ast,"redefinition of variable\n");
+             }
         }
         // var_declaration -> id : type.
         if(error_flag)
@@ -679,12 +684,12 @@ var_declaration :
         $$.record_info = $1.record_info;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
-            yyerror(real_ast,"undefined type");
+            yyerror(real_ast,"undefined type\n");
         } else {
             for (auto i : *($3.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
                 if (!res.second){
-                    yyerror(real_ast,"redefinition of variable");
+                    yyerror(real_ast,"redefinition of variable\n");
                 }
             }
         }  
@@ -701,13 +706,13 @@ var_declaration :
     {
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
-            yyerror(real_ast,"undefined type");
+            yyerror(real_ast,"undefined type\n");
         } else {
             $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
             for (auto i : *($1.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
                 if (!res.second){
-                    yyerror(real_ast,"redefinition of variable");
+                    yyerror(real_ast,"redefinition of variable\n");
                 }
             }
         }
@@ -782,18 +787,19 @@ subprogram_head :
             tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num);
         }
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            yyerror(real_ast,"redefinition of function");
+            yyerror(real_ast,"redefinition of function\n");
         } 
 
         
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
-                    yyerror(real_ast,"redefinition of variable");
+                    yyerror(real_ast,"redefinition of variable\n");
                 }
             }
         }
@@ -821,17 +827,18 @@ subprogram_head :
         }
         
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            yyerror(real_ast,"redefinition of function");
+            yyerror(real_ast,"redefinition of function\n");
         } 
 
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(),table_set_queue.top());
         table_set_queue.push(now_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
-                    yyerror(real_ast,"redefinition of variable");
+                    yyerror(real_ast,"redefinition of variable\n");
                 }
             }
         }
@@ -1274,7 +1281,7 @@ const_list:
     {
         // const_list -> const_list , const_variable.
         if($1.type_ptr != $3.type_ptr) {
-           yyerror(real_ast,"const_list type not match");
+           yyerror(real_ast,"const_list type not match\n");
         }
         $$.type_ptr = $1.type_ptr;
         if(error_flag)
@@ -1334,7 +1341,7 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure");
+            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
         if(error_flag)
             break;
@@ -1603,7 +1610,7 @@ factor:
         // 类型检查
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure");
+            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
         $$.type_ptr = tmp->type();
         if(error_flag)
@@ -1700,7 +1707,8 @@ unsigned_const_variable :
 
 void yyerror(ast::AST* real_ast,const char *msg){
     //printf("%d :",line_count);
-    printf("%d :error:%s\n",line_count,msg);
+    printf("%d: \033[31merror\033[0m:%s",line_count,msg);
+    printf("%d:%s\n",line_count,buf.c_str());
     error_flag = 1;
     real_ast->set_root(nullptr);
 }
