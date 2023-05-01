@@ -240,8 +240,7 @@ const_declaration :
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
             yyerror(real_ast,"The identifier has been declared.\n");
-        } 
-        else{
+        } else{
             if(error_flag)
                 break;
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION);
@@ -1160,8 +1159,11 @@ variable:
             yyerror(real_ast,"variable not defined\n");
         } else {
             //类型检查
-            //应该是在这里检查数组/结构体访问是否合法
-            $$.type_ptr = tmp->type();//TODO
+            $$.type_ptr = tmp->type();
+            if(!$2.ArrayAccessCheck(tmp->type())){
+                yyerror(real_ast,"Type check failed\n");
+                yyerror(real_ast,"variable -> id id_varparts.\n");
+            }
             //std::cout<<"variable type:"<<tmp->type()<<std::endl;
             $$.name = new std::string($1.value.get<string>());
         }
@@ -1350,11 +1352,14 @@ call_procedure_statement:
     ID '(' expression_list ')'
     {
         //类型检查
-        //TODO: 过程调用的批量检查
         // call_procedure_statement -> id (expression_list).
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
+        FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+        }
+        if(!tmp->AssertParams(*($3.type_ptr_list))){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
         if(error_flag)
             break;
@@ -1370,7 +1375,7 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+            yyerror(real_ast,"call_procedure_statement -> no such procedure\n");
         }
         if(error_flag)
             break;
@@ -1650,10 +1655,13 @@ factor:
     {
         // factor -> id (expression_list).
         // 类型检查
-        //函数调用接口，最好批量实现
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
+        FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+            yyerror(real_ast,"factor -> no such procedure\n");
+        }
+        if(!tmp->AssertParams(*($3.type_ptr_list))){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
         $$.type_ptr = tmp->type();
         if(error_flag)
