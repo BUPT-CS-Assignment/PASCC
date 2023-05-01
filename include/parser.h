@@ -36,7 +36,7 @@ struct StandardTypeAttr {
 struct TypeAttr {
   enum MainType { BASIC, ARRAY, RECORD } main_type;
   pascal_type::TypeTemplate* type_ptr;
-  pascal_type::TypeTemplate* array_type_ptr;
+  ast::TypeNode* base_type_node;
   ast::TypeNode* type_node;
   std::vector<pascal_type::ArrayType::ArrayBound>* bounds;
   // std::vector<std::pair<int, int>>* bounds;
