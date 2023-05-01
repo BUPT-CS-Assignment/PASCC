@@ -1013,7 +1013,7 @@ statement:
             break;
         //类型检查
         if($2.type_ptr!=pascal_type::TYPE_BOOL){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         // statement -> if expression then statement else_part.
         $$ = new StatementNode(StatementNode::GrammarType::IF_STATEMENT);
@@ -1029,7 +1029,7 @@ statement:
         //类型检查
         if($4.type_ptr!=nullptr){
             if(($2.type_ptr!=$4.type_ptr)||($2.type_ptr==pascal_type::TYPE_REAL)){
-                yyerror(real_ast,"illegal type\n");
+                yyerror(real_ast,"Type check failed\n");
             }
         }
         // statement -> case expression of case_body end.
@@ -1043,7 +1043,7 @@ statement:
             break;
         //类型检查
         if($2.type_ptr!=pascal_type::TYPE_BOOL){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         // statement -> while expression do if_statement_1.
         $$ = new StatementNode(StatementNode::GrammarType::WHILE_STATEMENT);
@@ -1058,7 +1058,7 @@ statement:
             break;
         //类型检查
         if($4.type_ptr!=pascal_type::TYPE_BOOL){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         // statement -> repeat statement_list until expression.
         $$ = new StatementNode(StatementNode::GrammarType::REPEAT_STATEMENT);
@@ -1071,8 +1071,9 @@ statement:
         if(error_flag)
             break;
         //类型检查
-        if(($4.type_ptr!=$6.type_ptr)||($2.type_ptr!=$4.type_ptr)||($4.type==pascal_type::TYPE_REAL)){
-            yyerror(real_ast,"illegal type\n");
+        //这里有个问题：ID要不要类型检查？
+        if(($4.type_ptr!=$6.type_ptr)||($4.type_ptr==pascal_type::TYPE_REAL)){
+            yyerror(real_ast,"Type check failed\n");
         }
         // statement -> for id assignop expression updown expression do statement.
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
@@ -1242,7 +1243,7 @@ else_part:
 case_body:
     {
         // case_body -> empty.
-        $$.type_ptr_list = nullptr;
+        $$.type_ptr= nullptr;
         if(error_flag)
             break;
         $$.case_body_node = new CaseBodyNode();
@@ -1251,7 +1252,7 @@ case_body:
     | branch_list
     {
         // case_body -> branch_list.
-        $$.type_ptr_list = $1.type_ptr_list;
+        $$.type_ptr = $1.type_ptr;
         if(error_flag)
             break;
         $$.case_body_node = new CaseBodyNode();
@@ -1266,7 +1267,7 @@ branch_list:
         if(error_flag)
             break;        //对于某个branch_list，要求其内含的所有branch类型都一致，不需要存值
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1390,7 +1391,7 @@ expression_list:
     {
         //类型检查 检查是否为INT or CHAR  ???  
         if(!(($1.type_ptr==pascal_type::TYPE_INT)||($1.type_ptr==pascal_type::TYPE_CHAR))){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
@@ -1408,7 +1409,7 @@ expression:
         // 这里类型检查具体的规则是什么？有无特例？
         // expression -> simple_expression relop simple_expression.
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr = $1.type_ptr;
         
@@ -1429,7 +1430,7 @@ expression:
     {
         // 类型检查
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1529,7 +1530,7 @@ simple_expression:
     {
         // simple_expression -> simple_expression or term.
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1547,7 +1548,7 @@ simple_expression:
         // 类型检查
         // simple_expression -> simple_expression + term.
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1563,7 +1564,7 @@ simple_expression:
         // 类型检查
         // simple_expression -> simple_expression - term.
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1590,7 +1591,7 @@ term:
         // term -> term mulop factor.
         // 类型检查
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"illegal type\n");
+            yyerror(real_ast,"Type check failed\n");
         }
         $$.type_ptr = $1.type_ptr;
         
