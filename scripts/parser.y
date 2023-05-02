@@ -1063,7 +1063,7 @@ variable:
         } else {
             //类型检查
             $$.type_ptr = tmp->type();
-            if(!$2.ArrayAccessCheck(tmp->type())){
+            if(!$2.AccessCheck(tmp->type())){
                 yyerror(real_ast,"Type check failed\n");
                 yyerror(real_ast,"variable -> id id_varparts.\n");
             }

@@ -79,11 +79,7 @@ public:
   bool InsertParam(Parameter&);
 
   // passing parameter assertion
-<<<<<<< HEAD
-  bool AssertParams(const std::vector<pascal_type::TypeTemplate *> &params);
-=======
   bool AssertParams(const std::vector<pascal_type::TypeTemplate*>& params);
->>>>>>> main
   // get param type
   ParamType* operator[](std::string );
   // check ref
