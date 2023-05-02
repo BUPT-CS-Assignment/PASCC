@@ -31,13 +31,6 @@ Compiler::Compiler(std::string dir) {
   log_info("compiler: current dir : %s", cur_dir_.c_str());
 }
 
-bool Compiler::FilenameAssert(std::string &file) {
-  size_t len = file.length();
-  if(len == 0 || len >= 64) return false;
-  if(len < 2 || (file[len - 2] != '.' && file[len - 1] != 'c'))
-    file += ".c";
-  return true;
-}
 
 int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
@@ -59,12 +52,12 @@ int Compiler::Compile(ast::AST *in, string out, string st) {
     return -1;
   // filename check
   FILE* dst = stdout;
-  if(FilenameAssert(out)){
-    dst = fopen(out.c_str(),"w");
+  if(out.length() > 0){
+    dst = fopen((out + ".c").c_str(),"w");
   }
 
   if (dst == nullptr) {
-    log_fatal("failed to open file %s", out.c_str());
+    log_fatal("failed to open file %s.c", out.c_str());
     return -1;
   }
 
