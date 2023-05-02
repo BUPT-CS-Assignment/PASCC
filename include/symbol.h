@@ -12,9 +12,6 @@
 #include <unordered_map>
 #include "type.h"
 
-
-#include "type.h"
-
 namespace pascal_symbol {
 // Object Symbols for variables
 class ObjectSymbol {
@@ -27,15 +24,14 @@ public:
   std::string name() {return name_;}
   pascal_type::TypeTemplate* type() { return type_; }
   int decl_line() { return decl_line_; }
-  std::vector<int> ref_lines() { return ref_lines_; }
-
-  void InsertRefLine(int ref_line) { ref_lines_.emplace_back(ref_line); }
+//  std::vector<int> ref_lines() { return ref_lines_; }
+//  void InsertRefLine(int ref_line) { ref_lines_.emplace_back(ref_line); }
 
 protected:
   std::string name_;
   pascal_type::TypeTemplate* type_;
   int decl_line_;
-  std::vector<int> ref_lines_;
+//  std::vector<int> ref_lines_;
 };
 
 
@@ -83,7 +79,11 @@ public:
   bool InsertParam(Parameter&);
 
   // passing parameter assertion
+<<<<<<< HEAD
   bool AssertParams(const std::vector<pascal_type::TypeTemplate *> &params);
+=======
+  bool AssertParams(const std::vector<pascal_type::TypeTemplate*>& params);
+>>>>>>> main
   // get param type
   ParamType* operator[](std::string );
   // check ref

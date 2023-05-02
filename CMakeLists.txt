@@ -5,8 +5,7 @@ project(PASCC)
 find_package(FLEX)
 find_package(BISON)
 if(FLEX_FOUND AND BISON_FOUND)
-  message(STATUS "FLEX and BISON found")
-  BISON_TARGET(Parser ${CMAKE_BINARY_DIR}/../scripts/parser.y  ${CMAKE_BINARY_DIR}/../src/parser.tab.cc  DEFINES_FILE  ${CMAKE_BINARY_DIR}/../include/parser.tab.h)
+  BISON_TARGET(Parser ${CMAKE_BINARY_DIR}/../scripts/parser.y  ${CMAKE_BINARY_DIR}/../src/parser.tab.cc  DEFINES_FILE  ${CMAKE_BINARY_DIR}/../include/parser.tab.h COMPILE_FLAGS "-t")
   FLEX_TARGET(Lexer  ${CMAKE_BINARY_DIR}/../scripts/lex.l  ${CMAKE_BINARY_DIR}/../src/lex.yy.cc)
   ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
 endif()
@@ -29,8 +28,6 @@ endif()
 
 file(GLOB_RECURSE include "include/*.h" "thirdparty/*.h" "thirdparty/*.hpp")
 file(GLOB_RECURSE src "src/*.cc")
-list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc")
-file(GLOB_RECURSE test "test/*.cc")
 file(GLOB_RECURSE tools "thirdparty/*.c" "thirdparty/*.cc")
 
 add_executable(PASCC
@@ -40,11 +37,5 @@ add_executable(PASCC
         src/parser.tab.cc
         )
 
-add_executable(PASCC_TEST
-        ${tools}
-        ${src}
-        src/lex.yy.cc
-        src/parser.tab.cc
-        ${test}
-        )
+
 

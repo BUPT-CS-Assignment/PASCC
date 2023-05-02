@@ -7,8 +7,7 @@
 
 #include "compiler.h"
 #include "type.h"
-
-#define YYPARSE_DEBUG 0
+extern int yydebug;
 
 struct Token {
   ConstValue value;
@@ -181,6 +180,7 @@ extern std::string buf;
 // #define YYSTYPE
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+
 struct YYSTYPE
 {
     Token token_info;

@@ -11,3 +11,4 @@ test/input/*
 !test/input/*.txt
 test/__pycache__
 test/.pascc.*
+[Cc]MakeFile*

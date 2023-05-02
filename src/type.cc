@@ -209,7 +209,7 @@ BasicType* TYPE_STRINGLIKE;
 OperationMap operation_map;
 
 void TypeInit() {
-  log_info("initializing pascal_type ...");
+//  log_info("initializing pascal_type ...");
   TYPE_ERROR = nullptr;
 
   TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);

@@ -1,4 +1,5 @@
 #include "ast.h"
+#include <ctime>
 
 #include "log.h"
 
@@ -12,13 +13,7 @@ namespace ast {
 /* **************** standard output **************** */
 
 /* **************** ast output **************** */
-void AST::Format(string file_name) {
-  FILE* dst = fopen(file_name.c_str(), "w");
-  if (dst == nullptr) {
-    log_fatal("failed to open file %s", file_name.c_str());
-    abort();
-  }
-
+void AST::Format(FILE* dst) {
   if (root_ != nullptr) {
     libs_.Format(dst);
     root_->Format(dst);
@@ -62,9 +57,11 @@ bool LeafNode::AnalyzeReference(TableSet* ts, FunctionSymbol* fn) {
 /////////////////////////////////////////////
 
 void ProgramHeadNode::Format(FILE* dst) {
-  PRINT("/// Program Name : ")
+  time_t now = time(nullptr);
+  tm* local = localtime(&now);
+  PRINT("/// [")
   FormatAt(0, dst);
-  PRINT("\n")
+  PRINT("] created on %d/%d/%d\n",1900 + local->tm_year,1 + local->tm_mon,local->tm_mday)
 }
 
 void ProgramBodyNode::Format(FILE* dst) {

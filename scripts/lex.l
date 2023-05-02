@@ -6,7 +6,7 @@
 int line_count = 1;
 int char_count = 1;
 int i;
-std::string buf;
+std::string cur_line_info;
 
 void wrap();
 void process_anno();
@@ -165,7 +165,7 @@ SUBCATALOG              ".."
 %%
 void wrap()
 {
-    buf.clear();
+    cur_line_info.clear();
     line_count++; 
     char_count = 1;
 }
@@ -182,8 +182,8 @@ void process_anno()
 
 void cache_line()
 {
-    buf += yytext;
-    //std::cout<<"buf is "<<buf<<std::endl;
+    cur_line_info += yytext;
+    //std::cout<<"cur_line_info is "<<cur_line_info<<std::endl;
 
 }
 
