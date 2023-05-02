@@ -70,13 +70,13 @@ int main(int argc, char** argv){
   string style = parser.get_value<string>("s");
 
   Compiler compiler;
-  int p = compiler.Compile(in,out,style);
-
+  if(compiler.Compile(in,out,style) < 0)
+    return -1;
 
   // optional test execute
   if(parser.is_call("t")) {
     string test_args = parser.get_value<string>("t");
-    compiler.CodeExecute(compiler.tmp_file(p),test_args);
+    compiler.CodeExecute(compiler.tmp_file(0),test_args);
   }
 
   // optional reserve cache
