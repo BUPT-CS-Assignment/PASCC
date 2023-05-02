@@ -58,6 +58,7 @@ int main(int argc, char** argv){
   if(parser.is_call("d")){
     int debug = parser.get_value<int>("d");
     log_set_level(debug == 0 ? 4 : debug == 1 ? 3 : debug == 2 ? 2 : 1);
+    yydebug_(debug);
   }
 
   // get input source file

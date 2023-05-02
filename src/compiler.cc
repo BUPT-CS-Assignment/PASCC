@@ -141,3 +141,7 @@ void yyinput(const char* in){
   if(yyin == nullptr)
     throw std::runtime_error("yyinput(): failed to open file " + string(in));
 }
+
+void yydebug_(int level){
+  // TODO  set yydebug
+}

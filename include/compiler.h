@@ -12,6 +12,7 @@ const std::string stdout_ = "";
 const std::string stdin_ = "";
 
 void yyinput(const char* in);
+void yydebug_(int level);
 
 class Compiler {
  public:
