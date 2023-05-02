@@ -1582,7 +1582,7 @@ type_or_ID:
 
 /* The symbol of is expected.*/
 statement:
-    CASE expression error END
+    CASE error END
     {
         yyerror(real_ast,"The symbol of is expected");
     };
@@ -1623,10 +1623,10 @@ factor:error expression ')'
           yyerror(real_ast,"An opening parenthesis is expected.");
      }
      // todo 函数调用
-//    | ID error expression_list ')'
-//    {
-//        yyerror(real_ast,"An opening parenthesis is expected.");
-//    }
+   | ID error ')'
+   {
+       yyerror(real_ast,"An opening parenthesis is expected.");
+   }
     ;
 
     /* An opening bracket is expected ([).*/
@@ -1662,7 +1662,7 @@ program_head: error ID '(' id_list ')' ';'
     };
 
     /* The symbol then is expected.*/
-// statement: IF expression error statement else_part
+// statement: IF error statement else_part
 //     {
 //         yyerror(real_ast,"The symbol then is expected.");
 //     };
@@ -1673,17 +1673,17 @@ program_head: error ID '(' id_list ')' ';'
 //     };
 
     /* The symbol do is expected.*/
-statement: WHILE expression error statement
+statement: WHILE error statement
     {
         yyerror(real_ast,"The symbol do is expected.");
     }
-    | FOR ID ASSIGNOP expression updown expression error statement
+    | FOR ID ASSIGNOP expression updown error statement
     {
         yyerror(real_ast,"The symbol do is expected.");
     };
 
     /* The symbol to (or downto) is expected.*/
-statement: FOR ID ASSIGNOP expression error expression DO statement
+statement: FOR ID ASSIGNOP error expression DO statement
     {
         yyerror(real_ast,"The symbol to (or downto) is expected.");
     };
