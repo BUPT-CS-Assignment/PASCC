@@ -13,8 +13,6 @@ extern "C"
     extern int char_count;
 }
 extern std::string buf;
-int len =0,column=0;
-char my_buffer[1024];
 //AST real_ast;
 //symbol_table::SymbolTable *real_symbol_table = new symbol_table::SymbolTable();
 std::stack<symbol_table::TableSet*> table_set_queue;
@@ -24,25 +22,6 @@ pstdlib::PStdLibs *pstdlibs = new pstdlib::PStdLibs();
 int error_flag=0;
 
 void yyerror(ast::AST* real_ast,const char *msg);
-
-void fresh_argu(){
-    column = buf.size();
-    len = strlen(yytext);
-}
-
-void yyerror_(const char *error_s){
-    // fprintf(stderr,"%d:%d:\033[01;31m \terror\033[0m : %s\n", line_count, column, error_s);
-    fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, error_s);
-    // memset(my_buffer,'\0',1024);
-    // memset(my_buffer,' ',column-len);
-    // my_buffer[column-len]='^';
-    // memset(my_buffer+column-len+1,'~',len-1);
-    fprintf(stderr,"%d\t|\t%s\n",line_count,buf.c_str());
-    // std::cout<<"  "<<line_count<<"\t|\t"<<buf<<std::endl;
-    // fprintf(stderr,"\t|\t\033[01;31m%s\033[0m\n",my_buffer);
-    // fprintf(stderr,"\t|\t%s\n",my_buffer);
-    error_flag=1;   
-}
 
 %}
 
@@ -228,7 +207,7 @@ const_declaration :
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
-            yyerror(real_ast,"The identifier has been declared.\n");
+            yyerror(real_ast,"The identifier has been declared.");
         } 
         else{
             if(error_flag)
@@ -250,7 +229,7 @@ const_declaration :
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
-            yyerror(real_ast,"The identifier has been declared.\n");
+            yyerror(real_ast,"The identifier has been declared.");
         } 
         else {
             if(error_flag)
@@ -269,7 +248,7 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = nullptr;
         if(!symbol){
-            yyerror(real_ast,"The identifier has not been declared.\n");
+            yyerror(real_ast,"The identifier has not been declared.");
         }else {
             $$.value = symbol->value();
             $$.type_ptr = symbol->type();
@@ -285,7 +264,7 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = nullptr;
         if(!symbol){
-            yyerror(real_ast,"The identifier has not been declared.\n");
+            yyerror(real_ast,"The identifier has not been declared.");
         }else {
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
@@ -301,7 +280,7 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
         $$.type_ptr = nullptr;
         if(!symbol){
-            yyerror(real_ast,"The identifier has not been declared.\n");
+            yyerror(real_ast,"The identifier has not been declared.");
         }else {
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
@@ -389,17 +368,17 @@ type_declaration :
         if ($5.main_type == TypeAttr::BASIC) {
             pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($5.type_ptr)->type());
             if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),basic_type)){
-                yyerror(real_ast,"Error: redefinition of type %s.\n");
+                yyerror(real_ast,"Error: redefinition of type %s.");
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
             //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($5.type_ptr,*($5.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),dynamic_cast<ArrayType*>($5.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.\n");
+                yyerror(real_ast,"Error: redefinition of type %s.");
             } 
         } else if ($5.record_info) {
             //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($5.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),dynamic_cast<RecordType*>($5.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.\n");
+                yyerror(real_ast,"Error: redefinition of type %s.");
             } 
         }
 
@@ -419,17 +398,17 @@ type_declaration :
         if ($3.main_type == TypeAttr::BASIC) {
             pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($3.type_ptr)->type());
             if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),basic_type)){
-                yyerror(real_ast,"Error: redefinition of type %s.\n");
+                yyerror(real_ast,"Error: redefinition of type %s.");
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
             //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($3.array_type_ptr,*($3.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),dynamic_cast<ArrayType*>($3.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.\n");
+                yyerror(real_ast,"Error: redefinition of type %s.");
             } 
         } else if ($3.record_info) {
             //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($3.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),dynamic_cast<RecordType*>($3.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.\n");
+                yyerror(real_ast,"Error: redefinition of type %s.");
             } 
         }
 
@@ -569,10 +548,10 @@ period :
             $$.bound->lb_ = int($1.value.get<int>());
             $$.bound->ub_ = int($3.value.get<int>());
         } else {
-            yyerror(real_ast,"array bound must be integer or char\n");
+            yyerror(real_ast,"array bound must be integer or char");
         }
         if(arr_len < 0){
-            yyerror(real_ast,"array bound must be positive\n");
+            yyerror(real_ast,"array bound must be positive");
         }
         if(error_flag){
             break;
@@ -597,7 +576,7 @@ var_declarations :
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
-                yyerror(real_ast,"redefinition of variable\n");
+                yyerror(real_ast,"redefinition of variable");
             }
         }
         // var_declarations -> var var_declaration.
@@ -614,7 +593,7 @@ var_declaration :
         for (auto i : *($3.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $5.type_ptr));
             if (!res.second){
-             yyerror(real_ast,"redefinition of variable\n");
+             yyerror(real_ast,"redefinition of variable");
             }
         }
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
@@ -630,7 +609,7 @@ var_declaration :
         for (auto i : *($1.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
             if (!res.second){
-             yyerror(real_ast,"redefinition of variable\n");
+             yyerror(real_ast,"redefinition of variable");
              }
         }
         // var_declaration -> id : type.
@@ -645,12 +624,12 @@ var_declaration :
         $$.record_info = $1.record_info;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
-            yyerror(real_ast,"undefined type\n");
+            yyerror(real_ast,"undefined type");
         } else {
             for (auto i : *($3.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
                 if (!res.second){
-                    yyerror(real_ast,"redefinition of variable\n");
+                    yyerror(real_ast,"redefinition of variable");
                 }
             }
         }
@@ -666,13 +645,13 @@ var_declaration :
                 break;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
-            yyerror(real_ast,"undefined type\n");
+            yyerror(real_ast,"undefined type");
         } else {
             $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
             for (auto i : *($1.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
                 if (!res.second){
-                    yyerror(real_ast,"redefinition of variable\n");
+                    yyerror(real_ast,"redefinition of variable");
                 }
             }
         }
@@ -680,26 +659,7 @@ var_declaration :
         $$.variable_declaration_node->append_child($1.id_list_node);
         LeafNode *leaf_node = new LeafNode($3.value);
         $$.variable_declaration_node->append_child(leaf_node);
-    }
-    | id_list error type_or_ID
-    {
-        yyerror_("A colon is expected. In declarations, the colon is followed by a type.");
-    }
-    | var_declaration ';' id_list error type_or_ID
-    {
-        yyerror_("A colon is expected. In declarations, the colon is followed by a type.");
-    }
-    | var_declaration ';' error ':' type_or_ID
-    {
-        yyerror_("An identifier is expected.");
-    }
-    | error ':' type_or_ID
-    {
-        yyerror_("An identifier is expected.");
     };
-type_or_ID:
-    type
-    |ID;
 subprogram_declarations : 
     {
         if(error_flag)
@@ -753,7 +713,7 @@ subprogram_head :
             tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num);
         }
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            yyerror(real_ast,"redefinition of function\n");
+            yyerror(real_ast,"redefinition of function");
         } 
 
         
@@ -765,7 +725,7 @@ subprogram_head :
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
-                    yyerror(real_ast,"redefinition of variable\n");
+                    yyerror(real_ast,"redefinition of variable");
                 }
             }
         }
@@ -792,7 +752,7 @@ subprogram_head :
         }
         
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            yyerror(real_ast,"redefinition of function\n");
+            yyerror(real_ast,"redefinition of function");
         } 
 
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(),table_set_queue.top());
@@ -803,7 +763,7 @@ subprogram_head :
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
-                    yyerror(real_ast,"redefinition of variable\n");
+                    yyerror(real_ast,"redefinition of variable");
                 }
             }
         }
@@ -1078,7 +1038,7 @@ variable:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
              $$.type_ptr = nullptr;
-            yyerror(real_ast,"variable not defined\n");
+            yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
             $$.type_ptr = tmp->type();//TODO
@@ -1213,7 +1173,7 @@ const_list:
     {
         // const_list -> const_list , const_variable.
         if($1.type_ptr != $3.type_ptr) {
-           yyerror(real_ast,"const_list type not match\n");
+           yyerror(real_ast,"const_list type not match");
         }
         $$.type_ptr = $1.type_ptr;
         if(error_flag)
@@ -1253,7 +1213,7 @@ call_procedure_statement:
         // call_procedure_statement -> id (expression_list).
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+            yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
         if(error_flag)
             break;
@@ -1268,7 +1228,7 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+            yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
         if(error_flag)
             break;
@@ -1518,7 +1478,7 @@ factor:
         // 类型检查
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+            yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
         $$.type_ptr = tmp->type();
         if(error_flag)
@@ -1597,13 +1557,40 @@ unsigned_const_variable :
         $$.unsigned_constant_var_node->append_child(false_node);
     };
 
+/*---------------.
+| Error handler  |
+`---------------*/
+var_declaration:
+    var_declaration ';' id_list error type_or_ID
+    {
+        yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
+    }
+    | var_declaration ';' error ':' type_or_ID
+    {
+        yyerror(real_ast, "An identifier is expected.");
+    }
+    | error ':' type_or_ID
+    {
+        yyerror(real_ast, "An identifier is expected.");
+    }
+    | id_list error type_or_ID
+    {
+        yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
+    };
+
+type_or_ID:
+    type
+    |ID;
+
+/* The symbol of is expected.*/
+
+
 %%
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
-    //printf("%d :",line_count);
-    printf("%d: \033[31merror\033[0m:%s",line_count,msg);
-    printf("%d:%s\n",line_count,buf.c_str());
+    fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
+    fprintf(stderr,"%d\t|\t%s\n",line_count,buf.c_str());
     error_flag = 1;
     real_ast->set_root(nullptr);
 }
