@@ -142,4 +142,5 @@ void yyinput(const char* in){
 
 void yydebug_(int level){
   // TODO  set yydebug
+  yydebug = (level == 4);
 }

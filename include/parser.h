@@ -7,6 +7,7 @@
 
 #include "compiler.h"
 #include "type.h"
+extern int yydebug;
 
 struct Token {
   ConstValue value;
@@ -178,6 +179,7 @@ extern std::string buf;
 // #define YYSTYPE
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+
 struct YYSTYPE
 {
     Token token_info;
