@@ -1558,6 +1558,7 @@ unsigned_const_variable :
 /*---------------.
 | Error handler  |
 `---------------*/
+/* A colon is expected. In declarations, the colon is followed by a type.*/
 var_declaration:
     var_declaration ';' id_list error type_or_ID
     {
@@ -1575,12 +1576,137 @@ var_declaration:
     {
         yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
     };
-
 type_or_ID:
     type
     |ID;
 
 /* The symbol of is expected.*/
+statement:
+    CASE expression error END
+    {
+        yyerror(real_ast,"The symbol of is expected");
+    };
+type:
+    ARRAY '[' periods ']' error type
+    {
+        yyerror(real_ast,"The symbol of is expected");
+    };
+
+/* An opening parenthesis is expected.*/
+program_head: PROGRAM ID error ';'
+    {
+        yyerror(real_ast,"An opening parenthesis is expected.");
+    };
+formal_parameter: error ')'
+    {
+        yyerror(real_ast,"An opening parenthesis is expected.");
+    };
+statement:
+    READ error variable_list ')'
+    {
+        yyerror(real_ast,"An opening parenthesis is expected.");
+    }
+    | WRITE error expression_list ')'
+    {
+        yyerror(real_ast,"An opening parenthesis is expected.");
+    }
+    | WRITELN error expression_list ')'
+    {
+        yyerror(real_ast,"An opening parenthesis is expected.");
+    };
+call_procedure_statement: ID error expression_list ')'
+    {
+        yyerror(real_ast,"An opening parenthesis is expected.");
+    };
+factor:error expression ')'
+     {
+          yyerror(real_ast,"An opening parenthesis is expected.");
+     }
+     // todo 函数调用
+//    | ID error expression_list ')'
+//    {
+//        yyerror(real_ast,"An opening parenthesis is expected.");
+//    }
+    ;
+
+    /* An opening bracket is expected ([).*/
+// type: ARRAY error periods ']' OF type
+//     {
+//         yyerror(real_ast,"An opening bracket is expected ([).");
+//     };
+// id_varpart: error expression_list ']'
+//     {
+//        yyerror(real_ast,"An opening bracket is expected ([).");
+//     };
+
+    /* A closing bracket is expected (]).*/
+// type: ARRAY '[' periods error OF type
+//     {
+//         yyerror(real_ast,"An closing bracket is expected (]).");
+//     };
+// id_varpart: '[' expression_list error
+//     {
+//        yyerror(real_ast,"An closing bracket is expected (]).");
+//     };
+
+    /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
+program: program_head program_body error
+    {
+       yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
+    };
+
+    /* Every program must begin with the symbol program.*/
+program_head: error ID '(' id_list ')' ';'
+    {
+          yyerror(real_ast,"Every program must begin with the symbol program.");
+    };
+
+    /* The symbol then is expected.*/
+// statement: IF expression error statement else_part
+//     {
+//         yyerror(real_ast,"The symbol then is expected.");
+//     };
+    /* The symbol until is expected.*/
+// statement: REPEAT statement_list error expression
+//     {
+//         yyerror(real_ast,"The symbol until is expected.");
+//     };
+
+    /* The symbol do is expected.*/
+statement: WHILE expression error statement
+    {
+        yyerror(real_ast,"The symbol do is expected.");
+    }
+    | FOR ID ASSIGNOP expression updown expression error statement
+    {
+        yyerror(real_ast,"The symbol do is expected.");
+    };
+
+    /* The symbol to (or downto) is expected.*/
+statement: FOR ID ASSIGNOP expression error expression DO statement
+    {
+        yyerror(real_ast,"The symbol to (or downto) is expected.");
+    };
+
+    /* The symbol begin is expected.*/
+// compound_statement: error statement_list END
+//     {
+//         yyerror(real_ast,"The symbol begin is expected.");
+//     };
+
+    /* The symbol and is expected.*/
+
+    /* The symbol := is expected. */
+statement: FOR ID error expression updown expression DO statement
+    {
+        yyerror(real_ast,"The symbol := is expected.");
+    }
+    // |variable error expression
+    // {
+
+    // }
+    ;
+
 
 
 %%
