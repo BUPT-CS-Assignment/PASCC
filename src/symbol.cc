@@ -58,7 +58,7 @@ bool FunctionSymbol::AssertParams(const vector<TypeTemplate*>& params_in){
 
   for (int i = 0; i < params_in.size(); i++) {
     // assert parameter type
-    if (params_in[i] != params_[2*i].second.first) {
+    if (params_in[i] != params_[i].second.first) {
     //    std::cout << params_in[i] << params_[i].second.first << std::endl;
       return false;
     }
