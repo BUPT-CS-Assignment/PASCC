@@ -1622,7 +1622,6 @@ factor:error expression ')'
      {
           yyerror(real_ast,"An opening parenthesis is expected.");
      }
-     // todo 函数调用
    | ID error ')'
    {
        yyerror(real_ast,"An opening parenthesis is expected.");
@@ -1630,14 +1629,15 @@ factor:error expression ')'
     ;
 
     /* An opening bracket is expected ([).*/
-// type: ARRAY error periods ']' OF type
-//     {
-//         yyerror(real_ast,"An opening bracket is expected ([).");
-//     };
-// id_varpart: error expression_list ']'
-//     {
-//        yyerror(real_ast,"An opening bracket is expected ([).");
-//     };
+type: ARRAY error periods ']' OF type
+    {
+        yyerror(real_ast,"An opening bracket is expected ([).");
+    };
+variable:
+  error ']'
+    {
+       yyerror(real_ast,"An opening bracket is expected ([).");
+    };
 
     /* A closing bracket is expected (]).*/
 // type: ARRAY '[' periods error OF type
@@ -1713,6 +1713,8 @@ statement: FOR ID error expression updown expression DO statement
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
+    if(strcmp(msg,"syntax error")==0)
+        return;
     fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
     fprintf(stderr,"%d\t|\t%s\n",line_count,cur_line_info.c_str());
     error_flag = 1;
