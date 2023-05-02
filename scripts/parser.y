@@ -9,10 +9,8 @@ extern "C"
     void yyerror(const char *s);
     extern int yylex(void);
     extern int line_count;
-    extern char* yytext;
-    extern int char_count;
 }
-extern std::string buf;
+extern std::string cur_line_info;
 //AST real_ast;
 //symbol_table::SymbolTable *real_symbol_table = new symbol_table::SymbolTable();
 std::stack<symbol_table::TableSet*> table_set_queue;
@@ -1590,7 +1588,7 @@ type_or_ID:
 
 void yyerror(ast::AST* real_ast,const char *msg){
     fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
-    fprintf(stderr,"%d\t|\t%s\n",line_count,buf.c_str());
+    fprintf(stderr,"%d\t|\t%s\n",line_count,cur_line_info.c_str());
     error_flag = 1;
     real_ast->set_root(nullptr);
 }
