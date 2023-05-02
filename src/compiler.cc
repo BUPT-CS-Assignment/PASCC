@@ -20,9 +20,7 @@ std::set<std::string> Compiler::CODE_STYLES = {
 int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   ast::AST ast;
-  #if YYDEBUG
-  yydebug = 1;
-  #endif
+
   if(yyparse(&ast) == 0){
     log_info("syntax assert no-error");
   }else{
