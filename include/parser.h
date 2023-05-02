@@ -140,7 +140,7 @@ struct VarParts {
 struct IDVarpartsAttr {
   std::vector<VarParts>* var_parts;
   ast::IDVarPartsNode *id_varparts_node;
-  bool ArrayAccessCheck(pascal_type::TypeTemplate *base_type);
+  bool ArrayAccessCheck(pascal_type::ArrayType *base_type);
 };
 
 struct IDVarpartAttr {

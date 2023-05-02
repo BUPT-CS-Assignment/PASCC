@@ -37,7 +37,8 @@ add_executable(PASCC
         ${tools}
         ${src}
         src/lex.yy.cc
-        src/parser.tab.cc)
+        src/parser.tab.cc
+        )
 
 add_executable(PASCC_TEST
         ${tools}
