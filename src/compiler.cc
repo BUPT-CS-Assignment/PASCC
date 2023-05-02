@@ -84,8 +84,11 @@ void Compiler::CodeFormat(string file_name, string st) {
   }
 
   char cmd_buf[128];
+#ifdef WIN32
   sprintf(cmd_buf, CLANG_FORMAT,cur_dir_.c_str(),st.c_str(), file_name.c_str());
-  printf("%s\n",cmd_buf);
+#else
+  sprintf(cmd_buf, CLANG_FORMAT,st.c_str(), file_name.c_str());
+#endif
   system(cmd_buf);
 }
 
@@ -97,9 +100,9 @@ void Compiler::Remove(std::string file_name) {
   const char* fp = file_name.c_str();
 
 #ifdef WIN32
-    sprintf(cmd_buf,"if exist \"%s.*\" del \"%s.*\"",fp,fp);
+    sprintf(cmd_buf,"if exist \"%s.exe\" del \"%s.exe\"",fp,fp);
 #else
-    sprintf(cmd_buf,"if [ -f %s.* ]; then rm %s.*; fi;",fp,fp);
+    sprintf(cmd_buf,"if [ -f %s.out ]; then rm %s.out; fi;",fp,fp);
 #endif
     system(cmd_buf);
 }
