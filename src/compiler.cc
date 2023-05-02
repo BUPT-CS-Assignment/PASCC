@@ -21,7 +21,7 @@ Compiler::Compiler(std::string dir) {
 #ifdef WIN32
   size_t pos = dir.rfind("\\");
 #else
-  size_t pos = base_path.rfind("/");
+  size_t pos = dir.rfind("/");
 #endif
   if(pos != std::string::npos){
     cur_dir_ = dir.substr(0, pos);
@@ -99,7 +99,7 @@ void Compiler::Remove(std::string file_name) {
 #ifdef WIN32
     sprintf(cmd_buf,"if exist \"%s.*\" del \"%s.*\"",fp,fp);
 #else
-    sprintf(cmd_buf,"if [ -f %s.* ]; then rm %s.*; fi;",fp);
+    sprintf(cmd_buf,"if [ -f %s.* ]; then rm %s.*; fi;",fp,fp);
 #endif
     system(cmd_buf);
 }
