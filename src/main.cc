@@ -71,7 +71,7 @@ int main(int argc, char** argv){
 
   Compiler compiler;
   if(compiler.Compile(in,out,style) < 0)
-    return -1;
+    return 1;
 
   // optional test execute
   if(parser.is_call("t")) {

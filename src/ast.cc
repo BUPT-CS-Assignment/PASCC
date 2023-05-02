@@ -1,4 +1,5 @@
 #include "ast.h"
+#include <ctime>
 
 #include "log.h"
 
@@ -62,9 +63,11 @@ bool LeafNode::AnalyzeReference(TableSet* ts, FunctionSymbol* fn) {
 /////////////////////////////////////////////
 
 void ProgramHeadNode::Format(FILE* dst) {
-  PRINT("/// Program Name : ")
+  time_t now = time(nullptr);
+  tm* local = localtime(&now);
+  PRINT("/// [")
   FormatAt(0, dst);
-  PRINT("\n")
+  PRINT("] created on %d/%d/%d\n",1900 + local->tm_year,local->tm_mon,local->tm_mday)
 }
 
 void ProgramBodyNode::Format(FILE* dst) {
