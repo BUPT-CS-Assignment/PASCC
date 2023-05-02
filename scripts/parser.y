@@ -681,6 +681,14 @@ var_declaration :
         LeafNode *leaf_node = new LeafNode($3.value);
         $$.variable_declaration_node->append_child(leaf_node);
     }
+    | id_list error type_or_ID
+    {
+        yyerror_("A colon is expected. In declarations, the colon is followed by a type.");
+    }
+    | var_declaration ';' id_list error type_or_ID
+    {
+        yyerror_("A colon is expected. In declarations, the colon is followed by a type.");
+    }
     | var_declaration ';' error ':' type_or_ID
     {
         yyerror_("An identifier is expected.");
@@ -1529,12 +1537,6 @@ factor:
             break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::EXP);
         $$.factor_node->append_child($2.expression_node);
-    }
-    | '(' expression {column = buf.size();len = strlen(yytext);}error ';'
-    {
-        if(error_flag)
-            break;
-        yyerror_("A closing parenthesis is expected.\n");
     }
     | NOT factor
     {   

@@ -1,0 +1,8 @@
+program TestError5(void);
+var
+  a : char;
+  b  integer;
+  c : char;
+  d  B;
+begin
+end.
