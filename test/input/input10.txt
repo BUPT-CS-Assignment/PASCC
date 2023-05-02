@@ -3,6 +3,6 @@ var
     a : char;
     : integer;
     c : char;
-    : char;
+    : B;
 begin
 end.
