@@ -10,20 +10,21 @@ using std::string;
 
 /*  test command examples
  *  - arguments list
- *    usage: ${PASCC_TEST} [-i] [-o] [-t] [-r]
+ *    usage: ${PASCC} [-i] [-o] [-t] [-r]
  *    optional arguments:
  *    tag  name      n-args  note
  *     -h, --help      -     show help message
  *     -i, --input    [?]    input json file
  *     -o, --output   [?]    output c file
+ *     -s, --style    [?]    code style
  *     -t, --test     [?]    test output c file, optional test args
  *     -r, --reserve  [?]    reserve cache files
  *
- *  - set input and print result to screen
- *      ${PASCC_TEST} -i input/input01.txt
+ *  - set input and print result to screen, set code style and reserve cache files
+ *      ${PASCC} -i input/input01.txt -s google -r
  *
- *  - set input and output destination, run c files generated and set running arguments, finally
- *      ${PASCC_TEST} -i input/input01.txt -o output/output01.c -t "> test.out" -r
+ *  - set input and output destination, run c files generated and set running arguments
+ *      ${PASCC} -i input/input01.txt -o output/output01.c -t "> test.out"
  *
  */
 
@@ -35,6 +36,9 @@ int main(int argc, char** argv){
   // add optional argument 'output file' to set output c file
   parser.add_argument<string>("-o","--output").nArgs('?').help("output c file")
         .default_("");
+  // add optional argument 'code style' to set coding styles
+  parser.add_argument<string>("-s","--style").nArgs('?').help("code style")
+        .choices({"google","llvm","chromium","mozilla","webkit"});
   // add optional argument 'test' to run test and set test args
   parser.add_argument<string>("-t","--test").nArgs('?').help("test output c file, optional test args")
         .default_("");
@@ -48,9 +52,11 @@ int main(int argc, char** argv){
   string in = parser.get_value<string>("i");
   // get output destination
   string out = parser.get_value<string>("o");
+  // get code styles
+  string style = parser.get_value<string>("s");
 
   Compiler compiler;
-  int p = compiler.Compile(in,out);
+  int p = compiler.Compile(in,out,style);
 
 
   // optional test execute

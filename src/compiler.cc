@@ -9,8 +9,15 @@
 #include <fstream>
 using std::string;
 
+std::set<std::string> Compiler::CODE_STYLES = {
+    "llvm",
+    "google",
+    "chromium",
+    "mozilla",
+    "webkit",
+};
 
-int Compiler::Compile(string in, string out, Compiler::CODE_STYLE st) {
+int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   ast::AST ast;
   #if YYDEBUG
@@ -23,7 +30,8 @@ int Compiler::Compile(string in, string out, Compiler::CODE_STYLE st) {
   return Compile(&ast,out,st);
 }
 
-int Compiler::Compile(ast::AST *in, string out, Compiler::CODE_STYLE st) {
+
+int Compiler::Compile(ast::AST *in, string out, string st) {
   if(in == nullptr || in->root() == nullptr)
     return -1;
   // filename check
@@ -69,20 +77,15 @@ void Compiler::CodePrint(string file_name,FILE* dst) {
 }
 
 
-void Compiler::CodeFormat(string file_name, Compiler::CODE_STYLE st) {
-  if(file_name == stdin_ || st == CODE_STYLE::NONE) return;
-  string style;
-  switch (st) {
-    case CODE_STYLE::LLVM:      style="llvm";break;
-    case CODE_STYLE::GOOGLE:    style="google";break;
-    case CODE_STYLE::CHROMIUM:  style="chromium";break;
-    case CODE_STYLE::MOZILLA:   style="mozilla";break;
-    case CODE_STYLE::WEBKIT:    style="webkit";break;
-    default:return;
+void Compiler::CodeFormat(string file_name, string st) {
+  if(file_name == stdin_ || st.length() == 0) return;
+  if(CODE_STYLES.find(st) == CODE_STYLES.end()) {
+    log_warn("undefined code style: %s, reset to 'google'", st.c_str());
+    st = "google";
   }
 
   char cmd_buf[64];
-  sprintf(cmd_buf, CLANG_FORMAT,style.c_str(), file_name.c_str());
+  sprintf(cmd_buf, CLANG_FORMAT,st.c_str(), file_name.c_str());
   system(cmd_buf);
 }
 
