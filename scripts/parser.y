@@ -32,15 +32,15 @@ void fresh_argu(){
 
 void yyerror_(const char *error_s){
     // fprintf(stderr,"%d:%d:\033[01;31m \terror\033[0m : %s\n", line_count, column, error_s);
-    fprintf(stderr,"%d:%d:\terror: %s\n", line_count, 4, error_s);
-    memset(my_buffer,'\0',1024);
-    memset(my_buffer,' ',column-len);
-    my_buffer[column-len]='^';
-    memset(my_buffer+column-len+1,'~',len-1);
-    fprintf(stderr,"  %d\t|\t%s\n",line_count,buf.c_str());
+    fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, error_s);
+    // memset(my_buffer,'\0',1024);
+    // memset(my_buffer,' ',column-len);
+    // my_buffer[column-len]='^';
+    // memset(my_buffer+column-len+1,'~',len-1);
+    fprintf(stderr,"%d\t|\t%s\n",line_count,buf.c_str());
     // std::cout<<"  "<<line_count<<"\t|\t"<<buf<<std::endl;
     // fprintf(stderr,"\t|\t\033[01;31m%s\033[0m\n",my_buffer);
-    fprintf(stderr,"\t|\t%s\n",my_buffer);
+    // fprintf(stderr,"\t|\t%s\n",my_buffer);
     error_flag=1;   
 }
 
@@ -629,14 +629,14 @@ var_declarations :
     }
     | VAR var_declaration ';'
     {
+        if(error_flag)
+            break;
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
                 yyerror(real_ast,"redefinition of variable\n");
             }
         }
-        if(error_flag)
-            break;
         // var_declarations -> var var_declaration.
         $$ = new VariableDeclarationsNode();
         $$->append_child($2.variable_declaration_node);
@@ -645,7 +645,8 @@ var_declarations :
 var_declaration :
     var_declaration ';' id_list ':' type 
     {
-        
+        if(error_flag)
+            break;
         // var_declaration -> var_declaration ; id_list : type.
         $$.record_info = $1.record_info;
         for (auto i : *($3.list_ref)){
@@ -654,8 +655,6 @@ var_declaration :
              yyerror(real_ast,"redefinition of variable\n");
             }
         }
-        if(error_flag)
-            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -724,10 +723,13 @@ var_declaration :
         $$.variable_declaration_node->append_child(leaf_node);
         if(YYPARSE_DEBUG) printf("var_declaration -> id_list : ID.\n");
     }
-    | {column = buf.size(); len = strlen(yytext);} ':' error type
+    | var_declaration ';' error ':' type
     {
         yyerror_("An identifier is expected.");
-        // if ( YYPARSE_DEBUG ) printf("An identifier is expected.\n");
+    }
+    | error ':' type
+    {
+        yyerror_("An identifier is expected.");
     };
 subprogram_declarations : 
     {
@@ -735,7 +737,6 @@ subprogram_declarations :
             break;
         // subprogram_declarations -> empty.
         $$ = new SubprogramDeclarationsNode();
-        if (YYPARSE_DEBUG) printf("subprogram_declarations -> empty.\n");
     }
     | subprogram_declarations subprogram_declaration ';'
     {
@@ -745,9 +746,7 @@ subprogram_declarations :
         $$ = new SubprogramDeclarationsNode();
         $$->append_child($1);
         $$->append_child($2);
-        table_set_queue.pop();
-        if  (YYPARSE_DEBUG) printf("subprogram_declarations -> subprogram_declarations subprogram_declaration.\n");
-        
+        table_set_queue.pop();        
     };
 subprogram_declaration :
     subprogram_head subprogram_body
@@ -758,7 +757,6 @@ subprogram_declaration :
         $$ = new SubprogramDeclarationNode();
         $$->append_child($1);
         $$->append_child($2);
-        if (YYPARSE_DEBUG) printf("subprogram_declaration -> subprogram_head program_body.\n");
     };
 subprogram_body :
     const_declarations type_declarations var_declarations compound_statement
@@ -770,7 +768,6 @@ subprogram_body :
         $$->append_child($2);
         $$->append_child($3);
         $$->append_child($4);
-        if (YYPARSE_DEBUG) printf("subprogram_body -> const_declarations type_declarations var_declarations compound_statement.\n");
     };
 subprogram_head :
     FUNCTION ID formal_parameter ':' standrad_type ';'
@@ -810,7 +807,6 @@ subprogram_head :
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
         $$->append_child($5.standard_type_node);
-        if(YYPARSE_DEBUG) printf("subprogram_head -> function id formal_parameter : standrad_type.\n");
     }
     | PROCEDURE ID formal_parameter ';'
     {
