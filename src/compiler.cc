@@ -17,6 +17,28 @@ std::set<std::string> Compiler::CODE_STYLES = {
     "webkit",
 };
 
+Compiler::Compiler(std::string dir) {
+#ifdef WIN32
+  size_t pos = dir.rfind("\\");
+#else
+  size_t pos = base_path.rfind("/");
+#endif
+  if(pos != std::string::npos){
+    cur_dir_ = dir.substr(0, pos);
+  }else{
+    cur_dir_ = dir;
+  }
+  log_info("compiler: current dir : %s", cur_dir_.c_str());
+}
+
+bool Compiler::FilenameAssert(std::string &file) {
+  size_t len = file.length();
+  if(len == 0 || len >= 64) return false;
+  if(len < 2 || (file[len - 2] != '.' && file[len - 1] != 'c'))
+    file += ".c";
+  return true;
+}
+
 int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   ast::AST ast;
@@ -36,73 +58,50 @@ int Compiler::Compile(ast::AST *in, string out, string st) {
   if(in == nullptr || in->root() == nullptr)
     return -1;
   // filename check
-  size_t len = out.length();
-  FILE* out_dst = stdout;
-  if(len > 0){
-    if(len < 2 || (out[len - 2] != '.' && out[len - 1] != 'c'))  out += ".c";
-    out_dst = fopen(out.c_str(),"w");
-    log_info("compiler: result will format to %s", out.c_str());
+  FILE* dst = stdout;
+  if(FilenameAssert(out)){
+    dst = fopen(out.c_str(),"w");
   }
 
-  // temp-file create
-  string tmp_file_name = string(TMP_FILE_FORMAT) + std::to_string(time(nullptr));
-  temp_files_.push_back(tmp_file_name);
+  if (dst == nullptr) {
+    log_fatal("failed to open file %s", out.c_str());
+    return -1;
+  }
 
   // ast-format
-  in->Format(tmp_file_name + ".c");
+  in->Format(dst);
   // code-format
-  CodeFormat(tmp_file_name + ".c", st);
-  // print
-  CodePrint(tmp_file_name + ".c", out_dst);
-  return temp_files_.size() - 1;
-}
-
-
-void Compiler::CodePrint(string file_name,FILE* dst) {
-  if(file_name == stdin_) return;
-
-  std::filebuf fbuf;
-  if(fbuf.open(file_name.c_str(), std::ios::in) == nullptr)
-    throw std::runtime_error("failed to open file " + file_name);
-
-  if(dst == nullptr)
-    throw std::runtime_error("no output file stream");
-
-  std::istream ss(&fbuf);
-  std::string strbuf;
-  while(!ss.eof()) {
-    std::getline(ss,strbuf);
-    fprintf(dst,"%s\n",strbuf.c_str());
-  }
-  fbuf.close();
+  CodeFormat(out,st);
+  return 0;
 }
 
 
 void Compiler::CodeFormat(string file_name, string st) {
-  if(file_name == stdin_ || st.length() == 0) return;
+  if(file_name.length() == 0 || st.length() == 0) return;
   if(CODE_STYLES.find(st) == CODE_STYLES.end()) {
     log_warn("undefined code style: %s, reset to 'google'", st.c_str());
     st = "google";
   }
 
-  char cmd_buf[64];
-  sprintf(cmd_buf, CLANG_FORMAT,st.c_str(), file_name.c_str());
+  char cmd_buf[128];
+  sprintf(cmd_buf, CLANG_FORMAT,cur_dir_.c_str(),st.c_str(), file_name.c_str());
+  printf("%s\n",cmd_buf);
   system(cmd_buf);
 }
 
-void Compiler::Clear() {
+void Compiler::Remove(std::string file_name) {
   log_info("compiler: clean cache files");
   char cmd_buf[128];
-  for(auto& f : temp_files_) {
-    const char* fp = f.c_str();
+  if(file_name.length() == 0) return;
+
+  const char* fp = file_name.c_str();
+
 #ifdef WIN32
     sprintf(cmd_buf,"if exist \"%s.*\" del \"%s.*\"",fp,fp);
 #else
-    sprintf(cmd_buf,"if [ -f %s.* ]; then rm %s.*; fi;",fp,fp);
+    sprintf(cmd_buf,"if [ -f %s.* ]; then rm %s.*; fi;",fp);
 #endif
     system(cmd_buf);
-  }
-  temp_files_.clear();
 }
 
 
@@ -116,14 +115,6 @@ void Compiler::CodeExecute(string file_name, string args) {
   string cmd = string(cmd_buf) + args;
   log_info("exec: exec command : %s",cmd.c_str());
   system(cmd.c_str());
-}
-
-
-const char* Compiler::tmp_file(int pos) {
-  if(temp_files_.size() == 0) return nullptr;
-  if(pos < 0) pos = temp_files_.size() + pos;
-  if(pos < 0 || pos >= temp_files_.size()) return nullptr;
-  return temp_files_[pos].c_str();
 }
 
 

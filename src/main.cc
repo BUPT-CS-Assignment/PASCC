@@ -30,6 +30,8 @@ using std::string;
  *
  */
 
+void dir_make(std::string&);
+
 int main(int argc, char** argv){
   ArgumentParser parser;
   // add optional argument 'input json file' to set input json file
@@ -64,25 +66,36 @@ int main(int argc, char** argv){
 
   // get input source file
   string in = parser.get_value<string>("i");
+  dir_make(in);
   // get output destination
   string out = parser.get_value<string>("o");
+  dir_make(out);
   // get code styles
   string style = parser.get_value<string>("s");
 
-  Compiler compiler;
+  string dir = string(argv[0]);
+  Compiler compiler(dir);
   if(compiler.Compile(in,out,style) < 0)
     return 1;
 
   // optional test execute
   if(parser.is_call("t")) {
     string test_args = parser.get_value<string>("t");
-    compiler.CodeExecute(compiler.tmp_file(0),test_args);
+    compiler.CodeExecute(out,test_args);
   }
 
   // optional reserve cache
   if(!parser.is_call("r")){
-    compiler.Clear();
+    compiler.Remove(out);
   }
 
   return 0;
+}
+
+void dir_make(string& dir){
+#ifdef WIN32
+  std::replace(dir.begin(),dir.end(),'/','\\');
+#else
+  std::replace(dir.begin(),dir.end(),'\\','/');
+#endif
 }

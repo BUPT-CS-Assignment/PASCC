@@ -69,9 +69,9 @@ class AST {
 
   /**
    * @brief print AST
-   * @param file_name
+   * @param FILE ptr
    */
-  void Format(std::string file_name);
+  void Format(FILE* dst);
 
 private:
   Node* root_;  // root node pointer
