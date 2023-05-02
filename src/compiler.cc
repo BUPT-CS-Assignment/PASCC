@@ -22,6 +22,9 @@ int Compiler::Compile(string in, string out, string st) {
   ast::AST ast;
   if(yyparse(&ast) == 0){
     log_info("syntax assert no-error");
+  }else{
+    log_error("syntax error");
+    return -1;
   }
   // ast format
   return Compile(&ast,out,st);

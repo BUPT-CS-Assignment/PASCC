@@ -36,19 +36,7 @@ add_executable(PASCC
         ${src}
         src/lex.yy.cc
         src/parser.tab.cc
-        main/main.cc)
+        )
 
-find_package(Python3)
-if (Python3_FOUND)
-  message(STATUS "_Python3_INCLUDE_DIR: ${_Python3_INCLUDE_DIR}")
-  include_directories(${_Python3_INCLUDE_DIR})
-  add_library(PASCC_LIB SHARED
-          ${tools}
-          ${src}
-          src/lex.yy.cc
-          src/parser.tab.cc
-          main/lib_main.cc
-          )
-endif()
 
 

@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "parser.tab.h"
 #include "argparse.hpp"
+#include "log.h"
 using std::string;
 
 /*  test command examples
@@ -17,6 +18,7 @@ using std::string;
  *     -i, --input    [?]    input json file
  *     -o, --output   [?]    output c file
  *     -s, --style    [?]    code style
+ *     -d, --debug    [?]    debug mode (0: ERROR, 1: WARN, 2: INFO, 3: DEBUG)
  *     -t, --test     [?]    test output c file, optional test args
  *     -r, --reserve  [?]    reserve cache files
  *
@@ -39,6 +41,9 @@ int main(int argc, char** argv){
   // add optional argument 'code style' to set coding styles
   parser.add_argument<string>("-s","--style").nArgs('?').help("code style")
         .choices({"google","llvm","chromium","mozilla","webkit"});
+  // add optional argument 'debug level' to set debug level
+  parser.add_argument<int>("-d","--debug").nArgs('?').help("debug level")
+        .choices({0,1,2,3}).default_(2);
   // add optional argument 'test' to run test and set test args
   parser.add_argument<string>("-t","--test").nArgs('?').help("test output c file, optional test args")
         .default_("");
@@ -48,6 +53,13 @@ int main(int argc, char** argv){
   // argument parse
   parser.parse_args(argc, argv);
   // get argument value
+  // set debug level
+  log_set_level(2);
+  if(parser.is_call("d")){
+    int debug = parser.get_value<int>("d");
+    log_set_level(debug == 0 ? 4 : debug == 1 ? 3 : debug == 2 ? 2 : 1);
+  }
+
   // get input source file
   string in = parser.get_value<string>("i");
   // get output destination
