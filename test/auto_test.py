@@ -5,7 +5,7 @@ test_case_num = 9
 
 def run_program(input_file):
     input_file_c = input_file.replace('.txt', '.c')
-    subprocess.Popen(['../bin/PASCC_TEST', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE).wait()
+    subprocess.Popen(['../bin/PASCC', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE).wait()
     
     input_file_exe = input_file.replace('.txt', '')
     process = subprocess.Popen(['gcc', '-o', input_file_exe, input_file_c], stdout=subprocess.PIPE).wait()
