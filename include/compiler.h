@@ -28,14 +28,13 @@ class Compiler {
  private:
 #ifdef WIN32
   constexpr static const char* EXECUTE_FORMAT = "gcc \"%s.c\" -o \"%s.exe\" && \"%s.exe\" ";
-  constexpr static const char* CLANG_FORMAT = "%s\\clang-format.exe -style=%s -i \"%s\"";
+  constexpr static const char* CLANG_FORMAT = "%s\\clang-format.exe -style=%s -i \"%s.c\"";
 #else
   constexpr static const char* EXECUTE_FORMAT = "gcc %s.c -o %s.out && ./%s.out ";
-  constexpr static const char* CLANG_FORMAT = "clang-format -style=%s -i %s";
+  constexpr static const char* CLANG_FORMAT = "clang-format -style=%s -i %s.c";
 #endif
 
   std::string cur_dir_;
-  bool FilenameAssert(std::string& file_name);
   void CodeFormat(std::string file_name, std::string st);
 
 };

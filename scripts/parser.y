@@ -20,6 +20,8 @@ pstdlib::PStdLibs *pstdlibs = new pstdlib::PStdLibs();
 int error_flag=0;
 
 void yyerror(ast::AST* real_ast,const char *msg);
+void yyerror_var(ast::AST* real_ast,int line);
+void yynote(std::string msg,int line);
 
 %}
 
@@ -78,10 +80,10 @@ void yyerror(ast::AST* real_ast,const char *msg);
 %parse-param {ast::AST *real_ast}
 %start program
 %token PROGRAM FUNCTION PROCEDURE TO DOWNTO SUBCATALOG
-%token ARRAY VAR TYPE CONST RECORD
+%token ARRAY TYPE CONST RECORD
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
 %token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP READ WRITE WRITELN
-%token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_
+%token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_ VAR
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
 %type<periods_node_info> periods
@@ -366,17 +368,17 @@ type_declaration :
         if ($5.main_type == TypeAttr::BASIC) {
             pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($5.type_ptr)->type());
             if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),basic_type)){
-                yyerror(real_ast,"Error: redefinition of type %s.");
+                yyerror(real_ast,"Error: redefinition of type.");
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
             //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($5.type_ptr,*($5.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),dynamic_cast<ArrayType*>($5.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.");
+                yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($5.record_info) {
             //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($5.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),dynamic_cast<RecordType*>($5.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.");
+                yyerror(real_ast,"Error: redefinition of type.");
             } 
         }
 
@@ -396,17 +398,17 @@ type_declaration :
         if ($3.main_type == TypeAttr::BASIC) {
             pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($3.type_ptr)->type());
             if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),basic_type)){
-                yyerror(real_ast,"Error: redefinition of type %s.");
+                yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
             //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($3.array_type_ptr,*($3.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),dynamic_cast<ArrayType*>($3.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.");
+                yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($3.record_info) {
             //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($3.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),dynamic_cast<RecordType*>($3.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type %s.");
+                yyerror(real_ast,"Error: redefinition of type.");
             } 
         }
 
@@ -574,7 +576,8 @@ var_declarations :
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
-                yyerror(real_ast,"redefinition of variable");
+                yyerror_var(real_ast,$1.line_num);
+                yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
             }
         }
         // var_declarations -> var var_declaration.
@@ -712,6 +715,7 @@ subprogram_head :
         }
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
             yyerror(real_ast,"redefinition of function");
+            yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
         
@@ -724,6 +728,7 @@ subprogram_head :
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     yyerror(real_ast,"redefinition of variable");
+                    yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
                 }
             }
         }
@@ -751,6 +756,7 @@ subprogram_head :
         
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
             yyerror(real_ast,"redefinition of function");
+            yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(),table_set_queue.top());
@@ -762,6 +768,7 @@ subprogram_head :
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     yyerror(real_ast,"redefinition of variable");
+                    yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
                 }
             }
         }
@@ -1085,7 +1092,7 @@ variable:
 id_varparts:
     {
         // id_varparts -> empty.
-        $$.var_parts = new std::vector<VarParts>();
+        $$.var_parts = nullptr;
         if(error_flag)
             break;
         $$.id_varparts_node = new IDVarPartsNode();
@@ -1679,7 +1686,6 @@ factor:error expression ')'
      {
           yyerror(real_ast,"An opening parenthesis is expected.");
      }
-     // todo 函数调用
    | ID error ')'
    {
        yyerror(real_ast,"An opening parenthesis is expected.");
@@ -1687,14 +1693,15 @@ factor:error expression ')'
     ;
 
     /* An opening bracket is expected ([).*/
-// type: ARRAY error periods ']' OF type
-//     {
-//         yyerror(real_ast,"An opening bracket is expected ([).");
-//     };
-// id_varpart: error expression_list ']'
-//     {
-//        yyerror(real_ast,"An opening bracket is expected ([).");
-//     };
+type: ARRAY error periods ']' OF type
+    {
+        yyerror(real_ast,"An opening bracket is expected ([).");
+    };
+variable:
+  error ']'
+    {
+       yyerror(real_ast,"An opening bracket is expected ([).");
+    };
 
     /* A closing bracket is expected (]).*/
 // type: ARRAY '[' periods error OF type
@@ -1770,8 +1777,20 @@ statement: FOR ID error expression updown expression DO statement
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
+    if(strcmp(msg,"syntax error")==0)
+        return;
     fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
-    fprintf(stderr,"%d\t|\t%s\n",line_count,cur_line_info.c_str());
+    fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
+    error_flag = 1;
+    real_ast->set_root(nullptr);
+}
+
+void yynote(std::string msg ,int line){
+    fprintf(stderr,"%d:\033[01;32m \tnote\033[0m : previous definition of \"%s\" was here\n", line, msg.c_str());
+}
+
+void yyerror_var(ast::AST* real_ast,int line){
+    fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line, "redifinition of variable");
     error_flag = 1;
     real_ast->set_root(nullptr);
 }

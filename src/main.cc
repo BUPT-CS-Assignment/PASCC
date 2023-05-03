@@ -31,6 +31,7 @@ using std::string;
  */
 
 void dir_make(std::string&);
+void file_make(std::string&);
 
 int main(int argc, char** argv){
   ArgumentParser parser;
@@ -70,6 +71,7 @@ int main(int argc, char** argv){
   // get output destination
   string out = parser.get_value<string>("o");
   dir_make(out);
+  file_make(out);
   // get code styles
   string style = parser.get_value<string>("s");
 
@@ -98,4 +100,13 @@ void dir_make(string& dir){
 #else
   std::replace(dir.begin(),dir.end(),'\\','/');
 #endif
+}
+
+void file_make(string& file){
+  size_t len = file.length();
+  if(file.length() > 2){
+    if(file[len - 1] == 'c' && file[len - 2] == '.'){
+      file = file.substr(0,len - 2);
+    }
+  }
 }
