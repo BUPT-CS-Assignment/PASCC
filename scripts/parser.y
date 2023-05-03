@@ -1092,7 +1092,7 @@ variable:
 id_varparts:
     {
         // id_varparts -> empty.
-        $$.var_parts = nullptr;
+        $$.var_parts = new std::vector<VarParts>();
         if(error_flag)
             break;
         $$.id_varparts_node = new IDVarPartsNode();
