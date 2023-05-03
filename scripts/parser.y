@@ -205,7 +205,7 @@ const_declaration :
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
-            yyerror(real_ast,"The identifier has been declared.");
+            yyerror(real_ast,"The identifier has been declared.\n");
         } 
         else{
             if(error_flag)
@@ -924,6 +924,10 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($2.type_ptr!=pascal_type::TYPE_BOOL){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"IF expression THEN statement else_part\n");
+        }
         // statement -> if expression then statement else_part.
         $$ = new StatementNode(StatementNode::GrammarType::IF_STATEMENT);
         $$->append_child($2.expression_node);
@@ -935,6 +939,12 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($4.type_ptr!=nullptr){
+            if(($2.type_ptr!=$4.type_ptr)||($2.type_ptr==pascal_type::TYPE_REAL)){
+                yyerror(real_ast,"Type check failed\n");
+                yyerror(real_ast,"CASE expression OF case_body END\n");
+            }
+        }
         // statement -> case expression of case_body end.
         $$ = new StatementNode(StatementNode::GrammarType::CASE_STATEMET);
         $$->append_child($2.expression_node);
@@ -945,6 +955,10 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($2.type_ptr!=pascal_type::TYPE_BOOL){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"WHILE expression DO statement\n");
+        }
         // statement -> while expression do if_statement_1.
         $$ = new StatementNode(StatementNode::GrammarType::WHILE_STATEMENT);
         $$->append_child($2.expression_node);
@@ -956,6 +970,10 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        if($4.type_ptr!=pascal_type::TYPE_BOOL){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"REPEAT statement_list UNTIL expression\n");
+        }
         // statement -> repeat statement_list until expression.
         $$ = new StatementNode(StatementNode::GrammarType::REPEAT_STATEMENT);
         $$->append_child($2);
@@ -966,6 +984,11 @@ statement:
         if(error_flag)
             break;
         //类型检查
+        //这里有个问题：ID要不要类型检查？
+        if(($4.type_ptr!=$6.type_ptr)||($4.type_ptr==pascal_type::TYPE_REAL)){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"FOR ID ASSIGNOP expression updown expression DO statement\n");
+        }
         // statement -> for id assignop expression updown expression do statement.
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
         LeafNode *id_node = new LeafNode($2.value);
@@ -1039,7 +1062,11 @@ variable:
             yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
-            $$.type_ptr = tmp->type();//TODO
+            $$.type_ptr = tmp->type();
+            if(!$2.AccessCheck(tmp->type())){
+                yyerror(real_ast,"Type check failed\n");
+                yyerror(real_ast,"variable -> id id_varparts.\n");
+            }
             //std::cout<<"variable type:"<<tmp->type()<<std::endl;
             $$.name = new std::string($1.value.get<string>());
         }
@@ -1062,7 +1089,8 @@ id_varparts:
     | id_varparts id_varpart
     {
         // id_varparts -> id_varparts id_varpart.
-        if($$.var_parts){
+        //if($$.var_parts)
+        if($1.var_parts){
             $$.var_parts = $1.var_parts;
         } else {
             $$.var_parts = new std::vector<VarParts>();
@@ -1118,7 +1146,7 @@ else_part:
 case_body:
     {
         // case_body -> empty.
-        $$.type_ptr_list = nullptr;
+        $$.type_ptr= nullptr;
         if(error_flag)
             break;
         $$.case_body_node = new CaseBodyNode();
@@ -1126,7 +1154,7 @@ case_body:
     | branch_list
     {
         // case_body -> branch_list.
-        $$.type_ptr_list = $1.type_ptr_list;
+        $$.type_ptr = $1.type_ptr;
         if(error_flag)
             break;
         $$.case_body_node = new CaseBodyNode();
@@ -1136,11 +1164,15 @@ branch_list:
     branch_list ';' branch
     {
         // branch_list -> branch_list branch.
-        $$.type_ptr_list = $1.type_ptr_list;
-        $$.type_ptr_list->push_back($3.type_ptr);
         //todo 检查类型是否一致
         if(error_flag)
-            break;
+            break;        //对于某个branch_list，要求其内含的所有branch类型都一致，不需要存值
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"branch_list -> branch_list branch.\n");
+        }
+        $$.type_ptr = $1.type_ptr;
+
         $$.branch_list_node = new BranchListNode();
         $$.branch_list_node->append_child($1.branch_list_node);
         $$.branch_list_node->append_child($3.branch_node);
@@ -1148,8 +1180,7 @@ branch_list:
     | branch
     {
         // branch_list -> branch.
-        $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
-        $$.type_ptr_list->push_back($1.type_ptr);
+        $$.type_ptr = $1.type_ptr;
         if(error_flag)
             break;
         $$.branch_list_node = new BranchListNode();
@@ -1213,6 +1244,10 @@ call_procedure_statement:
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
+        if(!tmp->AssertParams(*($3.type_ptr_list))){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
+        }
         if(error_flag)
             break;
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID_EXP_LIST);
@@ -1226,7 +1261,7 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure");
+            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
         if(error_flag)
             break;
@@ -1250,6 +1285,11 @@ expression_list:
     | expression
     {
         //类型检查 检查是否为INT or CHAR  ???  
+        //确定要做这个？
+        //if(!(($1.type_ptr==pascal_type::TYPE_INT)||($1.type_ptr==pascal_type::TYPE_CHAR))){
+        //    yyerror(real_ast,"Type check failed\n");
+        //    yyerror(real_ast,"expression_list -> expression\n");
+        //}
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
         // expression_list -> expression.
@@ -1262,11 +1302,13 @@ expression:
     simple_expression RELOP simple_expression
     {
         // 类型检查
-        // 类型强转 为 *tmp
-        // 先暂定 tmp = $1.type_ptr
         // expression -> simple_expression relop simple_expression.
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"expression -> simple_expression relop simple_expression\n");
+        }
+        $$.type_ptr = pascal_type::TYPE_BOOL;
+        
         std::string relop = $2.value.get<string>();
         if($2.value.get<string>() == "<>") {
             relop = "!=";
@@ -1282,12 +1324,12 @@ expression:
     | simple_expression '=' simple_expression
     {
         // 类型检查
-        // 类型强转 为 *tmp
-        // 先暂定 tmp = $1.type_ptr
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
-        if(error_flag)
-            break;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression '=' simple_expression\n");
+        }
+        $$.type_ptr = pascal_type::TYPE_BOOL;
+
         $$.expression_node = new ExpressionNode();
         $$.expression_node->append_child($1.simple_expression_node);
         LeafNode *relop_node = new LeafNode(ConstValue("=="));
@@ -1375,10 +1417,11 @@ simple_expression:
     | simple_expression ADDOP term
     {
         // simple_expression -> simple_expression or term.
-        // 类型检查
-        // 类型强转 为 *tmp
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> simple_expression or term\n");
+        }
+        $$.type_ptr = $1.type_ptr;
 
         if(error_flag)
             break;
@@ -1392,10 +1435,12 @@ simple_expression:
     { 
         // 类型检查
         // simple_expression -> simple_expression + term.
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
-        if(error_flag)
-            break;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> simple_expression + term.\n");
+        }
+        $$.type_ptr = $1.type_ptr;
+
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
         LeafNode *plus_node = new LeafNode(ConstValue("+"));
@@ -1405,12 +1450,13 @@ simple_expression:
     | simple_expression UMINUS term
     {
         // 类型检查
-        // 类型强转 为 *tmp
         // simple_expression -> simple_expression - term.
-        TypeTemplate* tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
-        if(error_flag)
-            break;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> simple_expression - term.\n");
+        }
+        $$.type_ptr = $1.type_ptr;
+
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
         LeafNode *minus_node = new LeafNode(ConstValue("-"));
@@ -1431,9 +1477,11 @@ term:
     {  
         // term -> term mulop factor.
         // 类型检查
-        // 类型强转 为 *tmp
-        TypeTemplate *tmp = $1.type_ptr;
-        $$.type_ptr = tmp;
+        if($1.type_ptr!=$3.type_ptr){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"term -> term mulop factor\n");
+        }
+        $$.type_ptr = $1.type_ptr;
         
         std::string mulop = $2.value.get<string>();
         if(mulop == "div"){
@@ -1476,7 +1524,11 @@ factor:
         // 类型检查
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure");
+            yyerror(real_ast,"factor -> no such procedure\n");
+        }
+        if(!tmp->AssertParams(*($3.type_ptr_list))){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
         $$.type_ptr = tmp->type();
         if(error_flag)
@@ -1500,6 +1552,7 @@ factor:
     {   
         // factor -> not factor.
         // 类型检查
+        //需要吗？
         $$.type_ptr = $2.type_ptr;
         if(error_flag)
             break;

@@ -138,7 +138,8 @@ struct VarParts {
 
 struct IDVarpartsAttr {
   std::vector<VarParts>* var_parts;
-  ast::IDVarPartsNode* id_varparts_node;
+  ast::IDVarPartsNode *id_varparts_node;
+  bool AccessCheck(pascal_type::TypeTemplate *base_type);
 };
 
 struct IDVarpartAttr {
@@ -148,16 +149,16 @@ struct IDVarpartAttr {
 
 struct ExpressionListAttr {
   std::vector<pascal_type::TypeTemplate*>* type_ptr_list;
-  ast::ExpressionListNode* expression_list_node;
+  ast::ExpressionListNode *expression_list_node;
 };
 
 struct CaseBodyAttr {
-  std::vector<pascal_type::TypeTemplate*>* type_ptr_list;
+  pascal_type::TypeTemplate *type_ptr;
   ast::CaseBodyNode* case_body_node;
 };
 
 struct BranchListAttr {
-  std::vector<pascal_type::TypeTemplate*>* type_ptr_list;
+  pascal_type::TypeTemplate *type_ptr;
   ast::BranchListNode* branch_list_node;
 };
 

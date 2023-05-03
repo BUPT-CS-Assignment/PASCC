@@ -4,6 +4,7 @@
 
 #include "symbol.h"
 #include "type.h"
+#include <cstdio>
 using namespace pascal_type;
 using std::string;
 using std::vector;
@@ -55,15 +56,13 @@ bool FunctionSymbol::AssertParams(const vector<TypeTemplate*>& params_in){
     return false;
   }
 
-  for (int i = 0; i < params_.size(); i++) {
+  for (int i = 0; i < params_in.size(); i++) {
     // assert parameter type
-    if(params_in[i] != params_[i].second.first) {
+    if (params_in[i] != params_[i].second.first) {
+    //    std::cout << params_in[i] << params_[i].second.first << std::endl;
       return false;
     }
   }
   return true;
 }
-
-
-
 }
