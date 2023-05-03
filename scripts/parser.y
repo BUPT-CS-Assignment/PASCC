@@ -1459,6 +1459,9 @@ simple_expression:
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"simple_expression -> simple_expression + term.\n");
         }
+        if(error_flag)
+            break;
+
         $$.type_ptr = $1.type_ptr;
 
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1469,6 +1472,9 @@ simple_expression:
     }
     | simple_expression UMINUS term
     {
+          if(error_flag)
+            break;
+
         // 类型检查
         // simple_expression -> simple_expression - term.
         if($1.type_ptr!=$3.type_ptr){
