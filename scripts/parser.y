@@ -1022,7 +1022,9 @@ statement:
     }
     |WRITE '(' expression_list ')'
     {
-        $3.expression_list_node->GetType($3.type_ptr_list);
+        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+            yyerror(real_ast,"BasicType is expexted in WRITE\n");
+        }
         if(error_flag)
             break;
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
@@ -1030,7 +1032,9 @@ statement:
     }
     |WRITELN'(' expression_list ')'
     {
-        $3.expression_list_node->GetType($3.type_ptr_list);
+        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+            yyerror(real_ast,"BasicType is expexted in WRITELN\n");
+        }
         if(error_flag)
             break;
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
@@ -1042,7 +1046,12 @@ variable_list :
     { 
         $$.basic_types = new std::vector<BasicType*>();
         if($1.type_ptr != nullptr){
-            $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
+            if ($1.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
+                $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
+            } else{
+                yyerror(real_ast,"It should be basic type\n");
+            }
+            
         }
         if(error_flag)
             break;
@@ -1051,7 +1060,11 @@ variable_list :
     } | variable_list ',' variable{
         $$.basic_types = $1.basic_types;
         if($3.type_ptr != nullptr){
-            $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
+            if ($3.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
+                $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
+            } else{
+                yyerror(real_ast,"It should be basic type\n");
+            }
         }
         if(error_flag)
             break;

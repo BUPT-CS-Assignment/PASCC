@@ -527,11 +527,13 @@ void ExpressionListNode::Format(FILE* dst) {
   }
 }
 
-void ExpressionListNode::GetType(std::vector<pascal_type::TypeTemplate*>*type_list){
-  if(!type_list) return;
+bool ExpressionListNode::GetType(std::vector<pascal_type::TypeTemplate*>*type_list){
+  if(!type_list) return true;
   for (auto i:*type_list){
+    if (i->template_type() != pascal_type::TypeTemplate::TYPE::BASIC) return false;
     basic_types.push_back(dynamic_cast<BasicType*>(i));
   }
+  return true;
 }
 
 void StrExpressionNode::Format(FILE *dst) {
