@@ -23,7 +23,7 @@ if(WIN32)
 elseif(UNIX)
   message(STATUS "Linux")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__linux__ -Wno-error=register")
-  file(COPY "/usr/bin/clang" DESTINATION ${CMAKE_BINARY_DIR}/../bin/)
+  file(COPY "thirdparty/clang-format" DESTINATION ${CMAKE_BINARY_DIR}/../bin/)
 endif()
 
 file(GLOB_RECURSE include "include/*.h" "thirdparty/*.h" "thirdparty/*.hpp")
