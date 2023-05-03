@@ -1674,10 +1674,6 @@ statement:
     {
         yyerror(real_ast,"An opening parenthesis is expected.");
     };
-call_procedure_statement: ID error expression_list ')'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    };
 factor:error expression ')'
      {
           yyerror(real_ast,"An opening parenthesis is expected.");
@@ -1693,11 +1689,6 @@ type: ARRAY error periods ']' OF type
     {
         yyerror(real_ast,"An opening bracket is expected ([).");
     };
-variable:
-  error ']'
-    {
-       yyerror(real_ast,"An opening bracket is expected ([).");
-    };
 
     /* A closing bracket is expected (]).*/
 // type: ARRAY '[' periods error OF type
@@ -1712,13 +1703,17 @@ variable:
     /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
 program: program_head program_body error
     {
-       yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
+        table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
     };
 
     /* Every program must begin with the symbol program.*/
 program_head: error ID '(' id_list ')' ';'
     {
-          yyerror(real_ast,"Every program must begin with the symbol program.");
+        table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"Every program must begin with the symbol program.");
     };
 
     /* The symbol then is expected.*/
@@ -1767,14 +1762,23 @@ statement: FOR ID error expression updown expression DO statement
     // }
     ;
 
-
+statement: ID error ';'
+    {
+        yychar = ';';
+        yyerror(real_ast,"Syntax error, ';' expected .");
+    }
+    | error ';'
+    {
+        yychar = ';';
+        yyerror(real_ast,"Syntax error, ';' expected .");
+    };
 
 %%
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
-    if(strcmp(msg,"syntax error")==0)
-        return;
+    // if(strcmp(msg,"syntax error")==0)
+    //     return;
     fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
     fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
     error_flag = 1;
