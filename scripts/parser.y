@@ -557,7 +557,7 @@ period :
             break;
         }
         $$.period_node =new PeriodNode();
-        $$.period_node->set_len(arr_len);
+        $$.period_node->set_len(arr_len+1);
         $$.period_node->append_child($1.const_variable_node);
         $$.period_node->append_child($3.const_variable_node);
     };
