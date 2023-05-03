@@ -1670,10 +1670,10 @@ program_head: PROGRAM ID error ';'
     {
         yyerror(real_ast,"An opening parenthesis is expected.");
     };
-formal_parameter: error ')'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    };
+// formal_parameter: error ')'
+//     {
+//         yyerror(real_ast,"An opening parenthesis is expected.");
+//     };
 statement:
     READ error variable_list ')'
     {
@@ -1687,10 +1687,10 @@ statement:
     {
         yyerror(real_ast,"An opening parenthesis is expected.");
     };
-factor:error expression ')'
-     {
-          yyerror(real_ast,"An opening parenthesis is expected.");
-     }
+// factor:error expression ')'
+//      {
+//           yyerror(real_ast,"An opening parenthesis is expected.");
+//      }
    | ID error ')'
    {
        yyerror(real_ast,"An opening parenthesis is expected.");
@@ -1704,10 +1704,10 @@ type: ARRAY error periods ']' OF type
     };
 
     /* A closing bracket is expected (]).*/
-// type: ARRAY '[' periods error OF type
-//     {
-//         yyerror(real_ast,"An closing bracket is expected (]).");
-//     };
+type: ARRAY '[' periods error OF type
+    {
+        yyerror(real_ast,"An closing bracket is expected (]).");
+    };
 // id_varpart: '[' expression_list error
 //     {
 //        yyerror(real_ast,"An closing bracket is expected (]).");
@@ -1768,12 +1768,7 @@ statement: FOR ID ASSIGNOP error expression DO statement
 statement: FOR ID error expression updown expression DO statement
     {
         yyerror(real_ast,"The symbol := is expected.");
-    }
-    // |variable error expression
-    // {
-
-    // }
-    ;
+    };
 
 statement: ID error ';'
     {

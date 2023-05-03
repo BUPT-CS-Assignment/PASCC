@@ -1,8 +1,4 @@
-program TestError5(void);
-var
-  a : char;
-  b  integer;
-  c : char;
-  d  B;
+program Hello(void);
 begin
+  a[2 :=2;
 end.
