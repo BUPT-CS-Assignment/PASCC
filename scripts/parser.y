@@ -703,9 +703,9 @@ subprogram_head :
         // subprogram_head -> function id formal_parametert : standrad_type.
         FunctionSymbol* tmp ;
         if($3.parameters){
-            tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num, *$3.parameters);
+            tmp = new FunctionSymbol($2.value.get<string>(), $5.type_ptr, $2.line_num, *$3.parameters);
         } else {
-            tmp = new FunctionSymbol($2.value.get<string>(), nullptr, $2.line_num);
+            tmp = new FunctionSymbol($2.value.get<string>(), $5.type_ptr, $2.line_num);
         }
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
             yyerror(real_ast,"redefinition of function");
