@@ -17,19 +17,20 @@ namespace pascal_symbol {
 class ObjectSymbol {
 public:
   ObjectSymbol () {}
-  ObjectSymbol (std::string name, pascal_type::TypeTemplate* type, int decl_line)
-      : name_(name), type_(type), decl_line_(decl_line){}
+  ObjectSymbol (std::string name, pascal_type::TypeTemplate* type, int decl_line, bool is_ref = false)
+      : name_(name), type_(type), decl_line_(decl_line), is_ref_(is_ref){}
   ~ObjectSymbol() {}
 
   std::string name() {return name_;}
   pascal_type::TypeTemplate* type() { return type_; }
   int decl_line() { return decl_line_; }
-//  std::vector<int> ref_lines() { return ref_lines_; }
-//  void InsertRefLine(int ref_line) { ref_lines_.emplace_back(ref_line); }
+  virtual void set_ref(bool r) { is_ref_ = r; }
+  virtual bool is_ref() { return is_ref_; }
 
 protected:
   std::string name_;
   pascal_type::TypeTemplate* type_;
+  bool is_ref_;
   int decl_line_;
 //  std::vector<int> ref_lines_;
 };
@@ -50,6 +51,8 @@ public:
   ConstValue value() { return value_; }
   // get value type
   pascal_type::BasicType* type() { return value_.type(); }
+  void set_ref(bool r) override { is_ref_ = false; }
+  bool is_ref() override { return false; }
 
 private:
   ConstValue value_;
@@ -84,6 +87,8 @@ public:
   ParamType* operator[](std::string );
   // check ref
   bool IsReference(std::string);
+  void set_ref(bool r) override { is_ref_ = false; }
+  bool is_ref() override { return false; }
 
 private:
   std::vector<Parameter> params_;

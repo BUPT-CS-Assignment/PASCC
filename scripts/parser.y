@@ -846,6 +846,7 @@ var_parameter :
         for (int i = 0; i < para_len; i++){
             $2.parameters->at(i).second.second = FunctionSymbol::PARAM_MODE::REFERENCE;
         }
+        $$.parameters = $2.parameters;
         if(error_flag)
             break;
         $$.var_parameter_node = new VarParamNode();
