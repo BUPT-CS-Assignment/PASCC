@@ -2,36 +2,7 @@
 #include "type.h"
 #include <vector>
 
-using pascal_type::ArrayType;
-using pascal_type::RecordType;
-using pascal_type::TYPE_ERROR;
-using pascal_type::TypeTemplate;
-
-// ArrayType ArrayType::Visit(std::vector<BasicType *> v_types) {
-//   if (v_types.size() == 0)
-//     return *this;
-//   if (v_types.size() > dims())
-//     return ArrayType(TYPE_ERROR);
-//   for (int i = 0; i < v_types.size(); i++) {
-//     if (bounds_[i].type_ != v_types[i])
-//       return ArrayType(TYPE_ERROR);
-//   }
-//   return Visit(v_types.size());
-// }
-
-// ArrayType ArrayType::Visit(unsigned int v_layer) {
-//   if (v_layer == 0)
-//     return *this;
-//   if (v_layer > dims())
-//     return ArrayType(TYPE_ERROR);
-//   // temp array
-//   vector<ArrayBound> bs;
-//   for (int i = dims() - v_layer; i < bounds_.size(); i++) {
-//     bs.emplace_back(bounds_[i]);
-//   }
-//   return ArrayType(base_type_, bs);
-// }
-
+using namespace pascal_type;
 TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
   //   std::cout << "variable type:" << base_type << std::endl;
   int in_array = 0;

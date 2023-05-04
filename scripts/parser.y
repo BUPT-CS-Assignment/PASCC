@@ -892,8 +892,14 @@ statement_list :
 statement:
     variable ASSIGNOP expression
     {   
-        // 类型检查 指针为type_ptr
-        // statement -> variable assigbop expression.
+        // 类型检查
+        //此处赋值存在多种情况，结构体、数组等需要之后一一检查
+        // statement -> variable assignop expression.
+        //基本情况
+        if(!($1.type_ptr==TYPE_REAL&&$3.type_ptr==TYPE_INT)&&!is_same($1.type_ptr,$3.type_ptr)){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"statement -> variable assignop expression\n");
+        }
         std::string func_name = table_set_queue.top()->tag();
         if(error_flag)
             break;
@@ -932,7 +938,7 @@ statement:
         if(error_flag)
             break;
         //类型检查
-        if($2.type_ptr!=pascal_type::TYPE_BOOL){
+        if(!is_same($2.type_ptr,TYPE_BOOL)){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"IF expression THEN statement else_part\n");
         }
@@ -947,8 +953,8 @@ statement:
         if(error_flag)
             break;
         //类型检查
-        if($4.type_ptr!=nullptr){
-            if(($2.type_ptr!=$4.type_ptr)||($2.type_ptr==pascal_type::TYPE_REAL)){
+        if(!is_same($4.type_ptr,TYPE_ERROR)){
+            if((!is_same($2.type_ptr,$4.type_ptr))||is_same($2.type_ptr,TYPE_REAL)){
                 yyerror(real_ast,"Type check failed\n");
                 yyerror(real_ast,"CASE expression OF case_body END\n");
             }
@@ -963,7 +969,7 @@ statement:
         if(error_flag)
             break;
         //类型检查
-        if($2.type_ptr!=pascal_type::TYPE_BOOL){
+        if(!is_same($2.type_ptr,TYPE_BOOL)){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"WHILE expression DO statement\n");
         }
@@ -978,7 +984,7 @@ statement:
         if(error_flag)
             break;
         //类型检查
-        if($4.type_ptr!=pascal_type::TYPE_BOOL){
+        if(!is_same($4.type_ptr,TYPE_BOOL)){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"REPEAT statement_list UNTIL expression\n");
         }
@@ -992,8 +998,13 @@ statement:
         if(error_flag)
             break;
         //类型检查
-        //这里有个问题：ID要不要类型检查？
-        if(($4.type_ptr!=$6.type_ptr)||($4.type_ptr==pascal_type::TYPE_REAL)){
+        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($2.value.get<string>());
+        if((!is_basic(tmp->type()))||(!is_same(tmp->type(),$4.type_ptr))){
+            yyerror(real_ast,"Type check failed\n");
+                yyerror(real_ast,"FOR ID ASSIGNOP expression updown expression DO statement\n");
+        }
+
+        if((!is_same($4.type_ptr,$6.type_ptr))||(is_same($4.type_ptr,TYPE_REAL))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"FOR ID ASSIGNOP expression updown expression DO statement\n");
         }
@@ -1277,7 +1288,7 @@ call_procedure_statement:
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
-        if(!tmp->AssertParams(*($3.type_ptr_list))){
+        if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
@@ -1320,11 +1331,7 @@ expression_list:
     | expression
     {
         //类型检查 检查是否为INT or CHAR  ???  
-        //确定要做这个？
-        //if(!(($1.type_ptr==pascal_type::TYPE_INT)||($1.type_ptr==pascal_type::TYPE_CHAR))){
-        //    yyerror(real_ast,"Type check failed\n");
-        //    yyerror(real_ast,"expression_list -> expression\n");
-        //}
+        //这里应该是做不了的，但如果在声明的时候就有检查应该就不必做
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
         $$.is_lvalue_list = new std::vector<bool>();
@@ -1339,13 +1346,18 @@ expression:
     simple_expression RELOP simple_expression
     {
         // 类型检查
+        //从这里开始进行运算检查
         // expression -> simple_expression relop simple_expression.
-        if($1.type_ptr!=$3.type_ptr){
+        if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
+            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+        }
+        auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, $2.value.get<string>());
+        if(result==TYPE_ERROR){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"expression -> simple_expression relop simple_expression\n");
         }
         $$.is_lvalue = false;
-        $$.type_ptr = pascal_type::TYPE_BOOL;
+        $$.type_ptr = result;
         
         std::string relop = $2.value.get<string>();
         if($2.value.get<string>() == "<>") {
@@ -1362,12 +1374,17 @@ expression:
     | simple_expression '=' simple_expression
     {
         // 类型检查
-        if($1.type_ptr!=$3.type_ptr){
+        if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
+            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+        }
+        auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, "=");
+        
+        if(result==TYPE_ERROR){
             yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression '=' simple_expression\n");
+            yyerror(real_ast,"expression -> simple_expression '=' simple_expression\n");
         }
         $$.is_lvalue = false;
-        $$.type_ptr = pascal_type::TYPE_BOOL;
+        $$.type_ptr = result;
 
         if(error_flag)
             break;
@@ -1484,15 +1501,18 @@ simple_expression:
     { 
         // 类型检查
         // simple_expression -> simple_expression + term.
-        if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression -> simple_expression + term.\n");
-        }
         $$.is_lvalue = false;
         if(error_flag)
             break;
-
-        $$.type_ptr = $1.type_ptr;
+        if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
+            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+        }
+        auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"+");
+        if(result==TYPE_ERROR){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"expression -> simple_expression '+' simple_expression\n");
+        }
+        $$.type_ptr = result;
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
@@ -1507,11 +1527,15 @@ simple_expression:
             break;
         // 类型检查
         // simple_expression -> simple_expression - term.
-        if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression -> simple_expression - term.\n");
+        if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
+            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
         }
-        $$.type_ptr = $1.type_ptr;
+        auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"-");
+        if(result==TYPE_ERROR){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"expression -> simple_expression '-' simple_expression\n");
+        }
+        $$.type_ptr = result;
 
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
@@ -1534,12 +1558,16 @@ term:
     {  
         // term -> term mulop factor.
         // 类型检查
-        if($1.type_ptr!=$3.type_ptr){
+        if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
+            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+        }
+        auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,$2.value.get<string>());
+        if(result==TYPE_ERROR){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"term -> term mulop factor\n");
         }
         $$.is_lvalue = false;
-        $$.type_ptr = $1.type_ptr;
+        $$.type_ptr = result;
         
         std::string mulop = $2.value.get<string>();
         if(mulop == "div"){
@@ -1586,7 +1614,7 @@ factor:
         if(tmp == nullptr) {
             yyerror(real_ast,"factor -> no such procedure\n");
         }
-        if(!tmp->AssertParams(*($3.type_ptr_list))){
+        if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }

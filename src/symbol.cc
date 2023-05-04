@@ -52,15 +52,18 @@ bool FunctionSymbol::IsReference(std::string name) {
   }
 }
 
-bool FunctionSymbol::AssertParams(const vector<TypeTemplate*>& params_in){
-  if (params_in.size() != params_.size()) {
+bool FunctionSymbol::AssertParams(const vector<TypeTemplate *> &params_in,
+                                  const vector<bool> value_type_in) {
+  if (params_in.size() != params_.size() || params_in.size() != value_type_in.size()) {
     return false;
   }
 
   for (int i = 0; i < params_in.size(); i++) {
     // assert parameter type
-    if (params_in[i] != params_[i].second.first) {
-    //    std::cout << params_in[i] << params_[i].second.first << std::endl;
+    if (params_in[i] != params_[i].second.first ||
+        (value_type_in[i] == false &&
+         params_[i].second.second == PARAM_MODE::REFERENCE)) {
+      //    std::cout << params_in[i] << params_[i].second.first << std::endl;
       return false;
     }
   }
