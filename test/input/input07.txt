@@ -1,4 +1,4 @@
-program TestChar(void);
+program TestChar;
 var
   c: char;
 begin

@@ -70,6 +70,9 @@ int main(int argc, char** argv){
   dir_make(in);
   // get output destination
   string out = parser.get_value<string>("o");
+  if(parser.is_call("t") && !parser.is_call("o")){
+    out = "_pascc_tmp_" + std::to_string(time(nullptr));
+  }
   dir_make(out);
   file_make(out);
   // get code styles
@@ -88,7 +91,8 @@ int main(int argc, char** argv){
 
   // optional reserve cache
   if(!parser.is_call("r")){
-    compiler.Remove(out);
+    bool rm_all = parser.is_call("t") && (!parser.is_call("o"));
+    compiler.Remove(out, rm_all);
   }
 
   return 0;

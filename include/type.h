@@ -47,7 +47,7 @@ class BasicType : public TypeTemplate {
     switch (basic_type_) {
       case BASIC_TYPE::INT: return "int";
       case BASIC_TYPE::REAL: return "float";
-      case BASIC_TYPE::BOOL: return "bool";
+      case BASIC_TYPE::BOOL: return "int";
       case BASIC_TYPE::CHAR: return "char";
       default: return "void";
     }
@@ -96,7 +96,7 @@ class ArrayType : public TypeTemplate {
 
   ArrayType& operator=(const ArrayType& a2);
   bool operator==(const ArrayType& a2) const;
-  ArrayType Visit(std::vector<BasicType*> v_types); // visit array
+  ArrayType Visit(std::vector<TypeTemplate *> v_types); // visit array
   ArrayType Visit(unsigned int v_layer);            // visit array
 
  private:

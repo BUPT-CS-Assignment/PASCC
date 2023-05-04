@@ -146,13 +146,12 @@ program :
         }
     };
 program_head :
-    PROGRAM ID '(' id_list ')' ';' {
+    PROGRAM ID ';' {
         if(error_flag)
             break;
         $$ = new ProgramHeadNode();
         LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
-        $$->append_child($4.id_list_node);
         table_set_queue.push(top_table_set);
         pstdlibs->Preset(table_set_queue.top()->symbols());  
         
@@ -243,7 +242,6 @@ const_declaration :
 const_variable :
     PLUS ID
     {   
-        
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = nullptr;
@@ -557,7 +555,7 @@ period :
             break;
         }
         $$.period_node =new PeriodNode();
-        $$.period_node->set_len(arr_len);
+        $$.period_node->set_len(arr_len+1);
         $$.period_node->append_child($1.const_variable_node);
         $$.period_node->append_child($3.const_variable_node);
     };
@@ -702,10 +700,6 @@ subprogram_body :
 subprogram_head :
     FUNCTION ID formal_parameter ':' standrad_type ';'
     {
-        
-        // TODO插入符号表
-        // x = new FunctionSymbol(ID.name,$5,ID.decline,$3);
-        // insert(ID.name,x)
         // subprogram_head -> function id formal_parametert : standrad_type.
         FunctionSymbol* tmp ;
         if($3.parameters){
@@ -718,7 +712,6 @@ subprogram_head :
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
-        
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
         pstdlibs->Preset(table_set_queue.top()->symbols());
@@ -726,6 +719,9 @@ subprogram_head :
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
+                if (i.second.second == FunctionSymbol::PARAM_MODE::REFERENCE){
+                    tmp->set_ref(true);
+                }
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     yyerror(real_ast,"redefinition of variable");
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
@@ -742,10 +738,6 @@ subprogram_head :
     }
     | PROCEDURE ID formal_parameter ';'
     {
-        
-        // TODO插入符号表
-        // x = new FunctionSymbol(ID.name,NULL,ID.decline,$3);
-        // insert(ID.name,x)
         // subprogram_head -> procedure id formal_parametert.
         FunctionSymbol* tmp ;
         if($3.parameters){
@@ -766,6 +758,9 @@ subprogram_head :
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
+                if (i.second.second == FunctionSymbol::PARAM_MODE::REFERENCE){
+                    tmp->set_ref(true);
+                }
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     yyerror(real_ast,"redefinition of variable");
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
@@ -846,6 +841,7 @@ var_parameter :
         for (int i = 0; i < para_len; i++){
             $2.parameters->at(i).second.second = FunctionSymbol::PARAM_MODE::REFERENCE;
         }
+        $$.parameters = $2.parameters;
         if(error_flag)
             break;
         $$.var_parameter_node = new VarParamNode();
@@ -1022,7 +1018,9 @@ statement:
     }
     |WRITE '(' expression_list ')'
     {
-        $3.expression_list_node->GetType($3.type_ptr_list);
+        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+            yyerror(real_ast,"BasicType is expexted in WRITE\n");
+        }
         if(error_flag)
             break;
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
@@ -1030,7 +1028,9 @@ statement:
     }
     |WRITELN'(' expression_list ')'
     {
-        $3.expression_list_node->GetType($3.type_ptr_list);
+        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+            yyerror(real_ast,"BasicType is expexted in WRITELN\n");
+        }
         if(error_flag)
             break;
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
@@ -1042,7 +1042,12 @@ variable_list :
     { 
         $$.basic_types = new std::vector<BasicType*>();
         if($1.type_ptr != nullptr){
-            $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
+            if ($1.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
+                $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
+            } else{
+                yyerror(real_ast,"It should be basic type\n");
+            }
+            
         }
         if(error_flag)
             break;
@@ -1051,7 +1056,11 @@ variable_list :
     } | variable_list ',' variable{
         $$.basic_types = $1.basic_types;
         if($3.type_ptr != nullptr){
-            $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
+            if ($3.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
+                $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
+            } else{
+                yyerror(real_ast,"It should be basic type\n");
+            }
         }
         if(error_flag)
             break;
@@ -1063,18 +1072,23 @@ variable:
     ID id_varparts
     {
         // variable -> id id_varparts.
+        
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
+        
         if(tmp == nullptr) {
-             $$.type_ptr = nullptr;
+            $$.type_ptr = nullptr;
             yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
-            $$.type_ptr = tmp->type();
-            if(!$2.AccessCheck(tmp->type())){
+            //std::cout<<"variable type:"<<tmp->type()<<std::endl;
+            $$.type_ptr = $2.AccessCheck(tmp->type());
+            if($$.type_ptr==nullptr){
                 yyerror(real_ast,"Type check failed\n");
                 yyerror(real_ast,"variable -> id id_varparts.\n");
             }
-            //std::cout<<"variable type:"<<tmp->type()<<std::endl;
+            if(tmp->is_ref()){
+                $1.value.set("*("+$1.value.get<string>()+")");
+            }
             $$.name = new std::string($1.value.get<string>());
         }
         if(error_flag)
@@ -1088,7 +1102,7 @@ variable:
 id_varparts:
     {
         // id_varparts -> empty.
-        $$.var_parts = new std::vector<VarParts>();//TODO
+        $$.var_parts = new std::vector<VarParts>();
         if(error_flag)
             break;
         $$.id_varparts_node = new IDVarPartsNode();
@@ -1446,6 +1460,9 @@ simple_expression:
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"simple_expression -> simple_expression + term.\n");
         }
+        if(error_flag)
+            break;
+
         $$.type_ptr = $1.type_ptr;
 
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1456,6 +1473,9 @@ simple_expression:
     }
     | simple_expression UMINUS term
     {
+          if(error_flag)
+            break;
+
         // 类型检查
         // simple_expression -> simple_expression - term.
         if($1.type_ptr!=$3.type_ptr){
@@ -1657,10 +1677,10 @@ program_head: PROGRAM ID error ';'
     {
         yyerror(real_ast,"An opening parenthesis is expected.");
     };
-formal_parameter: error ')'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    };
+// formal_parameter: error ')'
+//     {
+//         yyerror(real_ast,"An opening parenthesis is expected.");
+//     };
 statement:
     READ error variable_list ')'
     {
@@ -1674,14 +1694,10 @@ statement:
     {
         yyerror(real_ast,"An opening parenthesis is expected.");
     };
-call_procedure_statement: ID error expression_list ')'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    };
-factor:error expression ')'
-     {
-          yyerror(real_ast,"An opening parenthesis is expected.");
-     }
+// factor:error expression ')'
+//      {
+//           yyerror(real_ast,"An opening parenthesis is expected.");
+//      }
    | ID error ')'
    {
        yyerror(real_ast,"An opening parenthesis is expected.");
@@ -1693,17 +1709,12 @@ type: ARRAY error periods ']' OF type
     {
         yyerror(real_ast,"An opening bracket is expected ([).");
     };
-variable:
-  error ']'
-    {
-       yyerror(real_ast,"An opening bracket is expected ([).");
-    };
 
     /* A closing bracket is expected (]).*/
-// type: ARRAY '[' periods error OF type
-//     {
-//         yyerror(real_ast,"An closing bracket is expected (]).");
-//     };
+type: ARRAY '[' periods error OF type
+    {
+        yyerror(real_ast,"An closing bracket is expected (]).");
+    };
 // id_varpart: '[' expression_list error
 //     {
 //        yyerror(real_ast,"An closing bracket is expected (]).");
@@ -1712,13 +1723,17 @@ variable:
     /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
 program: program_head program_body error
     {
-       yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
+        table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
     };
 
     /* Every program must begin with the symbol program.*/
 program_head: error ID '(' id_list ')' ';'
     {
-          yyerror(real_ast,"Every program must begin with the symbol program.");
+        table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"Every program must begin with the symbol program.");
     };
 
     /* The symbol then is expected.*/
@@ -1760,21 +1775,25 @@ statement: FOR ID ASSIGNOP error expression DO statement
 statement: FOR ID error expression updown expression DO statement
     {
         yyerror(real_ast,"The symbol := is expected.");
+    };
+
+statement: ID error ';'
+    {
+        yychar = ';';
+        yyerror(real_ast,"Syntax error, ';' expected .");
     }
-    // |variable error expression
-    // {
-
-    // }
-    ;
-
-
+    | error ';'
+    {
+        yychar = ';';
+        yyerror(real_ast,"Syntax error, ';' expected .");
+    };
 
 %%
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
-    if(strcmp(msg,"syntax error")==0)
-        return;
+    // if(strcmp(msg,"syntax error")==0)
+    //     return;
     fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
     fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
     error_flag = 1;

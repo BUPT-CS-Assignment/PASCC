@@ -117,7 +117,7 @@ ArrayType& ArrayType::operator=(const ArrayType& other) {
   return *this;
 }
 
-ArrayType ArrayType::Visit(std::vector<BasicType *> v_types) {
+ArrayType ArrayType::Visit(std::vector<TypeTemplate *> v_types) {
   if(v_types.size() == 0 ) return *this;
   if(v_types.size() > dims()) return ArrayType(TYPE_ERROR);
   for(int i = 0; i < v_types.size(); i++) {
