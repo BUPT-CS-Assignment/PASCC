@@ -897,8 +897,6 @@ statement:
         // statement -> variable assignop expression.
         //基本情况
         if(!($1.type_ptr==TYPE_REAL&&$3.type_ptr==TYPE_INT)&&!is_same($1.type_ptr,$3.type_ptr)){
-            std::cout<< "$1.type_ptr: "<<($1.type_ptr==TYPE_INT) <<std::endl;
-            std::cout<< "$3.type_ptr: "<<($3.type_ptr==TYPE_INT) <<std::endl;
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"statement -> variable assignop expression\n");
         }
