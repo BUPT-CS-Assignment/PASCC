@@ -465,6 +465,8 @@ void IDVarPartNode::Format(FILE* dst) {
   } else if (grammar_type_ == GrammarType::EXP_LIST) {
     PRINT("[")
     FormatAt(0, dst);
+    if(array_lb_ > 0) PRINT(" - %d",array_lb_)
+    else if(array_lb_ < 0) PRINT(" + %d",-array_lb_)
     PRINT("]")
   }
 }

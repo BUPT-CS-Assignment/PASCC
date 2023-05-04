@@ -16,9 +16,14 @@ namespace pascal_symbol {
 // Object Symbols for variables
 class ObjectSymbol {
 public:
+  enum class SYMBOL_TYPE {
+    VAR,
+    CONST,
+    FUNCTION,
+  };
   ObjectSymbol () {}
   ObjectSymbol (std::string name, pascal_type::TypeTemplate* type, int decl_line, bool is_ref = false)
-      : name_(name), type_(type), decl_line_(decl_line), is_ref_(is_ref){}
+      : name_(name), type_(type), decl_line_(decl_line), is_ref_(is_ref) {symbol_type_ = SYMBOL_TYPE::VAR;}
   ~ObjectSymbol() {}
 
   std::string name() {return name_;}
@@ -26,12 +31,14 @@ public:
   int decl_line() { return decl_line_; }
   virtual void set_ref(bool r) { is_ref_ = r; }
   virtual bool is_ref() { return is_ref_; }
+  SYMBOL_TYPE symbol_type() { return symbol_type_; }
 
 protected:
   std::string name_;
   pascal_type::TypeTemplate* type_;
   bool is_ref_;
   int decl_line_;
+  SYMBOL_TYPE symbol_type_;
 //  std::vector<int> ref_lines_;
 };
 
@@ -43,7 +50,7 @@ class ConstSymbol : public ObjectSymbol {
 public:
   ConstSymbol() {}
   ConstSymbol(std::string name, ConstValue value, int decl_line)
-      : ObjectSymbol(name, value.type(), decl_line), value_(value) {}
+      : ObjectSymbol(name, value.type(), decl_line), value_(value){symbol_type_ = SYMBOL_TYPE::CONST;}
 
   ~ConstSymbol() {}
 

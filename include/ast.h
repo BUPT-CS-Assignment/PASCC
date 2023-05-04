@@ -446,7 +446,9 @@ class IDVarPartNode : public Node {
 
   IDVarPartNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE* dst) override;
+  void set_array_lb(int lb) { array_lb_ = lb; }
  private:
+  int array_lb_ = 0;
   GrammarType grammar_type_;
 };
 
