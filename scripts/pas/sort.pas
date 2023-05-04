@@ -1,4 +1,4 @@
-program TestQsort(input,output);
+program TestQsort;
 
 var
   n: integer;

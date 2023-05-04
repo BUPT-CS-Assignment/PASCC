@@ -1,4 +1,4 @@
-program testadd(input,output);
+program testadd;
 
 var
   a, b, c: integer;

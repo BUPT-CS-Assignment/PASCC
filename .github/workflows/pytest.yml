@@ -33,7 +33,7 @@ jobs:
           mkdir build
           cd build
           cmake ..
-          cmake --build . --target PASCC_TEST -j 6
+          cmake --build . --target PASCC -j 6
         
       - name: Install and set up Python
         uses: actions/setup-python@v2

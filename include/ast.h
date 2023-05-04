@@ -536,7 +536,7 @@ class ExpressionListNode: public Node {
   ExpressionListNode(GrammarType gt) : grammar_type_(gt) {}
   std::string FormatString();
   void Format(FILE* dst) override;
-  void GetType(std::vector<pascal_type::TypeTemplate*>* type_list);
+  bool GetType(std::vector<pascal_type::TypeTemplate*>* type_list);
  private:
   //TODO get basic_type ptr lists
   std::vector<pascal_type::BasicType*> basic_types;

@@ -1,6 +1,7 @@
-program TestFunction(void);
+program TestFunction;
 
 var a, b, ret: integer;
+c: real;
 
 function max(num1, num2: integer): integer;
 var
@@ -16,6 +17,7 @@ end;
 begin
    a := 100;
    b := 200;
+   c := 300;
    ret := max(a, b);
    write(ret);
 end.

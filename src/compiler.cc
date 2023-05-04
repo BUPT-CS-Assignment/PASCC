@@ -75,6 +75,7 @@ void Compiler::CodeFormat(string file_name, string st) {
     log_warn("undefined code style: %s, reset to 'google'", st.c_str());
     st = "google";
   }
+  log_debug("compiler: code style : %s", st.c_str());
 
   char cmd_buf[128];
 #ifdef WIN32
@@ -85,18 +86,27 @@ void Compiler::CodeFormat(string file_name, string st) {
   system(cmd_buf);
 }
 
-void Compiler::Remove(std::string file_name) {
+void Compiler::Remove(std::string file_name, bool rm_all) {
   log_info("compiler: clean cache files");
   char cmd_buf[128];
   if(file_name.length() == 0) return;
-
+  file_name +=
+      (rm_all ? ".*" :
+#ifdef  WIN32
+                ".exe"
+#else
+                ".out"
+#endif
+    );
   const char* fp = file_name.c_str();
 
 #ifdef WIN32
-    sprintf(cmd_buf,"if exist \"%s.exe\" del \"%s.exe\"",fp,fp);
+    sprintf(cmd_buf,"if exist \"%s\" del \"%s\"",fp,fp);
 #else
-    sprintf(cmd_buf,"if [ -f %s.out ]; then rm %s.out; fi;",fp,fp);
+    sprintf(cmd_buf,"if [ -f %s ]; then rm %s; fi;",fp,fp);
 #endif
+
+    log_debug("compiler: remove command : %s",cmd_buf);
     system(cmd_buf);
 }
 
@@ -109,7 +119,7 @@ void Compiler::CodeExecute(string file_name, string args) {
   sprintf(cmd_buf,EXECUTE_FORMAT,fp,fp,fp);
   // optional args
   string cmd = string(cmd_buf) + args;
-  log_info("exec: exec command : %s",cmd.c_str());
+  log_debug("compiler: exec command : %s",cmd.c_str());
   system(cmd.c_str());
 }
 

@@ -47,7 +47,7 @@ class BasicType : public TypeTemplate {
     switch (basic_type_) {
       case BASIC_TYPE::INT: return "int";
       case BASIC_TYPE::REAL: return "float";
-      case BASIC_TYPE::BOOL: return "bool";
+      case BASIC_TYPE::BOOL: return "int";
       case BASIC_TYPE::CHAR: return "char";
       default: return "void";
     }
