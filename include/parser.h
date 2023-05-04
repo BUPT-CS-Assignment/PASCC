@@ -91,6 +91,7 @@ struct VariableAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::VariableNode* variable_node;
   std::string* name;
+  bool is_lvalue;
 };
 
 struct VariableListAttr {
@@ -102,27 +103,32 @@ struct ExpressionAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::ExpressionNode* expression_node;
   int length;
+  bool is_lvalue;
 };
 
 struct StrExpressionAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::StrExpressionNode* str_expression_node;
   int length;
+  bool is_lvalue;
 };
 
 struct SimpleExpressionAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::SimpleExpressionNode* simple_expression_node;
+  bool is_lvalue;
 };
 
 struct TermAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::TermNode* term_node;
+  bool is_lvalue;
 };
 
 struct FactorAttr {
   pascal_type::TypeTemplate* type_ptr;
   ast::FactorNode* factor_node;
+  bool is_lvalue;
 };
 
 struct UnsignedConstantVarAttr {
@@ -150,6 +156,7 @@ struct IDVarpartAttr {
 struct ExpressionListAttr {
   std::vector<pascal_type::TypeTemplate*>* type_ptr_list;
   ast::ExpressionListNode *expression_list_node;
+  std::vector<bool>* is_lvalue_list;
 };
 
 struct CaseBodyAttr {

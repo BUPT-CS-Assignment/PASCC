@@ -17,10 +17,11 @@ FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_
   for(int i = 0; i < params.size(); i++) {
     param_map_[params[i].first] = i;
   }
+  symbol_type_ = SYMBOL_TYPE::FUNCTION;
 }
 
 FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line)
-    : ObjectSymbol(name, return_type, decl_line) {}
+    : ObjectSymbol(name, return_type, decl_line) {symbol_type_ = SYMBOL_TYPE::FUNCTION;}
 
 bool FunctionSymbol::InsertParam(Parameter &p) {
   auto ptr = param_map_.find(p.first);
