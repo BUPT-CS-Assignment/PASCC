@@ -2,11 +2,7 @@
 #include "type.h"
 #include <vector>
 
-using pascal_type::ArrayType;
-using pascal_type::RecordType;
-using pascal_type::TYPE_ERROR;
-using pascal_type::TypeTemplate;
-
+using namespace pascal_type;
 TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
   //   std::cout << "variable type:" << base_type << std::endl;
   int in_array = 0;
