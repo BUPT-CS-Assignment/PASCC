@@ -156,14 +156,14 @@ extern OperationMap operation_map;
  * @param op operation string
  * @return
  */
-static BasicType* compute(BasicType* type1, BasicType* type2, std::string op);
+BasicType* compute(BasicType* type1, BasicType* type2, std::string op);
 
 /**
  * @brief check if a type is basic type
  * @param t ptr to type
  * @return
  */
-static bool is_basic(TypeTemplate* t);
+bool is_basic(TypeTemplate* t);
 
 /**
  * @brief check if two types are the same
@@ -171,7 +171,7 @@ static bool is_basic(TypeTemplate* t);
  * @param t2 type 2
  * @return
  */
-static bool is_same(TypeTemplate* t1, TypeTemplate* t2);
+bool is_same(TypeTemplate* t1, TypeTemplate* t2);
 
 /**
  * @brief check if two array types with visits are the same
@@ -181,7 +181,7 @@ static bool is_same(TypeTemplate* t1, TypeTemplate* t2);
  * @param vdim2 Visit dimensions 2
  * @return
  */
-static bool is_same(ArrayType* t1, int vdim1, ArrayType* t2, int vdim2);
+bool is_same(ArrayType* t1, int vdim1, ArrayType* t2, int vdim2);
 
 /**
  * @brief Visit array and check if is the same with the input type
@@ -190,7 +190,7 @@ static bool is_same(ArrayType* t1, int vdim1, ArrayType* t2, int vdim2);
  * @param t2 ptr to result-assertion type
  * @return
  */
-static bool is_same(ArrayType* t1, int vdim, BasicType* t2);
+bool is_same(ArrayType* t1, int vdim, BasicType* t2);
 
 /**
  * @brief check if two record types with access are the same
@@ -200,7 +200,7 @@ static bool is_same(ArrayType* t1, int vdim, BasicType* t2);
  * @param n2 Visit vector 2 with names
  * @return
  */
-static bool is_same(RecordType* t1, std::vector<std::string> n1, RecordType* t2, std::vector<std::string> n2);
+bool is_same(RecordType* t1, std::vector<std::string> n1, RecordType* t2, std::vector<std::string> n2);
 
 /**
  * @brief Visit record and check if is the same with the input type
@@ -209,7 +209,7 @@ static bool is_same(RecordType* t1, std::vector<std::string> n1, RecordType* t2,
  * @param t2 ptr to result-assertion type
  * @return
  */
-static bool is_same(RecordType* t1, std::vector<std::string> n1, TypeTemplate* t2);
+bool is_same(RecordType* t1, std::vector<std::string> n1, TypeTemplate* t2);
 
 
 }; // namespace pascal_type
