@@ -96,7 +96,7 @@ class ArrayType : public TypeTemplate {
 
   ArrayType& operator=(const ArrayType& a2);
   bool operator==(const ArrayType& a2) const;
-  ArrayType Visit(std::vector<BasicType*> v_types); // visit array
+  ArrayType Visit(std::vector<TypeTemplate *> v_types); // visit array
   ArrayType Visit(unsigned int v_layer);            // visit array
 
  private:

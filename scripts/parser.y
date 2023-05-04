@@ -1076,18 +1076,22 @@ variable:
     ID id_varparts
     {
         // variable -> id id_varparts.
+        
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
+        
         if(tmp == nullptr) {
              $$.type_ptr = nullptr;
             yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
-            $$.type_ptr = tmp->type();
-            if(!$2.AccessCheck(tmp->type())){
+            //std::cout<<"variable type:"<<tmp->type()<<std::endl;
+            $$.type_ptr = $2.AccessCheck(tmp->type());
+            if($$.type_ptr==nullptr){
                 yyerror(real_ast,"Type check failed\n");
                 yyerror(real_ast,"variable -> id id_varparts.\n");
             }
-            //std::cout<<"variable type:"<<tmp->type()<<std::endl;
+            //std::cout<<"safe after check"<<std::endl;
+            //std::cout<<"variable type:"<<$$.type_ptr<<std::endl;
             $$.name = new std::string($1.value.get<string>());
         }
         if(error_flag)
@@ -1101,7 +1105,7 @@ variable:
 id_varparts:
     {
         // id_varparts -> empty.
-        $$.var_parts = new std::vector<VarParts>();//TODO
+        $$.var_parts = new std::vector<VarParts>();
         if(error_flag)
             break;
         $$.id_varparts_node = new IDVarPartsNode();
