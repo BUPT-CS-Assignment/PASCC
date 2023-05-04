@@ -1290,7 +1290,7 @@ call_procedure_statement:
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure");
         }
-        if(!tmp->AssertParams(*($3.type_ptr_list))){
+        if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
@@ -1616,7 +1616,7 @@ factor:
         if(tmp == nullptr) {
             yyerror(real_ast,"factor -> no such procedure\n");
         }
-        if(!tmp->AssertParams(*($3.type_ptr_list))){
+        if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
