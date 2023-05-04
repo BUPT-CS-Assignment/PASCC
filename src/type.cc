@@ -148,22 +148,19 @@ bool ArrayType::operator==(const pascal_type::ArrayType &a2) const{
 }
 
 TypeTemplate* RecordType::Visit(std::vector<std::string> names) {
-  if(names.size() == 0) return this;
-  int loop = names.size();
-  RecordType* cur_record = this;
-  while(loop){
-    TypeTemplate* t = cur_record->Find(names[loop - 1]);
+  TypeTemplate* vtype = this;
+  int loop = 0, len = names.size();
+  while(loop < len){
+    // cast assert
+    if(vtype->template_type() != TYPE::RECORD) return nullptr;
+    // find element
+    auto t = vtype->DynamicCast<RecordType>()->Find(names[loop]);
     if(t == nullptr) return nullptr;
-
-    if(t->template_type() == TYPE::RECORD) {
-      cur_record = t->DynamicCast<RecordType>();
-    } else {
-      if(loop > 1) return nullptr;
-      else return t;
-    }
-    loop--;
+    // next
+    vtype = t;
+    loop++;
   }
-  return nullptr;
+  return vtype;
 }
 
 bool TypeTemplate::StringLike() {

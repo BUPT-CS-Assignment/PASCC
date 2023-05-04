@@ -909,7 +909,12 @@ statement:
             $$ = new StatementNode(StatementNode::GrammarType::FUNC_ASSIGN_OP_EXP);
         }else{
             $$ = new StatementNode(StatementNode::GrammarType::VAR_ASSIGN_OP_EXP);
+            if (!$1.is_lvalue){
+                yyerror(real_ast,"You can only assign values to lvalues");
+            }
         }
+        if(error_flag)
+            break;
         $$->append_child($1.variable_node);
         $$->append_child($3.expression_node);
     }
@@ -1085,7 +1090,6 @@ variable:
     ID id_varparts
     {
         // variable -> id id_varparts.
-        
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         
         if(tmp == nullptr) {
@@ -1093,7 +1097,15 @@ variable:
             yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
-            //std::cout<<"variable type:"<<tmp->type()<<std::endl;
+            // Convert to a detailed type
+            $$.is_lvalue = true;
+            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST == tmp->symbol_type()){
+                tmp = dynamic_cast<ConstSymbol*>(tmp);
+                $$.is_lvalue = false;
+            } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+                tmp = dynamic_cast<FunctionSymbol*>(tmp);
+                $$.is_lvalue = false;
+            }
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
                 yyerror(real_ast,"Type check failed\n");
@@ -1309,6 +1321,8 @@ expression_list:
         //类型检查 检查是否为INT or CHAR???
         $$.type_ptr_list = $1.type_ptr_list;
         $$.type_ptr_list->push_back($3.type_ptr);
+        $$.is_lvalue_list = $1.is_lvalue_list;
+        $$.is_lvalue_list->push_back($3.is_lvalue);
         // expression_list -> expression_list , expression.
         if(error_flag)
             break;
@@ -1322,6 +1336,8 @@ expression_list:
         //这里应该是做不了的，但如果在声明的时候就有检查应该就不必做
         $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
+        $$.is_lvalue_list = new std::vector<bool>();
+        $$.is_lvalue_list->push_back($1.is_lvalue);
         // expression_list -> expression.
         if(error_flag)
             break;
@@ -1342,6 +1358,7 @@ expression:
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"expression -> simple_expression relop simple_expression\n");
         }
+        $$.is_lvalue = false;
         $$.type_ptr = result;
         
         std::string relop = $2.value.get<string>();
@@ -1368,8 +1385,11 @@ expression:
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"expression -> simple_expression '=' simple_expression\n");
         }
+        $$.is_lvalue = false;
         $$.type_ptr = result;
 
+        if(error_flag)
+            break;
         $$.expression_node = new ExpressionNode();
         $$.expression_node->append_child($1.simple_expression_node);
         LeafNode *relop_node = new LeafNode(ConstValue("=="));
@@ -1380,6 +1400,7 @@ expression:
     {
         // expression -> simple_expression.
         $$.type_ptr = $1.type_ptr;
+        $$.is_lvalue = $1.is_lvalue;
         //std::cout<<$$.type_ptr<<std::endl;
         if(error_flag)
             break;
@@ -1395,6 +1416,7 @@ expression:
         // expression -> str_expression.
         $$.type_ptr = $1.type_ptr;
         $$.length = $1.length;
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         $$.expression_node = new ExpressionNode(ExpressionNode::TargetType::CONST_STRING);
@@ -1406,6 +1428,7 @@ str_expression :
         // str_expression -> string.
         $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
         $$.length = $1.value.get<string>().length();
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         $$.str_expression_node = new StrExpressionNode();
@@ -1415,6 +1438,7 @@ str_expression :
         // str_expression -> str_expression + string.
         $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
         $$.length = $1.length + $3.value.get<string>().length();
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         $$.str_expression_node = new StrExpressionNode();
@@ -1427,6 +1451,7 @@ simple_expression:
     {   
         // simple_expression -> term.
         $$.type_ptr = $1.type_ptr;
+        $$.is_lvalue = $1.is_lvalue;
         if(error_flag)
             break;
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1436,6 +1461,7 @@ simple_expression:
     {
         // simple_expression -> + term.
         $$.type_ptr = $2.type_ptr;
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1447,6 +1473,7 @@ simple_expression:
     {
         // simple_expression -> - term.
         $$.type_ptr = $2.type_ptr;
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1461,6 +1488,7 @@ simple_expression:
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"simple_expression -> simple_expression or term\n");
         }
+        $$.is_lvalue = false;
         $$.type_ptr = $1.type_ptr;
 
         if(error_flag)
@@ -1475,6 +1503,7 @@ simple_expression:
     { 
         // 类型检查
         // simple_expression -> simple_expression + term.
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
@@ -1495,7 +1524,8 @@ simple_expression:
     }
     | simple_expression UMINUS term
     {
-          if(error_flag)
+        $$.is_lvalue = false;
+        if(error_flag)
             break;
         // 类型检查
         // simple_expression -> simple_expression - term.
@@ -1520,6 +1550,7 @@ term:
     {   
         // term -> factor.
         $$.type_ptr = $1.type_ptr;
+        $$.is_lvalue = $1.is_lvalue;
         if(error_flag)
             break;
         $$.term_node = new TermNode();
@@ -1537,8 +1568,9 @@ term:
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"term -> term mulop factor\n");
         }
+        $$.is_lvalue = false;
         $$.type_ptr = result;
-
+        
         std::string mulop = $2.value.get<string>();
         if(mulop == "div"){
             mulop = "/";
@@ -1560,6 +1592,7 @@ factor:
     {   
         // factor -> unsigned_const_variable.
         $$.type_ptr = $1.type_ptr;
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::UCONST_VAR);
@@ -1569,6 +1602,7 @@ factor:
     {   
         // factor -> variable.
         $$.type_ptr = $1.type_ptr;
+        $$.is_lvalue = $1.is_lvalue;
         if(error_flag)
             break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::VARIABLE);
@@ -1586,6 +1620,7 @@ factor:
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
+        $$.is_lvalue = false;
         $$.type_ptr = tmp->type();
         if(error_flag)
             break;
@@ -1599,6 +1634,7 @@ factor:
     {
         // factor -> (expression).
         $$.type_ptr = $2.type_ptr;
+        $$.is_lvalue = false;
         if(error_flag)
             break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::EXP);
@@ -1609,6 +1645,7 @@ factor:
         // factor -> not factor.
         // 类型检查
         //需要吗？
+        $$.is_lvalue = false;
         $$.type_ptr = $2.type_ptr;
         if(error_flag)
             break;
