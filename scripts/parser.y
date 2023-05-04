@@ -242,7 +242,6 @@ const_declaration :
 const_variable :
     PLUS ID
     {   
-        
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = nullptr;
@@ -701,10 +700,6 @@ subprogram_body :
 subprogram_head :
     FUNCTION ID formal_parameter ':' standrad_type ';'
     {
-        
-        // TODO插入符号表
-        // x = new FunctionSymbol(ID.name,$5,ID.decline,$3);
-        // insert(ID.name,x)
         // subprogram_head -> function id formal_parametert : standrad_type.
         FunctionSymbol* tmp ;
         if($3.parameters){
@@ -717,7 +712,6 @@ subprogram_head :
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
-        
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
         pstdlibs->Preset(table_set_queue.top()->symbols());
@@ -725,6 +719,9 @@ subprogram_head :
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
+                if (i.second.second == FunctionSymbol::PARAM_MODE::REFERENCE){
+                    tmp->set_ref(true);
+                }
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     yyerror(real_ast,"redefinition of variable");
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
@@ -741,10 +738,6 @@ subprogram_head :
     }
     | PROCEDURE ID formal_parameter ';'
     {
-        
-        // TODO插入符号表
-        // x = new FunctionSymbol(ID.name,NULL,ID.decline,$3);
-        // insert(ID.name,x)
         // subprogram_head -> procedure id formal_parametert.
         FunctionSymbol* tmp ;
         if($3.parameters){
@@ -765,6 +758,9 @@ subprogram_head :
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
+                if (i.second.second == FunctionSymbol::PARAM_MODE::REFERENCE){
+                    tmp->set_ref(true);
+                }
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     yyerror(real_ast,"redefinition of variable");
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
@@ -1080,7 +1076,7 @@ variable:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         
         if(tmp == nullptr) {
-             $$.type_ptr = nullptr;
+            $$.type_ptr = nullptr;
             yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
@@ -1090,8 +1086,9 @@ variable:
                 yyerror(real_ast,"Type check failed\n");
                 yyerror(real_ast,"variable -> id id_varparts.\n");
             }
-            //std::cout<<"safe after check"<<std::endl;
-            //std::cout<<"variable type:"<<$$.type_ptr<<std::endl;
+            if(tmp->is_ref()){
+                $1.value.set("*("+$1.value.get<string>()+")");
+            }
             $$.name = new std::string($1.value.get<string>());
         }
         if(error_flag)
