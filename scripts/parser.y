@@ -146,13 +146,12 @@ program :
         }
     };
 program_head :
-    PROGRAM ID '(' id_list ')' ';' {
+    PROGRAM ID ';' {
         if(error_flag)
             break;
         $$ = new ProgramHeadNode();
         LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
-        $$->append_child($4.id_list_node);
         table_set_queue.push(top_table_set);
         pstdlibs->Preset(table_set_queue.top()->symbols());  
         

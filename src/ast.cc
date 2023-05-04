@@ -27,15 +27,15 @@ void AST::Format(FILE* dst) {
 void LeafNode::Format(FILE* dst) {
   BasicType* tp = value_.type();
   if (tp == pascal_type::TYPE_INT) {
-    PRINT(" %d ", value_.get<int>())
+    PRINT("%d", value_.get<int>())
   } else if (tp == pascal_type::TYPE_REAL) {
-    PRINT(" %.2f ", value_.get<float>())
+    PRINT("%.2f", value_.get<float>())
   } else if (tp == pascal_type::TYPE_BOOL) {
-    PRINT(" %s ", value_.get<bool>() ? "true" : "false")
+    PRINT("%d", value_.get<bool>())
   } else if (tp == pascal_type::TYPE_CHAR) {
-    PRINT(" '%c' ", value_.get<char>())
+    PRINT("'%c'", value_.get<char>())
   } else if (tp == pascal_type::TYPE_STRINGLIKE) {
-    PRINT(" %s ", value_.get<string>().c_str())
+    PRINT("%s", value_.get<string>().c_str())
   }
 }
 
@@ -56,6 +56,8 @@ bool LeafNode::AnalyzeReference(TableSet* ts, FunctionSymbol* fn) {
 }
 /////////////////////////////////////////////
 
+
+
 void ProgramHeadNode::Format(FILE* dst) {
   time_t now = time(nullptr);
   tm* local = localtime(&now);
@@ -69,9 +71,7 @@ void ProgramBodyNode::Format(FILE* dst) {
   FormatAt(1, dst);  // type decl
   FormatAt(2, dst);  // var decl
   FormatAt(3, dst);  // sub prog decl
-  PRINT("int main(int argc, char** argv) {\n")
-  PRINT("if (argc >= 1) freopen(argv[1], \"r\", stdin);\n")
-  PRINT("if (argc >= 2) freopen(argv[2], \"w\", stdout);\n")
+  PRINT("int main() {\n")
   FormatAt(4, dst);  // comp stat
   PRINT("}\n")
 }

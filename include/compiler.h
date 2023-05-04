@@ -23,7 +23,7 @@ class Compiler {
   int Compile(std::string in, std::string out = stdout_, std::string st = "google");
   int Compile(ast::AST* in, std::string out, std::string st);
   void CodeExecute(std::string file_name, std::string args = "");
-  void Remove(std::string file_name);
+  void Remove(std::string file_name, bool rm_all = false);
 
  private:
 #ifdef WIN32

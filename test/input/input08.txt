@@ -1,4 +1,4 @@
-program TestProcedure(void);
+program TestProcedure;
 
 procedure printMessage;
 begin
