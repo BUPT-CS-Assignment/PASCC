@@ -1,13 +1,10 @@
-program TestComparison;
+program TestArray;
 var
-  a, b: integer;
+  a, b: array [1..10] of array ['a'..'z'] of record x: integer; y:char end;
 begin
-  a := 10;
-  b := 3;
-  writeln(a = b); 
-  writeln(a <> b); 
-  writeln(a < b); 
-  writeln(a <= b); 
-  writeln(a > b); 
-  writeln(a >= b); 
+  a[2]['a'].x := 10;
+  b := a;
+  b[5]['b'].y := 'c';
+  writeln(b[2]['a'].x);
+  writeln(b[5]['b'].y);
 end.
