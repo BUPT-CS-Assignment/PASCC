@@ -227,6 +227,8 @@ void TypeInit() {
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "<=")] = TYPE_BOOL;
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, ">=")] = TYPE_BOOL;
   // int
+  operation_map[Operation(TYPE_INT, NULL, "-")] = TYPE_INT;
+  operation_map[Operation(TYPE_INT, NULL, "+")] = TYPE_INT;
   operation_map[Operation(TYPE_INT, TYPE_INT, "+")] = TYPE_INT;
   operation_map[Operation(TYPE_INT, TYPE_INT, "-")] = TYPE_INT;
   operation_map[Operation(TYPE_INT, TYPE_INT, "*")] = TYPE_INT;
