@@ -13,3 +13,5 @@ test/__pycache__
 test/.pascc.*
 [Cc]MakeFile*
 scripts/parser.output
+scripts/parser.tab.c
+test/errtest/input/temp.pas

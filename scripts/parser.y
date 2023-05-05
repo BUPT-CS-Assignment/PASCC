@@ -9,6 +9,8 @@ extern "C"
     void yyerror(const char *s);
     extern int yylex(void);
     extern int line_count;
+    extern int char_count;
+    extern bool new_line_flag;
 }
 extern std::string cur_line_info;
 //AST real_ast;
@@ -22,6 +24,7 @@ int error_flag=0;
 void yyerror(ast::AST* real_ast,const char *msg);
 void yyerror_var(ast::AST* real_ast,int line);
 void yynote(std::string msg,int line);
+bool is_in(void* token_set_raw);
 
 %}
 
@@ -1730,6 +1733,67 @@ unsigned_const_variable :
 /*---------------.
 | Error handler  |
 `---------------*/
+program:error
+    {
+        fprintf(stderr,"\033[01;31m error\033[0m : %s\n","There are unrecoverable errors. Please check the code carefully!");
+        while (yychar != YYEOF){
+            yychar = yylex();
+        }
+        real_ast->set_root(nullptr);
+        error_flag =1;
+    };
+
+program_head:  error  
+    {
+        new_line_flag=false;
+        yytoken_kind_t follow_set[] = {FUNCTION,PROCEDURE,TYPE,BEGIN_,VAR,YYEOF};
+        if(yychar==ID)
+            yyerror(real_ast,"Every program must begin with the symbol program.!");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (new_line_flag==false || yychar!= YYEOF){
+            yychar = yylex();
+        }
+    };
+program_head: PROGRAM error
+    {
+
+    };     
+
+program_body: error
+    {
+
+    };
+
+const_declarations: CONST error
+    {
+
+    };
+
+type_declarations: TYPE error
+    {
+
+    };
+
+var_declarations: VAR error
+    {
+
+    };
+
+subprogram_declaration: FUNCTION error
+    {
+
+    };
+
+subprogram_declaration: PROCEDURE error
+    {
+
+    };  
+
+statement : error
+    {
+
+    };
 /* A colon is expected. In declarations, the colon is followed by a type.*/
 var_declaration:
     var_declaration ';' id_list error type_or_ID
@@ -1813,20 +1877,20 @@ type: ARRAY '[' periods error OF type
 //     };
 
     /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
-program: program_head program_body error
-    {
-        table_set_queue.push(top_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());
-        yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
-    };
+// program: program_head program_body error
+//     {
+//         table_set_queue.push(top_table_set);
+//         pstdlibs->Preset(table_set_queue.top()->symbols());
+//         yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
+//     };
 
     /* Every program must begin with the symbol program.*/
-program_head: error ID '(' id_list ')' ';'
-    {
-        table_set_queue.push(top_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());
-        yyerror(real_ast,"Every program must begin with the symbol program.");
-    };
+// program_head: error ID '(' id_list ')' ';'
+//     {
+//         table_set_queue.push(top_table_set);
+//         pstdlibs->Preset(table_set_queue.top()->symbols());
+//         yyerror(real_ast,"Every program must begin with the symbol program.");
+//     };
 
     /* The symbol then is expected.*/
 // statement: IF error statement else_part
@@ -1873,23 +1937,32 @@ statement: ID error ';'
     {
         yychar = ';';
         yyerror(real_ast,"Syntax error, ';' expected .");
-    }
-    | error ';'
-    {
-        yychar = ';';
-        yyerror(real_ast,"Syntax error, ';' expected .");
     };
 
 %%
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
-    // if(strcmp(msg,"syntax error")==0)
-    //     return;
-    fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
+if(!yydebug)
+    if(strcmp(msg,"syntax error")==0)
+        return;
+
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", line_count,char_count,msg);
     fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
     error_flag = 1;
     real_ast->set_root(nullptr);
+}
+
+bool is_in(void* token_set_raw){
+    auto *token_set = (yytoken_kind_t*)token_set_raw;
+    if(yychar == YYEOF)
+        return true;
+    int i=0;
+    while(token_set[i] != YYEOF)
+        if(yychar==token_set[i++])
+            return true;
+    return false;
+    
 }
 
 void yynote(std::string msg ,int line){
