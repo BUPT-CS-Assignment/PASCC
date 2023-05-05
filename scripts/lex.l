@@ -5,6 +5,7 @@
 
 int line_count = 1;
 int char_count = 1;
+bool new_line_flag;
 int i;
 std::string cur_line_info;
 
@@ -79,7 +80,7 @@ ANNO                    (\{[^}]*\})
 ID                      {letter}({letter}|{digit})*
 
 /* 字符 */
-CHAR                    ('{letter}')
+CHAR                    ('({letter}|{digit})')
 /*字符串*/
 STRING_                  (\"([^\\\"\n]|(\\.))*\")
 
@@ -97,7 +98,7 @@ SUBCATALOG              ".."
   
 %% 
 "\t"                    { cache_line(); char_count += 4; }
-"\n"                    { wrap(); }
+"\n"                    { wrap(); new_line_flag = true;}
 {ws}                    { cache_line(); char_count += yyleng; }
 
 {PROGRAM}               { cache_line(); to_str(); return PROGRAM; }
