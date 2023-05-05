@@ -453,6 +453,7 @@ type :
         // type -> standrad_type.
         $$.main_type = (TypeAttr::MainType)0;
         $$.type_ptr = $1.type_ptr;
+        //if ($$.type_ptr == pascal_type::TYPE_BOOL) std::cout<<"666"<<std::endl;
         if(error_flag)
             break;
         $$.type_node = new TypeNode(TypeNode::GrammarType::BASIC_TYPE);
@@ -1089,10 +1090,12 @@ variable_list :
     { 
         $$.basic_types = new std::vector<BasicType*>();
         if($1.type_ptr != nullptr){
-            if ($1.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
+            if ($1.type_ptr==pascal_type::TYPE_INT ||
+                $1.type_ptr==pascal_type::TYPE_CHAR ||
+                $1.type_ptr==pascal_type::TYPE_REAL){
                 $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
             } else{
-                yyerror(real_ast,"It should be basic type\n");
+                yyerror(real_ast,"It should be INT BOOL or CHAR\n");
             }
             
         }
@@ -1103,10 +1106,12 @@ variable_list :
     } | variable_list ',' variable{
         $$.basic_types = $1.basic_types;
         if($3.type_ptr != nullptr){
-            if ($3.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
+            if ($3.type_ptr==pascal_type::TYPE_INT ||
+                $3.type_ptr==pascal_type::TYPE_CHAR ||
+                $3.type_ptr==pascal_type::TYPE_REAL){
                 $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
             } else{
-                yyerror(real_ast,"It should be basic type\n");
+                yyerror(real_ast,"It should be INT BOOL or CHAR\n");
             }
         }
         if(error_flag)
