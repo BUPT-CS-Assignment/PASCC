@@ -131,7 +131,7 @@ ArrayType ArrayType::Visit(unsigned int v_layer) {
   if(v_layer > dims()) return ArrayType(TYPE_ERROR);
   // temp array
   vector<ArrayBound> bs;
-  for(int i = dims() - v_layer; i < bounds_.size(); i++) {
+  for(int i = v_layer; i < bounds_.size(); i++) {
     bs.emplace_back(bounds_[i]);
   }
   return ArrayType(base_type_, bs);
