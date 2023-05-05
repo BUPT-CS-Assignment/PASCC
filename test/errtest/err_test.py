@@ -2,7 +2,7 @@ import re
 import pytest
 import subprocess
 
-test_case_index = [1,2]
+test_case_index = range(1,25)
 
 def remove_ansi_escapes(text):
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')

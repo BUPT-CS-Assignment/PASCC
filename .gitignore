@@ -16,7 +16,10 @@ test/corrtest/input/*
 [Cc]MakeFile*
 scripts/parser.output
 scripts/parser.tab.c
-test/errtest/input/temp.pas
+test/errtest/input/atemp.pas
 test/corrtest/input/input*
 test/errtest/output/output*.txt
 test/errtest/input/input*.pas
+test/errtest/__pycache__/*.pyc
+scripts/__pycache__/*.pyc
+scripts/test.sh
