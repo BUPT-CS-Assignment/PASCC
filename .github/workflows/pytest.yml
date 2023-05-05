@@ -45,6 +45,6 @@ jobs:
       
       - name: Run tests
         run: |
-          cd test
+          cd scripts
           pytest
           

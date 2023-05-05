@@ -1,2 +1,0 @@
-4: \terror : redefinition of variable
-4:\t|\t  x: integer

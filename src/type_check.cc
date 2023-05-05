@@ -19,11 +19,14 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
     } else { //结构体
       // check array
       if (in_array) {
-        auto cur_array_type = cur_type->DynamicCast<ArrayType>()->Visit(vistor);
-        if (cur_array_type == TYPE_ERROR) {
+        auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
+        if (!cur_array_type->Valid()) {
           return TYPE_ERROR;
         }
-        cur_type = cur_array_type.base_type();
+        if(cur_array_type->dims() != 0){
+          return TYPE_ERROR;
+        }
+        cur_type = cur_array_type->base_type();
         in_array = 0;
       }
       vistor.clear();
@@ -36,11 +39,12 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
     }
   }
   if (in_array) {
-    auto cur_array_type = cur_type->DynamicCast<ArrayType>()->Visit(vistor);
-    if (cur_array_type == TYPE_ERROR) {
+    auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
+    if (!cur_array_type->Valid()) {
       return TYPE_ERROR;
     }
-    cur_type = cur_array_type.base_type();
+    if(cur_array_type->dims() == 0) cur_type = cur_array_type->base_type();
+    else cur_type = cur_array_type;
   }
   return cur_type;
 }
