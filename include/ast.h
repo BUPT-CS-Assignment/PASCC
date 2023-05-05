@@ -429,14 +429,6 @@ class VariableNode : public Node {
   void Format(bool ref, FILE* dst);
 };
 
-class IDVarPartsNode : public Node {
- public:
-//  enum class GrammarType {
-//    EPSILON,      //id_varparts → EPSILON
-//    MULTIPLE_IDv, //id_varparts → id_varparts id_varpart
-//  };
-};
-
 class IDVarPartNode : public Node {
  public:
   enum class GrammarType {
@@ -445,12 +437,30 @@ class IDVarPartNode : public Node {
   };
 
   IDVarPartNode(GrammarType gt) : grammar_type_(gt) {}
+  GrammarType grammar_type() { return grammar_type_; }
   void Format(FILE* dst) override;
   void set_array_lb(int lb) { array_lb_ = lb; }
  private:
   int array_lb_ = 0;
   GrammarType grammar_type_;
 };
+
+class IDVarPartsNode : public Node {
+ public:
+//  enum class GrammarType {
+//    EPSILON,      //id_varparts → EPSILON
+//    MULTIPLE_IDv, //id_varparts → id_varparts id_varpart
+//  };
+  void set_lb(std::vector<pascal_type::ArrayType::ArrayBound> &bound){
+    if (child_list_.size() == 0) return;
+    if (child_list_[1]->DynamicCast<IDVarPartNode>()->grammar_type() == IDVarPartNode::GrammarType::EXP_LIST){
+      child_list_[1]->DynamicCast<IDVarPartNode>()->set_array_lb(bound.back().lb_);
+      bound.pop_back();
+    }
+    child_list_[0]->DynamicCast<IDVarPartsNode>()->set_lb(bound);  
+  }
+};
+
 
 class BranchListNode : public Node {
 public:

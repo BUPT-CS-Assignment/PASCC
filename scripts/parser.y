@@ -469,7 +469,21 @@ type :
         $$.base_type_node = $6.base_type_node;
         $$.bounds = $3.bounds;
         if ($3.bounds){
-            $$.type_ptr = new pascal_type::ArrayType($6.type_ptr,*($3.bounds));
+            // connect $3.bounds and $6.bounds
+            auto merged_bounds = new std::vector<ArrayType::ArrayBound>();
+            for (auto i : *($3.bounds)){
+                merged_bounds->push_back(i);
+            }
+            auto basic_type = $6.type_ptr;
+            if($6.type_ptr->template_type() == pascal_type::TypeTemplate::TYPE::ARRAY) {
+                for (auto i : *($6.bounds)){
+                    merged_bounds->push_back(i);
+                }
+                basic_type = $6.type_ptr->DynamicCast<pascal_type::ArrayType>()->base_type();
+            }
+
+            $$.type_ptr = new pascal_type::ArrayType(basic_type, *merged_bounds);
+            delete merged_bounds;
         }
         
         if(error_flag)
@@ -1139,6 +1153,11 @@ variable:
             } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
                 tmp = dynamic_cast<FunctionSymbol*>(tmp);
                 $$.is_lvalue = false;
+            } else {
+                if (tmp->type()->template_type() == TypeTemplate::TYPE::ARRAY && !error_flag){
+                    std::vector<ArrayType::ArrayBound> bounds = dynamic_cast<ArrayType*>(tmp->type())->bounds();
+                    $2.id_varparts_node->set_lb(bounds);
+                }
             }
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
