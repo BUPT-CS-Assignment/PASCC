@@ -8,6 +8,7 @@ int char_count = 1;
 bool new_line_flag;
 int i;
 std::string cur_line_info;
+std::string last_line_info;
 
 void wrap();
 void process_anno();
@@ -166,6 +167,7 @@ SUBCATALOG              ".."
 %%
 void wrap()
 {
+    last_line_info = cur_line_info;
     cur_line_info.clear();
     line_count++; 
     char_count = 1;

@@ -10,8 +10,10 @@ extern "C"
     extern int yylex(void);
     extern int line_count;
     extern bool new_line_flag;
+    extern int yyleng;
 }
 extern std::string cur_line_info;
+extern std::string last_line_info;
 //AST real_ast;
 //symbol_table::SymbolTable *real_symbol_table = new symbol_table::SymbolTable();
 std::stack<symbol_table::TableSet*> table_set_queue;
@@ -19,11 +21,12 @@ symbol_table::TableSet* top_table_set = new symbol_table::TableSet("main",nullpt
 pstdlib::PStdLibs *pstdlibs = new pstdlib::PStdLibs();
 //table_set_queue.push(top_table_set);
 int error_flag=0;
+char location_pointer[256];
+void location_pointer_refresh();
 
 void yyerror(ast::AST* real_ast,const char *msg);
 void yyerror_var(ast::AST* real_ast,int line);
 void yynote(std::string msg,int line);
-
 %}
 
 %union
@@ -1623,7 +1626,7 @@ term:
         $$.type_ptr = result;
         
         std::string mulop = $2.value.get<string>();
-        if(mulop == "/"){
+        if(mulop == "/" && !error_flag){
             $1.term_node->set_op_div(true);
         } else if(mulop == "div"){
             mulop = "/";
@@ -1769,25 +1772,31 @@ program:error
 
 program_head:  error  
     {
+        location_pointer_refresh();
         new_line_flag=false;
         if(yychar==ID)
-            yyerror(real_ast,"Every program must begin with the symbol program.!");
+            yyerror(real_ast,"Every program must begin with the symbol program!");
         else
             yyerror(real_ast,"unknown error!");
-        while (new_line_flag==false || yychar!= YYEOF){
+        while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
+        fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
     };
 program_head: PROGRAM error
     {
+        location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
             yyerror(real_ast,"An identifier is expected.");
         else
             yyerror(real_ast,"unknown error!");
-        while (new_line_flag==false || yychar!= YYEOF){
+        while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
+        fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
     };     
 
 program_body: error
@@ -1978,7 +1987,7 @@ if(!yydebug)
         return;
 
     fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count,cur_line_info.size(),msg);
-    fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
+        
     error_flag = 1;
     real_ast->set_root(nullptr);
 }
@@ -1993,6 +2002,12 @@ void yyerror_var(ast::AST* real_ast,int line){
     real_ast->set_root(nullptr);
 }
 
+void location_pointer_refresh(){
+    auto length = cur_line_info.size()-yyleng;
+    memset(location_pointer,' ',length);
+    location_pointer[length]='^';
+    location_pointer[length+1]='\n';
+}
 // int main(){
 //     AST *real_ast = new AST();
 //     if(!yyparse(real_ast)&&error_flag){

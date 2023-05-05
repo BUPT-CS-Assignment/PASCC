@@ -453,11 +453,11 @@ class IDVarPartsNode : public Node {
 //  };
   void set_lb(std::vector<pascal_type::ArrayType::ArrayBound> &bound){
     if (child_list_.size() == 0) return;
-    if (child_list_[1]->DynamicCast<IDVarPartNode>()->grammar_type() == IDVarPartNode::GrammarType::EXP_LIST){
-      child_list_[1]->DynamicCast<IDVarPartNode>()->set_array_lb(bound.back().lb_);
-      bound.pop_back();
+    child_list_[0]->DynamicCast<IDVarPartsNode>()->set_lb(bound);
+    if(child_list_[1]->DynamicCast<IDVarPartNode>()->grammar_type() == IDVarPartNode::GrammarType::EXP_LIST){
+      child_list_[1]->DynamicCast<IDVarPartNode>()->set_array_lb(bound[0].lb_);
+      bound.erase(bound.begin());
     }
-    child_list_[0]->DynamicCast<IDVarPartsNode>()->set_lb(bound);  
   }
 };
 

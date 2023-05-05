@@ -17,3 +17,6 @@ test/corrtest/input/*
 scripts/parser.output
 scripts/parser.tab.c
 test/errtest/input/temp.pas
+test/corrtest/input/input*
+test/errtest/output/output*.txt
+test/errtest/input/input*.pas
