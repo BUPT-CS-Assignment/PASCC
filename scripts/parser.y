@@ -194,15 +194,19 @@ const_declarations :{
     }
     | CONST const_declaration ';'
     {   
+        // const_declarations -> const const_declaration
         if(error_flag)
             break;
-        // const_declarations -> const const_declaration
         $$ = new ConstDeclarationsNode(); 
         $$->append_child($2);
+        
     };
 const_declaration :
     const_declaration ';' ID '=' const_variable
     {
+        if (!$5.is_right){
+            break;
+        }
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
@@ -225,8 +229,10 @@ const_declaration :
         
         // const_declaration -> id = const_variable.
         //TODO 插入符号表
+        if (!$3.is_right){
+            break;
+        }
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
-
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
             yyerror(real_ast,"The identifier has been declared.");
         } 
@@ -247,7 +253,14 @@ const_variable :
         $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
+            $$.is_right = false;
         }else {
+            // You cannot use variables to assign values to constants
+            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
+                yyerror(real_ast,"The identifier is not a const variable.");
+                $$.is_right = false;
+                break;
+            }
             $$.value = symbol->value();
             $$.type_ptr = symbol->type();
             if(error_flag)
@@ -263,7 +276,14 @@ const_variable :
         $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
+            $$.is_right = false;
         }else {
+            // You cannot use variables to assign values to constants
+            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
+                yyerror(real_ast,"The identifier is not a const variable.");
+                $$.is_right = false;
+                break;
+            }
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
@@ -279,7 +299,14 @@ const_variable :
         $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
-        }else {
+            $$.is_right = false;
+        } else {
+            // You cannot use variables to assign values to constants
+            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
+                yyerror(real_ast,"The identifier is not a const variable.");
+                $$.is_right = false;
+                break;
+            }
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
         }
@@ -469,7 +496,7 @@ type :
 record_body :
     {
         // record_body -> empty.
-        $$.record_info = nullptr;
+        $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
         if(error_flag)
             break;
         $$.record_body_node = new RecordBodyNode();
@@ -569,8 +596,6 @@ var_declarations :
     }
     | VAR var_declaration ';'
     {
-        if(error_flag)
-            break;
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
@@ -579,14 +604,15 @@ var_declarations :
             }
         }
         // var_declarations -> var var_declaration.
+        if(error_flag)
+            break;
         $$ = new VariableDeclarationsNode();
         $$->append_child($2.variable_declaration_node);
     };
 var_declaration :
     var_declaration ';' id_list ':' type 
     {
-        if(error_flag)
-            break;
+        
         // var_declaration -> var_declaration ; id_list : type.
         $$.record_info = $1.record_info;
         for (auto i : *($3.list_ref)){
@@ -595,6 +621,8 @@ var_declaration :
              yyerror(real_ast,"redefinition of variable");
             }
         }
+        if(error_flag)
+            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -602,8 +630,6 @@ var_declaration :
     }
     | id_list ':' type 
     {
-        if(error_flag)
-           break;
         $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
         for (auto i : *($1.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
@@ -612,14 +638,14 @@ var_declaration :
              }
         }
         // var_declaration -> id : type.
+        if(error_flag)
+           break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.id_list_node);
         $$.variable_declaration_node->append_child($3.type_node);
     }
     |var_declaration ';' id_list ':' ID
     {
-        if(error_flag)
-            break;
         $$.record_info = $1.record_info;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
@@ -632,6 +658,8 @@ var_declaration :
                 }
             }
         }
+        if(error_flag)
+            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -640,8 +668,6 @@ var_declaration :
     }
     |id_list ':' ID
     {
-        if(error_flag)
-                break;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
             yyerror(real_ast,"undefined type");
@@ -654,6 +680,8 @@ var_declaration :
                 }
             }
         }
+        if(error_flag)
+            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::ID);
         $$.variable_declaration_node->append_child($1.id_list_node);
         LeafNode *leaf_node = new LeafNode($3.value);
@@ -778,7 +806,7 @@ subprogram_head :
 formal_parameter :
     {   
         // formal_parameter -> empty.
-        $$.parameters = nullptr;
+        $$.parameters = new std::vector<std::pair<std::string, std::pair<BasicType*,FunctionSymbol::PARAM_MODE>>>();
         if(error_flag)
             break;
         $$.formal_parameter_node = new FormalParamNode();
@@ -1034,21 +1062,21 @@ statement:
     }
     |WRITE '(' expression_list ')'
     {
+        if(error_flag)
+            break;
         if(!$3.expression_list_node->GetType($3.type_ptr_list)){
             yyerror(real_ast,"BasicType is expexted in WRITE\n");
         }
-        if(error_flag)
-            break;
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
         $$->append_child($3.expression_list_node);
     }
     |WRITELN'(' expression_list ')'
     {
+        if(error_flag)
+            break;
         if(!$3.expression_list_node->GetType($3.type_ptr_list)){
             yyerror(real_ast,"BasicType is expexted in WRITELN\n");
         }
-        if(error_flag)
-            break;
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
         $$->append_child($3.expression_list_node);
     };

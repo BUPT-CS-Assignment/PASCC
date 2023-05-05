@@ -25,6 +25,7 @@ struct ValueAttr {
   pascal_type::BasicType* type_ptr;
   ConstValue value;
   ast::LeafNode* const_variable_node;
+  bool is_right = true;
 };
 
 struct StandardTypeAttr {
