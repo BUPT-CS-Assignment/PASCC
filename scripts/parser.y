@@ -1768,7 +1768,6 @@ program:error
 program_head:  error  
     {
         new_line_flag=false;
-        yytoken_kind_t follow_set[] = {FUNCTION,PROCEDURE,TYPE,BEGIN_,VAR,YYEOF};
         if(yychar==ID)
             yyerror(real_ast,"Every program must begin with the symbol program.!");
         else
@@ -1976,7 +1975,7 @@ if(!yydebug)
     if(strcmp(msg,"syntax error")==0)
         return;
 
-    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", line_count,cur_line_info.size(),msg);
+    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count,cur_line_info.size(),msg);
     fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
     error_flag = 1;
     real_ast->set_root(nullptr);
