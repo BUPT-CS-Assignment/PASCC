@@ -1623,7 +1623,7 @@ term:
         $$.type_ptr = result;
         
         std::string mulop = $2.value.get<string>();
-        if(mulop == "/"){
+        if(mulop == "/" && !error_flag){
             $1.term_node->set_op_div(true);
         } else if(mulop == "div"){
             mulop = "/";
