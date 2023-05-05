@@ -92,6 +92,8 @@ class ArrayType : public TypeTemplate {
   TypeTemplate* base_type() { return base_type_; }
   bool Valid() { return base_type_ != TYPE_NONE && base_type_ != TYPE_ERROR;}
   size_t dims() { return bounds_.size(); }     // get dimensions
+  std::vector<ArrayBound>& bounds() { return bounds_; }  // get bounds
+  ArrayBound bound(size_t i) { return bounds_[i]; }     // get bound of dimension i
   bool StringLike(int access_layer = 0);            // check if string-like (array of char)
 
   ArrayType& operator=(const ArrayType& a2);
