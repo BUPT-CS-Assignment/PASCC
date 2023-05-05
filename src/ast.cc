@@ -549,6 +549,13 @@ void StrExpressionNode::Format(FILE *dst) {
   PRINT("\"")
 }
 
+void TermNode::Format(FILE *dst) {
+  if(op_div) PRINT("(float)")
+  for(auto child:child_list_){
+    child->Format(dst);
+  }
+}
+
 void FactorNode::Format(FILE* dst) {
   switch (grammar_type_) {
     case GrammarType::UCONST_VAR:

@@ -604,6 +604,10 @@ class TermNode : public Node {
 //    FACTOR,               //term → factor
 //    TERM_MULOP_FACTOR,    //term → term mulop factor
 //  };
+   void set_op_div(bool op) { op_div = op; }
+   void Format(FILE* dst) override;
+  private:
+    bool op_div = false;
 };
 
 
