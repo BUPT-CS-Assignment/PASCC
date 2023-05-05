@@ -20,7 +20,6 @@ def read_expected_output(output_file):
 
 def check_program(input_file, expected_output):
     output = run_program(input_file)
-    print(repr(output))
     expected_output = read_expected_output(expected_output)
     
     assert output == expected_output
