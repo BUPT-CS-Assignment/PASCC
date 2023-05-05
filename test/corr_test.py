@@ -4,10 +4,10 @@ import subprocess
 test_case_num = 9
 
 def run_program(input_file):
-    input_file_c = input_file.replace('.txt', '.c')
+    input_file_c = input_file.replace('.pas', '.c')
     subprocess.Popen(['../bin/PASCC', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE).wait()
     
-    input_file_exe = input_file.replace('.txt', '')
+    input_file_exe = input_file.replace('.pas', '')
     process = subprocess.Popen(['gcc', '-o', input_file_exe, input_file_c], stdout=subprocess.PIPE).wait()
    
     output, error = subprocess.Popen([input_file_exe], stdout=subprocess.PIPE).communicate()
