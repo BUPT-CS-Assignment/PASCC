@@ -1,4 +1,0 @@
-program Hello;
-begin
-  a[2 :=2;
-end.

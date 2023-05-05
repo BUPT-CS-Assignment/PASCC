@@ -26,7 +26,7 @@ def check_program(input_file, expected_output):
     assert output == expected_output
 
 @pytest.mark.parametrize("input_file, expected_output", [
-    (f"errtest/input/input{i:02d}.txt", f"errtest/output/output{i:02d}.txt") for i in test_case_index
+    (f"errtest/input/input{i:02d}.pas", f"errtest/output/output{i:02d}.txt") for i in test_case_index
 ])
 
 def test_program_with_multiple_cases(input_file, expected_output):

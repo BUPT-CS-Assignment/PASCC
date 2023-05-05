@@ -1,8 +1,0 @@
-program TestError2;
-var
-    a : char;
-    : integer;
-    c : char;
-    : B;
-begin
-end.
