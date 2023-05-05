@@ -412,9 +412,9 @@ void StatementNode::Format(FILE* dst) {
     case GrammarType::REPEAT_STATEMENT: {
       PRINT("do {\n")
       FormatAt(0, dst);
-      PRINT("} while (")
+      PRINT("} while (!(")
       FormatAt(1, dst);
-      PRINT(");\n")
+      PRINT("));\n")
       break;
     }
   }
