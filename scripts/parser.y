@@ -9,7 +9,6 @@ extern "C"
     void yyerror(const char *s);
     extern int yylex(void);
     extern int line_count;
-    extern bool new_line_flag;
 }
 extern std::string cur_line_info;
 //AST real_ast;
@@ -195,19 +194,15 @@ const_declarations :{
     }
     | CONST const_declaration ';'
     {   
-        // const_declarations -> const const_declaration
         if(error_flag)
             break;
+        // const_declarations -> const const_declaration
         $$ = new ConstDeclarationsNode(); 
         $$->append_child($2);
-        
     };
 const_declaration :
     const_declaration ';' ID '=' const_variable
     {
-        if (!$5.is_right){
-            break;
-        }
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
@@ -230,10 +225,8 @@ const_declaration :
         
         // const_declaration -> id = const_variable.
         //TODO 插入符号表
-        if (!$3.is_right){
-            break;
-        }
         pascal_symbol::ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
+
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
             yyerror(real_ast,"The identifier has been declared.");
         } 
@@ -254,14 +247,7 @@ const_variable :
         $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
-            $$.is_right = false;
         }else {
-            // You cannot use variables to assign values to constants
-            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                yyerror(real_ast,"The identifier is not a const variable.");
-                $$.is_right = false;
-                break;
-            }
             $$.value = symbol->value();
             $$.type_ptr = symbol->type();
             if(error_flag)
@@ -277,14 +263,7 @@ const_variable :
         $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
-            $$.is_right = false;
         }else {
-            // You cannot use variables to assign values to constants
-            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                yyerror(real_ast,"The identifier is not a const variable.");
-                $$.is_right = false;
-                break;
-            }
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
@@ -300,14 +279,7 @@ const_variable :
         $$.type_ptr = nullptr;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
-            $$.is_right = false;
-        } else {
-            // You cannot use variables to assign values to constants
-            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                yyerror(real_ast,"The identifier is not a const variable.");
-                $$.is_right = false;
-                break;
-            }
+        }else {
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
         }
@@ -451,7 +423,6 @@ type :
         // type -> standrad_type.
         $$.main_type = (TypeAttr::MainType)0;
         $$.type_ptr = $1.type_ptr;
-        //if ($$.type_ptr == pascal_type::TYPE_BOOL) std::cout<<"666"<<std::endl;
         if(error_flag)
             break;
         $$.type_node = new TypeNode(TypeNode::GrammarType::BASIC_TYPE);
@@ -467,21 +438,7 @@ type :
         $$.base_type_node = $6.base_type_node;
         $$.bounds = $3.bounds;
         if ($3.bounds){
-            // connect $3.bounds and $6.bounds
-            auto merged_bounds = new std::vector<ArrayType::ArrayBound>();
-            for (auto i : *($3.bounds)){
-                merged_bounds->push_back(i);
-            }
-            auto basic_type = $6.type_ptr;
-            if($6.type_ptr->template_type() == pascal_type::TypeTemplate::TYPE::ARRAY) {
-                for (auto i : *($6.bounds)){
-                    merged_bounds->push_back(i);
-                }
-                basic_type = $6.type_ptr->DynamicCast<pascal_type::ArrayType>()->base_type();
-            }
-
-            $$.type_ptr = new pascal_type::ArrayType(basic_type, *merged_bounds);
-            delete merged_bounds;
+            $$.type_ptr = new pascal_type::ArrayType($6.type_ptr,*($3.bounds));
         }
         
         if(error_flag)
@@ -512,7 +469,7 @@ type :
 record_body :
     {
         // record_body -> empty.
-        $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
+        $$.record_info = nullptr;
         if(error_flag)
             break;
         $$.record_body_node = new RecordBodyNode();
@@ -612,6 +569,8 @@ var_declarations :
     }
     | VAR var_declaration ';'
     {
+        if(error_flag)
+            break;
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
@@ -620,15 +579,14 @@ var_declarations :
             }
         }
         // var_declarations -> var var_declaration.
-        if(error_flag)
-            break;
         $$ = new VariableDeclarationsNode();
         $$->append_child($2.variable_declaration_node);
     };
 var_declaration :
     var_declaration ';' id_list ':' type 
     {
-        
+        if(error_flag)
+            break;
         // var_declaration -> var_declaration ; id_list : type.
         $$.record_info = $1.record_info;
         for (auto i : *($3.list_ref)){
@@ -637,8 +595,6 @@ var_declaration :
              yyerror(real_ast,"redefinition of variable");
             }
         }
-        if(error_flag)
-            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -646,6 +602,8 @@ var_declaration :
     }
     | id_list ':' type 
     {
+        if(error_flag)
+           break;
         $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
         for (auto i : *($1.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
@@ -654,14 +612,14 @@ var_declaration :
              }
         }
         // var_declaration -> id : type.
-        if(error_flag)
-           break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.id_list_node);
         $$.variable_declaration_node->append_child($3.type_node);
     }
     |var_declaration ';' id_list ':' ID
     {
+        if(error_flag)
+            break;
         $$.record_info = $1.record_info;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
@@ -674,8 +632,6 @@ var_declaration :
                 }
             }
         }
-        if(error_flag)
-            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -684,6 +640,8 @@ var_declaration :
     }
     |id_list ':' ID
     {
+        if(error_flag)
+                break;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
             yyerror(real_ast,"undefined type");
@@ -696,8 +654,6 @@ var_declaration :
                 }
             }
         }
-        if(error_flag)
-            break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::ID);
         $$.variable_declaration_node->append_child($1.id_list_node);
         LeafNode *leaf_node = new LeafNode($3.value);
@@ -822,7 +778,7 @@ subprogram_head :
 formal_parameter :
     {   
         // formal_parameter -> empty.
-        $$.parameters = new std::vector<std::pair<std::string, std::pair<BasicType*,FunctionSymbol::PARAM_MODE>>>();
+        $$.parameters = nullptr;
         if(error_flag)
             break;
         $$.formal_parameter_node = new FormalParamNode();
@@ -1083,6 +1039,7 @@ statement:
         if(!$3.expression_list_node->GetType($3.type_ptr_list)){
             yyerror(real_ast,"BasicType is expexted in WRITE\n");
         }
+        
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
         $$->append_child($3.expression_list_node);
     }
@@ -1102,12 +1059,10 @@ variable_list :
     { 
         $$.basic_types = new std::vector<BasicType*>();
         if($1.type_ptr != nullptr){
-            if ($1.type_ptr==pascal_type::TYPE_INT ||
-                $1.type_ptr==pascal_type::TYPE_CHAR ||
-                $1.type_ptr==pascal_type::TYPE_REAL){
+            if ($1.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
                 $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
             } else{
-                yyerror(real_ast,"It should be INT BOOL or CHAR\n");
+                yyerror(real_ast,"It should be basic type\n");
             }
             
         }
@@ -1118,12 +1073,10 @@ variable_list :
     } | variable_list ',' variable{
         $$.basic_types = $1.basic_types;
         if($3.type_ptr != nullptr){
-            if ($3.type_ptr==pascal_type::TYPE_INT ||
-                $3.type_ptr==pascal_type::TYPE_CHAR ||
-                $3.type_ptr==pascal_type::TYPE_REAL){
+            if ($3.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
                 $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
             } else{
-                yyerror(real_ast,"It should be INT BOOL or CHAR\n");
+                yyerror(real_ast,"It should be basic type\n");
             }
         }
         if(error_flag)
@@ -1151,11 +1104,6 @@ variable:
             } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
                 tmp = dynamic_cast<FunctionSymbol*>(tmp);
                 $$.is_lvalue = false;
-            } else {
-                if (tmp->type()->template_type() == TypeTemplate::TYPE::ARRAY && !error_flag){
-                    std::vector<ArrayType::ArrayBound> bounds = dynamic_cast<ArrayType*>(tmp->type())->bounds();
-                    $2.id_varparts_node->set_lb(bounds);
-                }
             }
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
@@ -1511,8 +1459,20 @@ simple_expression:
     |PLUS term
     {
         // simple_expression -> + term.
-        $$.type_ptr = $2.type_ptr;
+
+        if(!is_basic($2.type_ptr)){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> + term\n");
+        }
+        auto result=compute((BasicType*)$2.type_ptr, "+");
+        
+        if(result==TYPE_ERROR){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> + term\n");
+        }
         $$.is_lvalue = false;
+        $$.type_ptr = result;
+
         if(error_flag)
             break;
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1523,8 +1483,18 @@ simple_expression:
     |UMINUS term
     {
         // simple_expression -> - term.
-        $$.type_ptr = $2.type_ptr;
+        if(!is_basic($2.type_ptr)){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> - term\n");
+        }
+        auto result=compute((BasicType*)$2.type_ptr, "-");
+        
+        if(result==TYPE_ERROR){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"simple_expression -> - term\n");
+        }
         $$.is_lvalue = false;
+        $$.type_ptr = result;
         if(error_flag)
             break;
         $$.simple_expression_node = new SimpleExpressionNode();
@@ -1695,9 +1665,19 @@ factor:
     {   
         // factor -> not factor.
         // 类型检查
-        //需要吗？
+        if(!is_basic($2.type_ptr)){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"factor -> not factor\n");
+        }
+        auto result=compute((BasicType*)$2.type_ptr, "not");
+        
+        if(result==TYPE_ERROR){
+            yyerror(real_ast,"Type check failed\n");
+            yyerror(real_ast,"factor -> not factor\n");
+        }
         $$.is_lvalue = false;
-        $$.type_ptr = $2.type_ptr;
+        $$.type_ptr = result;
+
         if(error_flag)
             break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::NOT);
@@ -1755,73 +1735,6 @@ unsigned_const_variable :
 /*---------------.
 | Error handler  |
 `---------------*/
-program:error
-    {
-        fprintf(stderr,"\033[01;31m error\033[0m : %s\n","There are unrecoverable errors. Please check the code carefully!");
-        while (yychar != YYEOF){
-            yychar = yylex();
-        }
-        real_ast->set_root(nullptr);
-        error_flag =1;
-    };
-
-program_head:  error  
-    {
-        new_line_flag=false;
-        if(yychar==ID)
-            yyerror(real_ast,"Every program must begin with the symbol program.!");
-        else
-            yyerror(real_ast,"unknown error!");
-        while (new_line_flag==false || yychar!= YYEOF){
-            yychar = yylex();
-        }
-    };
-program_head: PROGRAM error
-    {
-        new_line_flag=false;
-        if(yychar==';')
-            yyerror(real_ast,"An identifier is expected.");
-        else
-            yyerror(real_ast,"unknown error!");
-        while (new_line_flag==false || yychar!= YYEOF){
-            yychar = yylex();
-        }
-    };     
-
-program_body: error
-    {
-
-    };
-
-const_declarations: CONST error
-    {
-
-    };
-
-type_declarations: TYPE error
-    {
-
-    };
-
-var_declarations: VAR error
-    {
-
-    };
-
-subprogram_declaration: FUNCTION error
-    {
-
-    };
-
-subprogram_declaration: PROCEDURE error
-    {
-
-    };  
-
-statement : error
-    {
-
-    };
 /* A colon is expected. In declarations, the colon is followed by a type.*/
 var_declaration:
     var_declaration ';' id_list error type_or_ID
@@ -1857,10 +1770,10 @@ type:
     };
 
 /* An opening parenthesis is expected.*/
-// program_head: PROGRAM ID error ';'
-//     {
-//         yyerror(real_ast,"An opening parenthesis is expected.");
-//     };
+program_head: PROGRAM ID error ';'
+    {
+        yyerror(real_ast,"An opening parenthesis is expected.");
+    };
 // formal_parameter: error ')'
 //     {
 //         yyerror(real_ast,"An opening parenthesis is expected.");
@@ -1905,20 +1818,20 @@ type: ARRAY '[' periods error OF type
 //     };
 
     /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
-// program: program_head program_body error
-//     {
-//         table_set_queue.push(top_table_set);
-//         pstdlibs->Preset(table_set_queue.top()->symbols());
-//         yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
-//     };
+program: program_head program_body error
+    {
+        table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
+    };
 
     /* Every program must begin with the symbol program.*/
-// program_head: error ID '(' id_list ')' ';'
-//     {
-//         table_set_queue.push(top_table_set);
-//         pstdlibs->Preset(table_set_queue.top()->symbols());
-//         yyerror(real_ast,"Every program must begin with the symbol program.");
-//     };
+program_head: error ID '(' id_list ')' ';'
+    {
+        table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"Every program must begin with the symbol program.");
+    };
 
     /* The symbol then is expected.*/
 // statement: IF error statement else_part
@@ -1965,17 +1878,20 @@ statement: ID error ';'
     {
         yychar = ';';
         yyerror(real_ast,"Syntax error, ';' expected .");
+    }
+    | error ';'
+    {
+        yychar = ';';
+        yyerror(real_ast,"Syntax error, ';' expected .");
     };
 
 %%
  
 
 void yyerror(ast::AST* real_ast,const char *msg){
-if(!yydebug)
-    if(strcmp(msg,"syntax error")==0)
-        return;
-
-    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count,cur_line_info.size(),msg);
+    // if(strcmp(msg,"syntax error")==0)
+    //     return;
+    fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line_count, msg);
     fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
     error_flag = 1;
     real_ast->set_root(nullptr);
