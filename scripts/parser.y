@@ -9,7 +9,6 @@ extern "C"
     void yyerror(const char *s);
     extern int yylex(void);
     extern int line_count;
-    extern int char_count;
     extern bool new_line_flag;
 }
 extern std::string cur_line_info;
@@ -24,7 +23,6 @@ int error_flag=0;
 void yyerror(ast::AST* real_ast,const char *msg);
 void yyerror_var(ast::AST* real_ast,int line);
 void yynote(std::string msg,int line);
-bool is_in(void* token_set_raw);
 
 %}
 
@@ -1781,7 +1779,14 @@ program_head:  error
     };
 program_head: PROGRAM error
     {
-
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"An identifier is expected.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (new_line_flag==false || yychar!= YYEOF){
+            yychar = yylex();
+        }
     };     
 
 program_body: error
@@ -1853,10 +1858,10 @@ type:
     };
 
 /* An opening parenthesis is expected.*/
-program_head: PROGRAM ID error ';'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    };
+// program_head: PROGRAM ID error ';'
+//     {
+//         yyerror(real_ast,"An opening parenthesis is expected.");
+//     };
 // formal_parameter: error ')'
 //     {
 //         yyerror(real_ast,"An opening parenthesis is expected.");
@@ -1971,22 +1976,10 @@ if(!yydebug)
     if(strcmp(msg,"syntax error")==0)
         return;
 
-    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", line_count,char_count,msg);
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", line_count,cur_line_info.size(),msg);
     fprintf(stderr,"%d:\t|\t%s\n",line_count,cur_line_info.c_str());    
     error_flag = 1;
     real_ast->set_root(nullptr);
-}
-
-bool is_in(void* token_set_raw){
-    auto *token_set = (yytoken_kind_t*)token_set_raw;
-    if(yychar == YYEOF)
-        return true;
-    int i=0;
-    while(token_set[i] != YYEOF)
-        if(yychar==token_set[i++])
-            return true;
-    return false;
-    
 }
 
 void yynote(std::string msg ,int line){
