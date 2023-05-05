@@ -1623,7 +1623,9 @@ term:
         $$.type_ptr = result;
         
         std::string mulop = $2.value.get<string>();
-        if(mulop == "div"){
+        if(mulop == "/"){
+            $1.term_node->set_op_div(true);
+        } else if(mulop == "div"){
             mulop = "/";
         } else if (mulop == "mod"){
             mulop = "%";
