@@ -615,6 +615,8 @@ var_declarations :
     }
     | VAR var_declaration ';'
     {
+        if(error_flag)
+            break;
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
@@ -623,8 +625,6 @@ var_declarations :
             }
         }
         // var_declarations -> var var_declaration.
-        if(error_flag)
-            break;
         $$ = new VariableDeclarationsNode();
         $$->append_child($2.variable_declaration_node);
     };
@@ -1780,12 +1780,13 @@ program:error
         location_pointer_refresh();
         new_line_flag=false;
         yyerror(real_ast,"There are unrecoverable errors. Please check the code carefully!");
-        // fprintf(stderr,"\033[01;31m error\033[0m : %s\n","There are unrecoverable errors. Please check the code carefully!");
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
-        fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-        fprintf(stderr,"\t| %s",location_pointer);
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
         fprintf(stderr,"abort!\n");
         while (yychar!= YYEOF){
             yychar = yylex();
@@ -1818,11 +1819,14 @@ program:error
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
-        if(yychar==';')
+        if(yychar==';'){
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
-        else
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
             fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-        fprintf(stderr,"\t| %s",location_pointer);
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
     }; 
      
     const_declaration: const_declaration ';' ID '=' error
@@ -1843,6 +1847,81 @@ program:error
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
 
+    type_declaration: type_declaration ';' error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar=='=')
+            yyerror(real_ast,"A type definition must begin with an identifier");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+    /*todo
+    目前这是一种保底的恢复方法,这里会抛弃所有type定义;
+    目标希望做到恢复到type_declaration级别;
+    */
+    type_declarations: TYPE  error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar=='=')
+            yyerror(real_ast,"A type definition must begin with an identifier");
+        else
+            yyerror(real_ast,"There are unrecoverable errors in type_declarations. Please check the code carefully!");
+        while (new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        while (yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
+            yychar = yylex();
+        }
+    }
+
+/*
+    该产生式会导致program_body的FOLLOW集中出现error
+    程序中只会出现一次program_body应该不会引起冲突
+*/
+program: program_head program_body error
+    {
+        location_pointer_refresh();
+        table_set_queue.push(top_table_set);
+        pstdlibs->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"A dot is expected at the end of the program !");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+    var_declaration: id_list ':' error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"A type identifier is expected here.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+    }
 // program_head:  error  
 //     {
 //         location_pointer_refresh();
@@ -1976,12 +2055,7 @@ program:error
 // //     };
 
 //     /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
-// // program: program_head program_body error
-// //     {
-// //         table_set_queue.push(top_table_set);
-// //         pstdlibs->Preset(table_set_queue.top()->symbols());
-// //         yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
-// //     };
+
 
 //     /* Every program must begin with the symbol program.*/
 // // program_head: error ID '(' id_list ')' ';'
