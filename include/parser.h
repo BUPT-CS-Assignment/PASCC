@@ -39,7 +39,6 @@ struct TypeAttr {
   ast::TypeNode* base_type_node;
   ast::TypeNode* type_node;
   std::vector<pascal_type::ArrayType::ArrayBound>* bounds;
-  // std::vector<std::pair<int, int>>* bounds;
   std::unordered_map<std::string, pascal_type::TypeTemplate*>* record_info;
 };
 

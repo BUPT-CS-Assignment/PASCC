@@ -25,6 +25,7 @@ void location_pointer_refresh();
 void yyerror(ast::AST* real_ast,const char *msg);
 void yyerror_var(ast::AST* real_ast,int line);
 void yynote(std::string msg,int line);
+
 %}
 
 %union
@@ -225,7 +226,6 @@ const_declaration :
             $$->append_child($5.const_variable_node);
             // const_declaration -> const_declaration ; id = const_variable.
         }
-        
     }
     | ID '=' const_variable
     {   
@@ -252,7 +252,7 @@ const_variable :
     {   
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
-        $$.type_ptr = nullptr;
+        $$.type_ptr = pascal_type::TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
         }else {
@@ -267,7 +267,7 @@ const_variable :
     {
         // const_variable -> - id. todo -
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
-        $$.type_ptr = nullptr;
+        $$.type_ptr = pascal_type::TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
         }else {
@@ -283,7 +283,7 @@ const_variable :
     {
         // const_variable -> id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
-        $$.type_ptr = nullptr;
+        $$.type_ptr = pascal_type::TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
         }else {
@@ -304,7 +304,6 @@ const_variable :
         $$.value = $2.value;
         if(error_flag)
             break; 
-        //$$.const_variable_node = new LeafNode($2.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL));
         $$.const_variable_node = new LeafNode($2.value);
     }
     | num
@@ -394,6 +393,7 @@ type_declaration :
         LeafNode *leaf_node = new LeafNode($3.value);
         $$->append_child(leaf_node);
         $$->append_child($5.type_node);
+        delete $5.record_info;
     }
     | ID '=' type
     {
@@ -419,6 +419,7 @@ type_declaration :
         LeafNode *leaf_node = new LeafNode($1.value);
         $$->append_child(leaf_node);
         $$->append_child($3.type_node);
+        delete $3.record_info;
     };
 type :
     standrad_type
@@ -450,6 +451,7 @@ type :
         $$.type_node->set_base_type_node($6.base_type_node);
         $$.type_node->append_child($3.periods_node);
         $$.type_node->append_child($6.type_node);
+        delete $6.bounds;
     }
     | RECORD record_body END
     {
@@ -516,6 +518,7 @@ periods :
         $$.periods_node = new PeriodsNode();
         $$.periods_node->append_child($1.periods_node);
         $$.periods_node->append_child($3.period_node);
+        delete $3.bound;
     }
     | period
     {
@@ -527,6 +530,7 @@ periods :
             break;
         $$.periods_node = new PeriodsNode();
         $$.periods_node->append_child($1.period_node);
+        delete $1.bound;
     };
 period :
     const_variable SUBCATALOG const_variable
@@ -583,6 +587,7 @@ var_declarations :
         // var_declarations -> var var_declaration.
         $$ = new VariableDeclarationsNode();
         $$->append_child($2.variable_declaration_node);
+        delete $2.record_info;
     };
 var_declaration :
     var_declaration ';' id_list ':' type 
@@ -603,6 +608,7 @@ var_declaration :
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
         $$.variable_declaration_node->append_child($5.type_node);
+        delete $3.list_ref;
     }
     | id_list ':' type 
     {
@@ -619,6 +625,7 @@ var_declaration :
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.id_list_node);
         $$.variable_declaration_node->append_child($3.type_node);
+        delete $1.list_ref;
     }
     |var_declaration ';' id_list ':' ID
     {
@@ -643,6 +650,7 @@ var_declaration :
         $$.variable_declaration_node->append_child($3.id_list_node);
         LeafNode *leaf_node = new LeafNode($5.value);
         $$.variable_declaration_node->append_child(leaf_node);
+        delete $3.list_ref;
     }
     |id_list ':' ID
     {
@@ -664,6 +672,7 @@ var_declaration :
         $$.variable_declaration_node->append_child($1.id_list_node);
         LeafNode *leaf_node = new LeafNode($3.value);
         $$.variable_declaration_node->append_child(leaf_node);
+        delete $1.list_ref;
     };
 subprogram_declarations : 
     {
@@ -780,6 +789,7 @@ subprogram_head :
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
+        delete $3.parameters;
     };
 formal_parameter :
     {   
@@ -927,6 +937,7 @@ statement:
             break;
         $$->append_child($1.variable_node);
         $$->append_child($3.expression_node);
+        delete $1.name;
     }
     | call_procedure_statement
     {
@@ -1046,11 +1057,11 @@ statement:
     }
     |READLN '(' variable_list ')'
     {
-	$3.variable_list_node->set_types($3.basic_types);
-	if(error_flag)
-	    break;
-	$$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
-	$$->append_child($3.variable_list_node);
+        if(error_flag)
+            break;
+        $3.variable_list_node->set_types($3.basic_types);
+        $$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
+        $$->append_child($3.variable_list_node);
     }
     |WRITE '(' expression_list ')'
     {
@@ -1062,6 +1073,7 @@ statement:
         
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
         $$->append_child($3.expression_list_node);
+        delete $3.type_ptr_list;//todo
     }
     |WRITELN'(' expression_list ')'
     {
@@ -1072,6 +1084,7 @@ statement:
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
         $$->append_child($3.expression_list_node);
+        delete $3.type_ptr_list;//todo
     };
 
 variable_list :
@@ -1114,7 +1127,7 @@ variable:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         string name = $1.value.get<string>();
         if(tmp == nullptr) {
-            $$.type_ptr = nullptr;
+            $$.type_ptr = pascal_type::TYPE_NONE;
             yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
@@ -1125,10 +1138,12 @@ variable:
                 $$.is_lvalue = false;
             } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
                 //函数调用 类型检查
-                if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
+                if (name!=table_set_queue.top()->tag()){
+                    if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
                     yyerror(real_ast,"Type check failed\n");
                     yyerror(real_ast,"call_procedure_statement -> id'\n");
-                }
+                    }
+                }            
                 name+="()";
                 $$.is_lvalue = false;
                 real_ast->libs()->Call(tmp->name());
@@ -1154,6 +1169,9 @@ variable:
         LeafNode *id_node = new LeafNode(name);
         $$.variable_node->append_child(id_node);
         $$.variable_node->append_child($2.id_varparts_node);
+        for (auto i : *($2.var_parts)){
+            delete i.subscript;
+        }
     };
 
 id_varparts:
@@ -1180,6 +1198,7 @@ id_varparts:
         $$.id_varparts_node = new IDVarPartsNode();
         $$.id_varparts_node->append_child($1.id_varparts_node);
         $$.id_varparts_node->append_child($2.id_varpart_node);
+        delete $2.var_part;
     };
 
 id_varpart:
@@ -1224,7 +1243,7 @@ else_part:
 case_body:
     {
         // case_body -> empty.
-        $$.type_ptr= nullptr;
+        $$.type_ptr= pascal_type::TYPE_NONE;
         if(error_flag)
             break;
         $$.case_body_node = new CaseBodyNode();
@@ -1340,6 +1359,8 @@ call_procedure_statement:
         $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
         delete ref_stack;
         real_ast->libs()->Call(tmp->name());
+        delete $3.is_lvalue_list;
+        delete $3.type_ptr_list;
     };
     | ID
     {   
@@ -1448,7 +1469,6 @@ expression:
         // expression -> simple_expression.
         $$.type_ptr = $1.type_ptr;
         $$.is_lvalue = $1.is_lvalue;
-        //std::cout<<$$.type_ptr<<std::endl;
         if(error_flag)
             break;
         if($$.type_ptr && $$.type_ptr->template_type() == pascal_type::TypeTemplate::TYPE::ARRAY) {
@@ -1707,6 +1727,7 @@ factor:
         $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
         delete ref_stack;
         real_ast->libs()->Call(tmp->name());
+        delete $3.type_ptr_list;
 
     }
     | '(' expression ')'
@@ -1750,13 +1771,6 @@ unsigned_const_variable :
             break;
         LeafNode *num_node = new LeafNode($1.value);
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
-        //$$.unsigned_constant_var_node->append_child($1.const_variable_node);
-
-//        if($1.type_ptr==pascal_type::TYPE_INT){
-//            num_node = new LeafNode($1.value.m_INT);
-//        } else {
-//            num_node = new LeafNode($1.value.m_REAL);
-//        }
         $$.unsigned_constant_var_node->append_child(num_node);
     };
     | CHAR
