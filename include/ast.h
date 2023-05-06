@@ -583,7 +583,7 @@ class ExpressionNode : public Node {
   void Format(FILE* dst) override;
  private:
   TargetType target_type_;
-  bool is_ref_;
+  bool is_ref_ = 0;
 };
 
 class StrExpressionNode : public Node {
