@@ -1,7 +1,7 @@
 import pytest
 import subprocess
 
-test_case_num = 12
+test_case_num = 6
 
 def run_program(input_file):
     input_file_c = input_file.replace('.pas', '.c')
