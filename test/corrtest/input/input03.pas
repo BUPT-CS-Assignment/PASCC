@@ -5,15 +5,17 @@ begin
   n := 3;
 
   writeln("if .. then .. else");
-  if n > 0 then writeln("n > 0")
-  else writeln("n <= 0");
+  if n <= 0 then writeln("n <= 0")
+  else 
+    if n >= 5 then writeln("n >= 5")
+    else writeln("n < 5");
 
   writeln("");
   writeln("case .. of .. end");
   case n of
-    1: writeln('1');
-    2: writeln('2');
-    3: writeln('3')
+    1, 2, 3: writeln("n is between 1 and 3");
+    4, 5, 6: writeln("n is between 4 and 6");
+    7: writeln("n is 7")
   end;
 
   writeln("");

@@ -1,8 +1,8 @@
 if .. then .. else
-n > 0
+n < 5
 
 case .. of .. end
-3
+n is between 1 and 3
 
 while .. do
 1
