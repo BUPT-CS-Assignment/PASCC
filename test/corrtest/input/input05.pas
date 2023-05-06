@@ -48,7 +48,7 @@ begin
   f := 1;
   writeln("arctan(", f, ") = ", arctan(f));
 
-  writeln("eof() = ", eof);
+  writeln("eof = ", eof);
 
-  writeln("eoln() = ", eoln);
+  writeln("eoln = ", eoln);
 end.

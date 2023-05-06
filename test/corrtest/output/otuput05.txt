@@ -13,5 +13,5 @@ exp(2.00) =  7.39
 ln(10.00) =  2.30
 sqrt(16.00) =  4.00
 arctan(1.00) =  0.79
-eof() = TRUE
-eoln() = TRUE
+eof = TRUE
+eoln = TRUE
