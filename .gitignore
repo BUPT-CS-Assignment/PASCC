@@ -17,7 +17,6 @@ test/corrtest/input/*
 scripts/parser.output
 scripts/parser.tab.c
 test/errtest/input/atemp.pas
-test/corrtest/input/input*
 test/errtest/output/output*.txt
 test/errtest/input/input*.pas
 test/errtest/__pycache__/*.pyc
