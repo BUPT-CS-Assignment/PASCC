@@ -8,7 +8,7 @@ def run_program(input_file):
     subprocess.Popen(['../bin/PASCC', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE).wait()
     
     input_file_exe = input_file.replace('.pas', '')
-    process = subprocess.Popen(['gcc', '-o', input_file_exe, input_file_c], stdout=subprocess.PIPE).wait()
+    process = subprocess.Popen(['gcc','-lm','-o', input_file_exe, input_file_c], stdout=subprocess.PIPE).wait()
    
     output, error = subprocess.Popen([input_file_exe], stdout=subprocess.PIPE).communicate()
     return output.decode('utf-8').strip()
