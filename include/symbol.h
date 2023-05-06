@@ -91,6 +91,7 @@ public:
   // passing parameter assertion
   bool AssertParams(const std::vector<pascal_type::TypeTemplate *> &params,
                     const std::vector<bool> value_type_in);
+  bool AssertParams();
   // get param type
   ParamType* operator[](std::string );
   // check ref
