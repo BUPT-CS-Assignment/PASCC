@@ -18,7 +18,6 @@ extern std::string last_line_info;
 //symbol_table::SymbolTable *real_symbol_table = new symbol_table::SymbolTable();
 std::stack<symbol_table::TableSet*> table_set_queue;
 symbol_table::TableSet* top_table_set = new symbol_table::TableSet("main",nullptr);
-pstdlib::PStdLibs *pstdlibs = new pstdlib::PStdLibs();
 //table_set_queue.push(top_table_set);
 int error_flag=0;
 char location_pointer[256];
@@ -157,7 +156,7 @@ program_head :
         LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         table_set_queue.push(top_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());  
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());  
         
     }
 program_body :
@@ -761,7 +760,7 @@ subprogram_head :
 
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
@@ -800,7 +799,7 @@ subprogram_head :
 
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(),table_set_queue.top());
         table_set_queue.push(now_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
@@ -1156,6 +1155,7 @@ variable:
                 tmp = dynamic_cast<FunctionSymbol*>(tmp);
                 name+="()";
                 $$.is_lvalue = false;
+                real_ast->libs()->Call(tmp->name());
             } else {
                 if (tmp->type()->template_type() == TypeTemplate::TYPE::ARRAY && !error_flag){
                     std::vector<ArrayType::ArrayBound> bounds = dynamic_cast<ArrayType*>(tmp->type())->bounds();
@@ -1363,13 +1363,14 @@ call_procedure_statement:
         }
         $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
         delete ref_stack;
+        real_ast->libs()->Call(tmp->name());
     };
     | ID
     {   
         //类型检查
         //todo 类型检查
         // call_procedure_statement -> id.
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
+        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
@@ -1378,6 +1379,7 @@ call_procedure_statement:
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID);
         LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
+        real_ast->libs()->Call(tmp->name());
     };
 expression_list:
     expression_list ',' expression
@@ -1701,6 +1703,7 @@ factor:
         }
         $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
         delete ref_stack;
+        real_ast->libs()->Call(tmp->name());
 
     }
     | '(' expression ')'
@@ -1899,7 +1902,7 @@ program: program_head program_body error
     {
         location_pointer_refresh();
         table_set_queue.push(top_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
         yyerror(real_ast,"A dot is expected at the end of the program !");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
@@ -2064,7 +2067,7 @@ program: program_head program_body error
 // // program_head: error ID '(' id_list ')' ';'
 // //     {
 // //         table_set_queue.push(top_table_set);
-// //         pstdlibs->Preset(table_set_queue.top()->symbols());
+// //         real_ast->libs()->Preset(table_set_queue.top()->symbols());
 // //         yyerror(real_ast,"Every program must begin with the symbol program.");
 // //     };
 
