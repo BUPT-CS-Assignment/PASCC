@@ -1125,8 +1125,11 @@ variable:
                 tmp = dynamic_cast<ConstSymbol*>(tmp);
                 $$.is_lvalue = false;
             } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
-                //TODO 函数调用 类型检查
-                tmp = dynamic_cast<FunctionSymbol*>(tmp);
+                //函数调用 类型检查
+                if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
+                    yyerror(real_ast,"Type check failed\n");
+                    yyerror(real_ast,"call_procedure_statement -> id'\n");
+                }
                 name+="()";
                 $$.is_lvalue = false;
                 real_ast->libs()->Call(tmp->name());
@@ -1342,11 +1345,16 @@ call_procedure_statement:
     | ID
     {   
         //类型检查
-        //todo 类型检查
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+        } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+            //函数调用 类型检查
+            if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
+                yyerror(real_ast,"Type check failed\n");
+                yyerror(real_ast,"call_procedure_statement -> id'\n");
+            }
         }
         if(error_flag)
             break;

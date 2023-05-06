@@ -70,6 +70,10 @@ bool FunctionSymbol::AssertParams(const vector<TypeTemplate *> &params_in,
   return true;
 }
 
+bool FunctionSymbol::AssertParams() {
+  return params_.size()==0 ;
+}
+
 std::vector<bool> FunctionSymbol::ParamRefVec() {
   std::vector<bool> res;
   for(auto& p : params_) {
