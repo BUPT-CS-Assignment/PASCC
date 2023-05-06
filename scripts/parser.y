@@ -441,8 +441,21 @@ type :
         $$.main_type = (TypeAttr::MainType)1;
         $$.base_type_node = $6.base_type_node;
         $$.bounds = $3.bounds;
-        if ($3.bounds){
-            $$.type_ptr = new pascal_type::ArrayType($6.type_ptr,*($3.bounds));
+            if ($3.bounds){
+                auto merged_bounds = new std::vector<ArrayType::ArrayBound>();
+                for (auto i : *($3.bounds)){
+                    merged_bounds->push_back(i);
+                }
+                auto basic_type = $6.type_ptr;
+                if($6.type_ptr->template_type() == pascal_type::TypeTemplate::TYPE::ARRAY) {
+                    for (auto i : *($6.bounds)){
+                        merged_bounds->push_back(i);
+                    }
+                    basic_type = $6.type_ptr->DynamicCast<pascal_type::ArrayType>()->base_type();
+                }
+
+                $$.type_ptr = new pascal_type::ArrayType(basic_type, *merged_bounds);
+                delete merged_bounds;
         }
         
         if(error_flag)
