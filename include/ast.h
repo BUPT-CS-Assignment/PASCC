@@ -23,7 +23,9 @@ class Node {
  public:
   // constructor
   Node() : parent_(nullptr) {};
-  ~Node() {};
+  ~Node() {
+      for (auto child : child_list_) delete child;
+  };
 
   // static creator
   static Node* Create(std::string node_name, int sub_type = 0, int other_type = 0);
@@ -62,6 +64,10 @@ class Node {
 class AST {
  public:
   // getter and setter functions
+  ~AST(){
+    if(root_ != nullptr)
+      delete root_;
+  }
   Node* root() { return root_;}
   pstdlib::PStdLibs* libs() { return &libs_; }
   void set_root(Node* root) { root_ = root;}

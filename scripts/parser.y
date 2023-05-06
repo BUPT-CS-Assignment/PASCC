@@ -14,11 +14,10 @@ extern "C"
 }
 extern std::string cur_line_info;
 extern std::string last_line_info;
-//AST real_ast;
-//symbol_table::SymbolTable *real_symbol_table = new symbol_table::SymbolTable();
+
 std::stack<symbol_table::TableSet*> table_set_queue;
 symbol_table::TableSet* top_table_set = new symbol_table::TableSet("main",nullptr);
-//table_set_queue.push(top_table_set);
+
 int error_flag=0;
 char location_pointer[256];
 void location_pointer_refresh();
@@ -398,17 +397,14 @@ type_declaration :
         // TODO
         // type_declaration -> type_declaration ; id = type.
         if ($5.main_type == TypeAttr::BASIC) {
-            //pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($5.type_ptr)->type());
             if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),dynamic_cast<BasicType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
-            //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($5.type_ptr,*($5.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),dynamic_cast<ArrayType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($5.record_info) {
-            //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($5.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),dynamic_cast<RecordType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
@@ -428,17 +424,14 @@ type_declaration :
         // TODO!
         // type_declaration -> id = type.
         if ($3.main_type == TypeAttr::BASIC) {
-            //pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($3.type_ptr)->type());
             if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),dynamic_cast<BasicType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
-            //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($3.array_type_ptr,*($3.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),dynamic_cast<ArrayType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($3.record_info) {
-            //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($3.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),dynamic_cast<RecordType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
@@ -536,7 +529,6 @@ standrad_type :
     BASIC_TYPE
     {
         // standrad_type -> int|real|bool|char.
-        //std::cout<<"$1.value.get<string>():"<<$1.value.get<string>()<<std::endl;
         string typestr = $1.value.get<string>();
         if (typestr == "integer"){
             $$.type_ptr = pascal_type::TYPE_INT;
