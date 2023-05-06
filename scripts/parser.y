@@ -219,7 +219,7 @@ const_declaration :
         else{
             // if(error_flag)
             //     break;
-            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION);
+            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION,$5.type_ptr);
             $$->append_child($1);
             LeafNode* leaf_node = new LeafNode($3.value);
             $$->append_child(leaf_node);
@@ -244,7 +244,7 @@ const_declaration :
         else {
             // if(error_flag)
             //     break;
-            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE);
+            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE,$3.type_ptr);
             LeafNode* leaf_node = new LeafNode($1.value);
             $$->append_child(leaf_node);
             $$->append_child($3.const_variable_node);
@@ -270,8 +270,7 @@ const_variable :
             $$.type_ptr = symbol->type();
             if(error_flag)
                 break;
-            $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));
-            
+            $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));     
         }
     }
     | UMINUS ID
