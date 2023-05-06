@@ -5,11 +5,16 @@
 using std::string;
 using std::vector;
 
-namespace pascal_type{
+namespace pascals{
 
-BasicType* compute(BasicType* t1, BasicType* t2, string op){
+pBasicType compute(pType t1, pType t2, string op){
   if(t1 == nullptr || t2 == nullptr) return TYPE_ERROR;
-  auto res = operation_map.find(Operation(t1,t2,op));
+  if(t1->template_type() != TypeTemplate::TYPE::BASIC ||
+     t2->template_type() != TypeTemplate::TYPE::BASIC) return TYPE_ERROR;
+
+  pBasicType tb1 = std::dynamic_pointer_cast<BasicType>(t1);
+  pBasicType tb2 = std::dynamic_pointer_cast<BasicType>(t2);
+  auto res = operation_map.find(Operation(tb1,tb2,op));
   if(res != operation_map.end()) {
     return (*res).second;
   } else {
@@ -17,14 +22,17 @@ BasicType* compute(BasicType* t1, BasicType* t2, string op){
   }
 }
 
-bool is_basic(TypeTemplate* t){
+bool is_basic(pType t){
   if(t == nullptr) return false;
   if(t->template_type() != TypeTemplate::TYPE::BASIC) return false;
-  return t == TYPE_INT || t == TYPE_REAL || t == TYPE_BOOL || t == TYPE_CHAR;
+  return is_same(t,TYPE_INT) ||
+         is_same(t, TYPE_REAL) ||
+         is_same(t,TYPE_BOOL) ||
+         is_same(t, TYPE_CHAR);
 }
 
-bool is_same(TypeTemplate* t1, TypeTemplate* t2){
-  if(t1 == t2) return true;
+bool is_same(pType t1, pType t2){
+  if(t1.get() == t2.get()) return true;
   if(t1 == nullptr || t2 == nullptr) return false;
   if(t1->template_type() != t2->template_type()) return false;
   if(t1->template_type() == TypeTemplate::TYPE::ARRAY) {
@@ -35,29 +43,29 @@ bool is_same(TypeTemplate* t1, TypeTemplate* t2){
   return false;
 }
 
-bool is_same(ArrayType* t1, int vdim1, ArrayType* t2, int vdim2){
+bool is_same(pArrayType t1, int vdim1, pArrayType t2, int vdim2){
   if(t1 == nullptr || t2 == nullptr) return false;
   if(t1->base_type() != t2->base_type()) return false;
-  ArrayType temp_t1 = t1->Visit(vdim1);
-  ArrayType temp_t2 = t2->Visit(vdim2);
-  return temp_t1 == temp_t2;
-}
-
-bool is_same(ArrayType* t1, int vdim, BasicType* t2){
-  if(t1 == nullptr || t2 == nullptr) return false;
-  ArrayType temp_t1 = t1->Visit(vdim);
-  ArrayType temp_t2 = ArrayType(t2);
-  return temp_t1 == temp_t2;
-}
-
-bool is_same(RecordType* t1, vector<string> n1, RecordType* t2, vector<string> n2){
-  TypeTemplate* temp_t1 = t1->Visit(n1);
-  TypeTemplate* temp_t2 = t2->Visit(n2);
+  pArrayType temp_t1 = t1->Visit(vdim1);
+  pArrayType temp_t2 = t2->Visit(vdim2);
   return is_same(temp_t1, temp_t2);
 }
 
-bool is_same(RecordType* t1, vector<string> n1, TypeTemplate* t2) {
-  TypeTemplate *temp_t1 = t1->Visit(n1);
+bool is_same(pArrayType t1, int vdim, pBasicType t2){
+  if(t1 == nullptr || t2 == nullptr) return false;
+  pArrayType temp_t1 = t1->Visit(vdim);
+  pArrayType temp_t2 = std::make_shared<ArrayType>(t2);
+  return is_same(temp_t1, temp_t2);
+}
+
+bool is_same(pRecordType t1, vector<string> n1, pRecordType t2, vector<string> n2){
+  pType temp_t1 = t1->Visit(n1);
+  pType temp_t2 = t2->Visit(n2);
+  return is_same(temp_t1, temp_t2);
+}
+
+bool is_same(pRecordType t1, vector<string> n1, pType t2) {
+  pType temp_t1 = t1->Visit(n1);
   return is_same(temp_t1, t2);
 }
 

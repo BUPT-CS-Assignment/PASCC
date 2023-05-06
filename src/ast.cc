@@ -6,10 +6,8 @@
 using std::string;
 using std::vector;
 using json = nlohmann::json;
-using namespace symbol_table;
-using namespace pascal_symbol;
 
-namespace ast {
+namespace pascals::ast {
 /* **************** standard output **************** */
 
 /* **************** ast output **************** */
@@ -25,16 +23,16 @@ void AST::Format(FILE* dst) {
 //////////////////////////////
 
 void LeafNode::Format(FILE* dst) {
-  BasicType* tp = value_.type();
-  if (tp == pascal_type::TYPE_INT) {
+  pBasicType tp = value_.type();
+  if (is_same(tp, TYPE_INT)) {
     PRINT("%d", value_.get<int>())
-  } else if (tp == pascal_type::TYPE_REAL) {
+  } else if (is_same(tp, TYPE_REAL)) {
     PRINT("%.2f", value_.get<float>())
-  } else if (tp == pascal_type::TYPE_BOOL) {
+  } else if (is_same(tp, TYPE_BOOL)) {
     PRINT("%d", value_.get<bool>())
-  } else if (tp == pascal_type::TYPE_CHAR) {
+  } else if (is_same(tp, TYPE_CHAR)) {
     PRINT("'%c'", value_.get<char>())
-  } else if (tp == pascal_type::TYPE_STRINGLIKE) {
+  } else if (is_same(tp, TYPE_STRINGLIKE)) {
     PRINT("%s", value_.get<string>().c_str())
   }
 }
@@ -44,9 +42,9 @@ bool LeafNode::AnalyzeReference(TableSet* ts, FunctionSymbol* fn) {
   // search table and judge if is current layer
   bool local = false;
   string id = value_.get<string>();
-  auto* entry = ts->SearchEntry<ObjectSymbol>(id, &local);
+  auto entry = ts->SearchEntry<ObjectSymbol>(id, &local);
   if (entry != nullptr && local) {
-    FunctionSymbol::ParamType* pt = (*fn)[id];
+    auto pt = (*fn)[id];
     // search param-passing mode
     if (pt != nullptr && pt->second == FunctionSymbol::PARAM_MODE::REFERENCE) {
       is_ref_ = true;
@@ -132,7 +130,7 @@ void VariableDeclarationNode::Format(FILE* dst) {
   }
   // analyze current layer
   size_t last = child_list_.size() - 1;
-  Node* tnode = child_list_[last];
+  pNode tnode = child_list_[last];
   vector<LeafNode*> idlist =
       child_list_[last - 1]->DynamicCast<IdListNode>()->Lists();
 
@@ -189,7 +187,7 @@ void TypeDeclarationNode::Format(FILE* dst) {
   TypeNode* tnode = (*child_list_.rbegin())->DynamicCast<TypeNode>();
   LeafNode* idnode = (*(child_list_.rbegin() + 1))->DynamicCast<LeafNode>();
 
-  TypeNode* base_type = tnode->base_type();
+  pTypeNode base_type = tnode->base_type();
   PRINT("typedef ")
   base_type->Format(dst);
   if (tnode->grammar_type() == TypeNode::GrammarType::ARRAY) {
@@ -423,11 +421,11 @@ void StatementNode::Format(FILE* dst) {
 string VariableListNode::FormatString() {
   string format = "";
   for (int i = 0; i < basic_types.size(); i++) {
-    BasicType* type = basic_types[i];
-    string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d" :
-                   type == TYPE_STRINGLIKE ? "%s" :
-                   type == TYPE_REAL ? "%.2f" :
-                   type == TYPE_CHAR ? "%c" :
+    pBasicType type = basic_types[i];
+    string chfmt = (is_same(type, TYPE_INT) || is_same(type,TYPE_BOOL)) ? "%d" :
+                   is_same(type,TYPE_STRINGLIKE) ? "%s" :
+                   is_same(type,TYPE_REAL) ? "%.2f" :
+                   is_same(type,TYPE_CHAR) ? "%c" :
                    throw std::runtime_error("ExpressionListNode: FormatString() : error type");
     format += chfmt + " ";
   }
@@ -449,8 +447,9 @@ void VariableListNode::Format(bool ref, FILE *dst) {
   }
 }
 
-void VariableListNode::GetType(vector<BasicType*> *type_list) {
-  basic_types.assign(type_list->begin(),type_list->end());
+void VariableListNode::set_types(vector<pBasicType>& type_list) {
+  //use std::move
+  basic_types.assign(type_list.begin(), type_list.end());
 }
 
 void VariableNode::Format(bool ref,FILE* dst) {
@@ -476,7 +475,7 @@ void BranchNode::Format(FILE* dst) {
     auto const_list = child_list_[id]->DynamicCast<ConstListNode>();
     auto statement = child_list_[id + 1];
     auto const_vars = const_list->Consts();
-    for (auto const_var : *const_vars) {
+    for (auto const_var : const_vars) {
       PRINT("case ")
       const_var->Format(dst);
       PRINT(":\n")
@@ -511,11 +510,11 @@ void ElseNode::Format(FILE* dst) {
 string ExpressionListNode::FormatString() {
   string format = "";
   for (int i = 0; i < basic_types.size(); i++) {
-    BasicType* type = basic_types[i];
-    string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d" :
-                   type == TYPE_STRINGLIKE ? "%s" :
-                   type == TYPE_REAL ? "%.2f" :
-                   type == TYPE_CHAR ? "%c" :
+    pBasicType type = basic_types[i];
+    string chfmt = (is_same(type, TYPE_INT) || is_same(type,TYPE_BOOL)) ? "%d" :
+                   is_same(type,TYPE_STRINGLIKE) ? "%s" :
+                   is_same(type,TYPE_REAL) ? "%.2f" :
+                   is_same(type,TYPE_CHAR) ? "%c" :
                    throw std::runtime_error("ExpressionListNode: FormatString() : error type");
     format += chfmt;
   }
@@ -531,11 +530,12 @@ void ExpressionListNode::Format(FILE* dst) {
   }
 }
 
-bool ExpressionListNode::GetType(std::vector<pascal_type::TypeTemplate*>*type_list){
-  if(!type_list) return true;
-  for (auto i:*type_list){
-    if (i->template_type() != pascal_type::TypeTemplate::TYPE::BASIC) return false;
-    basic_types.push_back(dynamic_cast<BasicType*>(i));
+bool ExpressionListNode::set_types(std::vector<pType>& type_list){
+  if(type_list.empty()) return true;
+  for (auto tp : type_list){
+    if (!is_basic(tp) && !is_same(tp, TYPE_STRINGLIKE)) return false;
+    pBasicType basic_type = std::dynamic_pointer_cast<BasicType>(tp);
+    basic_types.push_back(basic_type);
   }
   return true;
 }

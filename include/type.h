@@ -3,13 +3,14 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 #include <string>
 #include <string.h>
 #include <type_traits>
 #include <unordered_map>
 
 
-namespace pascal_type {
+namespace pascals {
 
 class TypeTemplate {
  public:
@@ -31,6 +32,7 @@ class TypeTemplate {
  protected:
   TYPE template_type_;
 };
+using pType = std::shared_ptr<TypeTemplate>;
 
 // basic type including INT, REAL, CHAR, BOOL
 class BasicType : public TypeTemplate {
@@ -56,13 +58,15 @@ class BasicType : public TypeTemplate {
  private:
    BASIC_TYPE basic_type_;
 };
-extern BasicType* TYPE_INT;
-extern BasicType* TYPE_REAL;
-extern BasicType* TYPE_BOOL;
-extern BasicType* TYPE_CHAR;
-extern BasicType* TYPE_NONE;
-extern BasicType* TYPE_ERROR;
-extern BasicType* TYPE_STRINGLIKE;
+using pBasicType = std::shared_ptr<BasicType>;
+
+extern pBasicType TYPE_INT;
+extern pBasicType TYPE_REAL;
+extern pBasicType TYPE_BOOL;
+extern pBasicType TYPE_CHAR;
+extern pBasicType TYPE_NONE;
+extern pBasicType TYPE_ERROR;
+extern pBasicType TYPE_STRINGLIKE;
 
 
 // Array type
@@ -70,26 +74,24 @@ class ArrayType : public TypeTemplate {
  public:
   // Array bound
   struct ArrayBound{
-   BasicType* type_;
+   pBasicType type_;
    int lb_;
    int ub_;
    // functions
    ArrayBound() : type_(TYPE_NONE), lb_(0), ub_(0) {};
    ArrayBound(const ArrayBound& b2) : type_(b2.type_), lb_(b2.lb_), ub_(b2.ub_) {};
    ArrayBound& operator=(const ArrayBound& b2);
-   bool operator==(const ArrayBound& b2) const {
-     return type_ == b2.type_ && lb_ == b2.lb_ && ub_ == b2.ub_;
-   }
+   bool operator==(const ArrayBound& b2) const;
   };
 
   ArrayType() : TypeTemplate(TYPE::ARRAY), base_type_(TYPE_NONE) {}
-  ArrayType(TypeTemplate* type) : TypeTemplate(TYPE::ARRAY), base_type_(type) {}
-  ArrayType(TypeTemplate* type, std::vector<ArrayBound> bounds)
+  ArrayType(pType type) : TypeTemplate(TYPE::ARRAY), base_type_(type) {}
+  ArrayType(pType type, std::vector<ArrayBound> bounds)
     : TypeTemplate(TYPE::ARRAY), base_type_(type), bounds_(std::move(bounds)) {}
   ArrayType(const ArrayType& a2);
   ~ArrayType() {}
 
-  TypeTemplate* base_type() { return base_type_; }
+  const pType base_type() { return base_type_; }
   bool Valid() { return base_type_ != TYPE_NONE && base_type_ != TYPE_ERROR;}
   size_t dims() { return bounds_.size(); }     // get dimensions
   std::vector<ArrayBound>& bounds() { return bounds_; }  // get bounds
@@ -98,51 +100,56 @@ class ArrayType : public TypeTemplate {
 
   ArrayType& operator=(const ArrayType& a2);
   bool operator==(const ArrayType& a2) const;
-  ArrayType Visit(std::vector<TypeTemplate *> v_types); // visit array
-  ArrayType Visit(unsigned int v_layer);            // visit array
+  std::shared_ptr<ArrayType> Visit(std::vector<pType>& v_types); // visit array
+  std::shared_ptr<ArrayType> Visit(unsigned int v_layer);            // visit array
 
  private:
-  TypeTemplate* base_type_;  // basic types or record type
+  pType base_type_;  // basic types or record type
   std::vector<ArrayBound> bounds_;  // multi-dims bounds
 };
+using pArrayType = std::shared_ptr<ArrayType>;
 
 // Record type
 class RecordType : public TypeTemplate {
  public:
+  typedef std::unordered_map<std::string, pType> RecordInfo;
   RecordType() : TypeTemplate(TYPE::RECORD){}
-  RecordType(std::unordered_map<std::string, TypeTemplate*> types_map)
-    : TypeTemplate(TYPE::RECORD), types_map_(std::move(types_map)) {}
+  RecordType(std::unordered_map<std::string, pType> types_map)
+    : TypeTemplate(TYPE::RECORD), types_map_(types_map) {}
   ~RecordType() {}
 
-  bool add(std::string name, TypeTemplate* type);
-  TypeTemplate* Find(std::string name);
-  TypeTemplate* Visit(std::vector<std::string> names);
+  bool add(std::string name, pType type);
+  pType Find(std::string name);
+  pType Visit(std::vector<std::string>& names);
 
  private:
-  std::unordered_map<std::string, TypeTemplate*> types_map_;
+  std::unordered_map<std::string, pType> types_map_;
 };
+using pRecordType = std::shared_ptr<RecordType>;
 
 class Operation {
  public:
   Operation() {}
-  Operation(BasicType* in_type1, BasicType* in_type2, std::string op)
+  Operation(pBasicType in_type1, pBasicType in_type2, std::string op)
     : in_type1(in_type1), in_type2(in_type2), op(std::move(op)) {}
   ~Operation() {}
   bool operator==(const Operation& other) const {
-    return in_type1 == other.in_type1 && in_type2 == other.in_type2 && op == other.op;
+    return in_type1.get() == other.in_type1.get() &&
+           in_type2.get() == other.in_type2.get() &&
+           op == other.op;
   }
-  BasicType* in_type1;
-  BasicType* in_type2;
+  pBasicType in_type1;
+  pBasicType in_type2;
   std::string op;
 };
 struct OperationHash {
   std::size_t operator()(const Operation& k) const {
-    return ((std::hash<BasicType*>()(k.in_type1) ^
-            (std::hash<BasicType*>()(k.in_type2) >> 1)) >> 1) ^
+    return ((std::hash<pBasicType>()(k.in_type1) ^
+            (std::hash<pBasicType>()(k.in_type2) >> 1)) >> 1) ^
             std::hash<std::string>()(k.op);
   }
 };
-typedef std::unordered_map<Operation, BasicType*, OperationHash> OperationMap;
+typedef std::unordered_map<Operation, pBasicType, OperationHash> OperationMap;
 extern OperationMap operation_map;
 
 
@@ -158,14 +165,14 @@ extern OperationMap operation_map;
  * @param op operation string
  * @return
  */
-BasicType* compute(BasicType* type1, BasicType* type2, std::string op);
+pBasicType compute(pType type1, pType type2, std::string op);
 
 /**
  * @brief check if a type is basic type
  * @param t ptr to type
  * @return
  */
-bool is_basic(TypeTemplate* t);
+bool is_basic(pType t);
 
 /**
  * @brief check if two types are the same
@@ -173,7 +180,7 @@ bool is_basic(TypeTemplate* t);
  * @param t2 type 2
  * @return
  */
-bool is_same(TypeTemplate* t1, TypeTemplate* t2);
+bool is_same(pType t1, pType t2);
 
 /**
  * @brief check if two array types with visits are the same
@@ -192,7 +199,7 @@ bool is_same(ArrayType* t1, int vdim1, ArrayType* t2, int vdim2);
  * @param t2 ptr to result-assertion type
  * @return
  */
-bool is_same(ArrayType* t1, int vdim, BasicType* t2);
+bool is_same(ArrayType* t1, int vdim, pBasicType t2);
 
 /**
  * @brief check if two record types with access are the same
@@ -211,10 +218,10 @@ bool is_same(RecordType* t1, std::vector<std::string> n1, RecordType* t2, std::v
  * @param t2 ptr to result-assertion type
  * @return
  */
-bool is_same(RecordType* t1, std::vector<std::string> n1, TypeTemplate* t2);
+bool is_same(RecordType* t1, std::vector<std::string> n1, pType t2);
 
 
-}; // namespace pascal_type
+}; // namespace pascals
 
 class ConstValue{
 public:
@@ -228,13 +235,13 @@ public:
   ConstValue(const char* v) {set(std::string(v));}
   ConstValue(std::string v) {set(v); }
 
-  void set(int v) {m_Type = pascal_type::TYPE_INT; m_INT = v;}
-  void set(float v) {m_Type = pascal_type::TYPE_REAL; m_REAL = v;}
-  void set(bool v) {m_Type = pascal_type::TYPE_BOOL; m_BOOLEAN = v;}
-  void set(char v) {m_Type = pascal_type::TYPE_CHAR; m_CHAR = v;}
-  void set(std::string v) {m_Type = pascal_type::TYPE_STRINGLIKE; m_STRING = v;}
+  void set(int v) {m_Type = pascals::TYPE_INT; m_INT = v;}
+  void set(float v) {m_Type = pascals::TYPE_REAL; m_REAL = v;}
+  void set(bool v) {m_Type = pascals::TYPE_BOOL; m_BOOLEAN = v;}
+  void set(char v) {m_Type = pascals::TYPE_CHAR; m_CHAR = v;}
+  void set(std::string v) {m_Type = pascals::TYPE_STRINGLIKE; m_STRING = v;}
 
-  pascal_type::BasicType* type() {return m_Type;}
+  const pascals::pBasicType& type() {return m_Type;}
   template <typename T> T get() {
     if(std::is_same<T, int>::value) return *(T*)(&m_INT);
     else if (std::is_same<T, char>::value)  return *(T*)(&m_CHAR);
@@ -257,7 +264,7 @@ public:
   ConstValue operator/(const ConstValue& other);
 
 private:
-  pascal_type::BasicType* m_Type = nullptr;
+  pascals::pBasicType m_Type = nullptr;
   union {
     int m_INT;
     float m_REAL;

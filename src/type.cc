@@ -3,7 +3,7 @@
 
 using std::vector;
 using std::string;
-using namespace pascal_type;
+using namespace pascals;
 
 ConstValue::ConstValue(const ConstValue& other) {
   m_Type = other.m_Type;
@@ -49,13 +49,13 @@ ConstValue ConstValue::operator+(const ConstValue& other) {
 ConstValue ConstValue::operator-(const ConstValue& other) {
   if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator- : type not match");
   ConstValue ret;
-  if (m_Type == pascal_type::TYPE_INT) {
+  if (is_same(m_Type, TYPE_INT)) {
     ret.set((int)(m_INT - other.m_INT));
     return ret;
-  } else if (m_Type == pascal_type::TYPE_REAL) {
+  } else if (is_same(m_Type, TYPE_REAL)) {
     ret.set((float)(m_REAL - other.m_REAL));
     return ret;
-  } else if(m_Type == pascal_type::TYPE_CHAR){
+  } else if(is_same(m_Type, TYPE_CHAR)){
     ret.set((char)((int)m_CHAR - (int)other.m_CHAR));
     return ret;
   } else {
@@ -67,10 +67,10 @@ ConstValue ConstValue::operator-(const ConstValue& other) {
 ConstValue ConstValue::operator*(const ConstValue& other) {
   if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator* : type not match");
   ConstValue ret;
-  if (m_Type == pascal_type::TYPE_INT) {
+  if (is_same(m_Type, TYPE_INT)) {
     ret.set((int)(m_INT * other.m_INT));
     return ret;
-  } else if (m_Type == pascal_type::TYPE_REAL) {
+  } else if (is_same(m_Type, TYPE_REAL)) {
     ret.set((float)(m_REAL * other.m_REAL));
     return ret;
   } else {
@@ -82,10 +82,10 @@ ConstValue ConstValue::operator*(const ConstValue& other) {
 ConstValue ConstValue::operator/(const ConstValue& other) {
   if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator* : type not match");
   ConstValue ret;
-  if (m_Type == pascal_type::TYPE_INT) {
+  if (is_same(m_Type, TYPE_INT)) {
     ret.set((int)(m_INT / other.m_INT));
     return ret;
-  } else if (m_Type == pascal_type::TYPE_REAL) {
+  } else if (is_same(m_Type, TYPE_REAL)) {
     ret.set((float)(m_REAL / other.m_REAL));
     return ret;
   } else {
@@ -94,12 +94,18 @@ ConstValue ConstValue::operator/(const ConstValue& other) {
 }
 
 
-namespace pascal_type {
+namespace pascals {
 ArrayType::ArrayBound& ArrayType::ArrayBound::operator=(const ArrayBound& b2) {
   type_ = b2.type_;
   lb_ = b2.lb_;
   ub_ = b2.ub_;
   return *this;
+}
+
+bool ArrayType::ArrayBound::operator==(const pascals::ArrayType::ArrayBound &b2) const {
+  return type_.get() == b2.type_.get() &&
+         lb_ == b2.lb_ &&
+         ub_ == b2.ub_;
 }
 
 ArrayType::ArrayType(const ArrayType& other) {
@@ -117,28 +123,29 @@ ArrayType& ArrayType::operator=(const ArrayType& other) {
   return *this;
 }
 
-ArrayType ArrayType::Visit(std::vector<TypeTemplate *> v_types) {
-  if(v_types.size() == 0 ) return *this;
-  if(v_types.size() > dims()) return ArrayType(TYPE_ERROR);
+pArrayType ArrayType::Visit(std::vector<pType>& v_types) {
+  if(v_types.size() == 0 ) return std::make_shared<ArrayType>(*this);
+  if(v_types.size() > dims()) return std::make_shared<ArrayType>(TYPE_ERROR);
   for(int i = 0; i < v_types.size(); i++) {
-    if(bounds_[i].type_ != v_types[i]) return ArrayType(TYPE_ERROR);
+    bool same_type = is_same(bounds_[i].type_, v_types[i]);
+    if(!same_type) return std::make_shared<ArrayType>(TYPE_ERROR);
   }
   return Visit(v_types.size());
 }
 
-ArrayType ArrayType::Visit(unsigned int v_layer) {
-  if(v_layer == 0 ) return *this;
-  if(v_layer > dims()) return ArrayType(TYPE_ERROR);
+pArrayType ArrayType::Visit(unsigned int v_layer) {
+  if(v_layer == 0 ) return std::make_shared<ArrayType>(*this);
+  if(v_layer > dims()) return std::make_shared<ArrayType>(TYPE_ERROR);
   // temp array
   vector<ArrayBound> bs;
   for(int i = v_layer; i < bounds_.size(); i++) {
     bs.emplace_back(bounds_[i]);
   }
-  return ArrayType(base_type_, bs);
+  return std::make_shared<ArrayType>(base_type_, bs);
 }
 
-bool ArrayType::operator==(const pascal_type::ArrayType &a2) const{
-  if(base_type_ != a2.base_type_) return false;
+bool ArrayType::operator==(const ArrayType &a2) const{
+  if(!is_same(base_type_, a2.base_type_)) return false;
   int dims = bounds_.size();
   if(dims != a2.bounds_.size()) return false;
   for(int i = 0; i < dims; i++) {
@@ -147,8 +154,8 @@ bool ArrayType::operator==(const pascal_type::ArrayType &a2) const{
   return true;
 }
 
-TypeTemplate* RecordType::Visit(std::vector<std::string> names) {
-  TypeTemplate* vtype = this;
+pType RecordType::Visit(std::vector<std::string>& names) {
+  pType vtype = std::make_shared<RecordType>(*this);
   int loop = 0, len = names.size();
   while(loop < len){
     // cast assert
@@ -157,6 +164,7 @@ TypeTemplate* RecordType::Visit(std::vector<std::string> names) {
     auto t = vtype->DynamicCast<RecordType>()->Find(names[loop]);
     if(t == nullptr) return nullptr;
     // next
+    vtype.reset();
     vtype = t;
     loop++;
   }
@@ -172,19 +180,19 @@ bool TypeTemplate::StringLike() {
 }
 
 bool ArrayType::StringLike(int access_layer) {
-  if (base_type_ != pascal_type::TYPE_CHAR) return false;
+  if (base_type_ != TYPE_CHAR) return false;
   if (bounds_.size() != access_layer + 1) return false;
   return true;
 }
 
 
-bool RecordType::add(std::string name, TypeTemplate* type) {
+bool RecordType::add(std::string name, pType type) {
   if(types_map_.find(name) != types_map_.end()) return false;
   types_map_[name] = type;
   return true;
 }
 
-TypeTemplate* RecordType::Find(std::string name) {
+pType RecordType::Find(std::string name) {
   auto ptr = types_map_.find(name);
   if(ptr != types_map_.end()) return (*ptr).second;
   else return nullptr;
@@ -192,13 +200,13 @@ TypeTemplate* RecordType::Find(std::string name) {
 
 
 /* **************** global initialize **************** */
-BasicType* TYPE_INT;
-BasicType* TYPE_REAL;
-BasicType* TYPE_BOOL;
-BasicType* TYPE_CHAR;
-BasicType* TYPE_NONE;
-BasicType* TYPE_ERROR;
-BasicType* TYPE_STRINGLIKE;
+pBasicType TYPE_INT;
+pBasicType TYPE_REAL;
+pBasicType TYPE_BOOL;
+pBasicType TYPE_CHAR;
+pBasicType TYPE_NONE;
+pBasicType TYPE_ERROR;
+pBasicType TYPE_STRINGLIKE;
 
 
 
@@ -209,12 +217,12 @@ void TypeInit() {
 //  log_info("initializing pascal_type ...");
   TYPE_ERROR = nullptr;
 
-  TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
-  TYPE_CHAR = new BasicType(BasicType::BASIC_TYPE::CHAR);
-  TYPE_INT = new BasicType(BasicType::BASIC_TYPE::INT);
-  TYPE_REAL = new BasicType(BasicType::BASIC_TYPE::REAL);
-  TYPE_NONE = new BasicType(BasicType::BASIC_TYPE::NONE);
-  TYPE_STRINGLIKE = new BasicType(BasicType::BASIC_TYPE::CHAR);
+  TYPE_BOOL = std::make_shared<BasicType>(BasicType::BASIC_TYPE::BOOL);
+  TYPE_CHAR = std::make_shared<BasicType>(BasicType::BASIC_TYPE::CHAR);
+  TYPE_INT = std::make_shared<BasicType>(BasicType::BASIC_TYPE::INT);
+  TYPE_REAL = std::make_shared<BasicType>(BasicType::BASIC_TYPE::REAL);
+  TYPE_NONE = std::make_shared<BasicType>(BasicType::BASIC_TYPE::NONE);
+  TYPE_STRINGLIKE = std::make_shared<BasicType>(BasicType::BASIC_TYPE::CHAR);
 
   //bool
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "and")] = TYPE_BOOL;

@@ -6,9 +6,7 @@
 #include "type.h"
 #include "symbol.h"
 
-namespace symbol_table {
-
-using namespace pascal_type;
+namespace pascals {
 
 // table template
 template <typename T>
@@ -16,7 +14,7 @@ class SymbolTableTemplate {
  public:
   SymbolTableTemplate() {}
   ~SymbolTableTemplate() {}
-  bool Insert(std::string name, T *symbol) {
+  bool Insert(std::string name, std::shared_ptr<T> symbol) {
     if (table_.find(name) != table_.end()) {
       return false;
     }
@@ -24,22 +22,22 @@ class SymbolTableTemplate {
     return true;
   }
 
-  T *Find(std::string name) {
+  const std::shared_ptr<T> Find(std::string name) {
     auto it = table_.find(name);
     if (it != table_.end()) return it->second;
     return nullptr;
   }
 
-  T* operator[](std::string name) {
+  const std::shared_ptr<T> operator[](std::string name) {
     return Find(name);
   }
 
  protected:
-  std::unordered_map<std::string, T*> table_;
+  std::unordered_map<std::string, std::shared_ptr<T>> table_;
 };
 
 class TypeTable : public SymbolTableTemplate<TypeTemplate> {};
-class SymbolTable : public SymbolTableTemplate<pascal_symbol::ObjectSymbol> {};
+class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {};
 
 // table set including symbol table and type table
 class TableSet {
@@ -50,23 +48,23 @@ class TableSet {
   SymbolTable *symbols() { return &symbols_; }
   TypeTable *def_types() { return &def_types_; }
   TableSet *previous() { return prev_table_set_; }
-  std::string tag() { return tag_; }
+  const std::string& tag() { return tag_; }
 
   template<typename T>
-  bool Insert(std::string name,T* symbol){
-    pascal_symbol::ObjectSymbol* object_flag = symbols_.Find(name);
-    TypeTemplate* type_flag = SearchEntry<TypeTemplate>(name);
+  bool Insert(std::string name,std::shared_ptr<T> symbol){
+    pObjectSymbol object_flag = symbols_.Find(name);
+    pType type_flag = SearchEntry<TypeTemplate>(name);
     if (object_flag != nullptr || type_flag != nullptr) {
       return false;
     }
-    if(std::is_same<T,pascal_symbol::ObjectSymbol>::value||
-       std::is_same<T,pascal_symbol::ConstSymbol>::value||
-       std::is_same<T,pascal_symbol::FunctionSymbol>::value) {
-      symbols_.Insert(name, (pascal_symbol::ObjectSymbol*)symbol);
+    if(std::is_same<T,ObjectSymbol>::value||
+       std::is_same<T,ConstSymbol>::value||
+       std::is_same<T,FunctionSymbol>::value) {
+      symbols_.Insert(name, *(std::shared_ptr<ObjectSymbol>*)(&symbol));
     } else if (std::is_same<T, TypeTemplate>::value ||
                std::is_same<T, ArrayType>::value ||
                std::is_same<T, RecordType>::value) {
-      def_types_.Insert(name, (TypeTemplate*)symbol);
+      def_types_.Insert(name, *(std::shared_ptr<TypeTemplate>*)(&symbol));
     }
     return true;
   }
@@ -78,24 +76,24 @@ class TableSet {
    * @param local_zone if is searched from current layer
    * @return T-pointer
    */
-  template <typename T> T* SearchEntry(std::string name, bool* local_zone = nullptr) {
+  template <typename T> std::shared_ptr<T> SearchEntry(std::string name, bool* local_zone = nullptr) {
     if(local_zone != nullptr) *local_zone = true;
-    if(std::is_same<T,pascal_symbol::ObjectSymbol>::value||
-       std::is_same<T,pascal_symbol::ConstSymbol>::value||
-       std::is_same<T,pascal_symbol::FunctionSymbol>::value) {
+    if(std::is_same<T,ObjectSymbol>::value||
+       std::is_same<T,ConstSymbol>::value||
+       std::is_same<T,FunctionSymbol>::value) {
       auto symbol_entry = symbols_.Find(name);
-      if (symbol_entry != nullptr)  return (T*)symbol_entry;
+      if (symbol_entry != nullptr)  return *(std::shared_ptr<T>*)&symbol_entry;
     } else if (std::is_same<T, TypeTemplate>::value ||
                std::is_same<T, ArrayType>::value ||
                std::is_same<T, RecordType>::value) {
       auto type_entry = def_types_.Find(name);
-      if (type_entry != nullptr)  return (T*)type_entry;
+      if (type_entry != nullptr)  return *(std::shared_ptr<T>*)&type_entry;
 
     } else if (std::is_same<T, BasicType>::value) {
-      if (name == "int") return (T*)pascal_type::TYPE_INT;
-      else if (name == "real") return (T*)pascal_type::TYPE_REAL;
-      else if (name == "char") return (T*)pascal_type::TYPE_CHAR;
-      else if (name == "bool") return (T*)pascal_type::TYPE_BOOL;
+      if (name == "int") return *(std::shared_ptr<T>*)&TYPE_INT;
+      else if (name == "real") return *(std::shared_ptr<T>*)&TYPE_REAL;
+      else if (name == "char") return *(std::shared_ptr<T>*)&TYPE_CHAR;
+      else if (name == "bool") return *(std::shared_ptr<T>*)&TYPE_BOOL;
     }
 
     if(local_zone != nullptr) *local_zone = false;

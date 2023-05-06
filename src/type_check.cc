@@ -2,12 +2,12 @@
 #include "type.h"
 #include <vector>
 
-using namespace pascal_type;
-TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
+using namespace pascals;
+pType IDVarpartsAttr::AccessCheck(pType base_type) {
   //   std::cout << "variable type:" << base_type << std::endl;
   int in_array = 0;
-  std::vector<pascal_type::TypeTemplate *> vistor;
-  TypeTemplate *cur_type = base_type;
+  std::vector<pType> vistor;
+  pType cur_type = base_type;
   
   for (int i = 0; i < var_parts->size(); i++) {
     // check each dim's type
@@ -19,7 +19,7 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
     } else { //结构体
       // check array
       if (in_array) {
-        auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
+        auto cur_array_type = cur_type->DynamicCast<ArrayType>()->Visit(vistor);
         if (!cur_array_type->Valid()) {
           return TYPE_ERROR;
         }
@@ -39,7 +39,7 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
     }
   }
   if (in_array) {
-    auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
+    auto cur_array_type = cur_type->DynamicCast<ArrayType>()->Visit(vistor);
     if (!cur_array_type->Valid()) {
       return TYPE_ERROR;
     }

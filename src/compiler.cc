@@ -34,7 +34,7 @@ Compiler::Compiler(std::string dir) {
 
 int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
-  ast::AST ast;
+  pascals::ast::AST ast;
 
   if(yyparse(&ast) == 0){
     log_info("syntax assert no-error");
@@ -47,7 +47,7 @@ int Compiler::Compile(string in, string out, string st) {
 }
 
 
-int Compiler::Compile(ast::AST *in, string out, string st) {
+int Compiler::Compile(pascals::ast::AST *in, string out, string st) {
   if(in == nullptr || in->root() == nullptr)
     return -1;
   // filename check

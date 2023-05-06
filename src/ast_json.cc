@@ -7,11 +7,9 @@
 
 using std::vector;
 using std::string;
-using namespace symbol_table;
 using json = nlohmann::json;
-using namespace pascal_symbol;
 
-namespace ast {
+namespace pascals::ast {
 /////////////////////////////
 Node* Node::Create(std::string node_name, int sub_type, int other_type) {
   if (node_name == "leaf") {
@@ -181,17 +179,17 @@ void Node::LoadFromJson(const nlohmann::json & node_json) {
     }else if(type_name == "type") {
       TypeNode* tn = node->StaticCast<TypeNode>();
       if(!item.contains("base_type")) {
-        tn->set_base_type_node(tn);
+//        tn->set_base_type_node(tn);
       } else {
         Node* base_node = Node::Create(item.at("base_type"));
-        tn->set_base_type_node(base_node->DynamicCast<TypeNode>());
+//        tn->set_base_type_node(base_node->DynamicCast<TypeNode>());
       }
     }
 
     node->LoadFromJson(item);
     node->set_parent(this);
 
-    this->append_child(node);
+    this->append_child(pNode(node));
   }
 }
 
