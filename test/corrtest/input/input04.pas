@@ -16,6 +16,7 @@ end;
 function testFunc: integer;
 begin
   writeln(2023);
+  testFunc := 54;
 end;
 
 function gcd(a, b: integer): integer;
@@ -40,8 +41,7 @@ begin
   
   writeln("");
   writeln("function-test");  
-  testFunc;
-  a := 54;
+  a := testFunc;
   b := 24;
   writeln(gcd(a, b));
   swap(a, b);
