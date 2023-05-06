@@ -65,6 +65,7 @@ class TableSet {
       symbols_.Insert(name, (pascal_symbol::ObjectSymbol*)symbol);
     } else if (std::is_same<T, TypeTemplate>::value ||
                std::is_same<T, ArrayType>::value ||
+               std::is_same<T,BasicType>::value ||
                std::is_same<T, RecordType>::value) {
       def_types_.Insert(name, (TypeTemplate*)symbol);
     }
@@ -87,15 +88,10 @@ class TableSet {
       if (symbol_entry != nullptr)  return (T*)symbol_entry;
     } else if (std::is_same<T, TypeTemplate>::value ||
                std::is_same<T, ArrayType>::value ||
+               std::is_same<T, BasicType>::value ||
                std::is_same<T, RecordType>::value) {
       auto type_entry = def_types_.Find(name);
       if (type_entry != nullptr)  return (T*)type_entry;
-
-    } else if (std::is_same<T, BasicType>::value) {
-      if (name == "int") return (T*)pascal_type::TYPE_INT;
-      else if (name == "real") return (T*)pascal_type::TYPE_REAL;
-      else if (name == "char") return (T*)pascal_type::TYPE_CHAR;
-      else if (name == "bool") return (T*)pascal_type::TYPE_BOOL;
     }
 
     if(local_zone != nullptr) *local_zone = false;

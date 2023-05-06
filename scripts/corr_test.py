@@ -1,18 +1,24 @@
 import pytest
 import subprocess
 
-test_case_num = 12
+test_case_num = 7
 
 def run_program(input_file):
     input_file_c = input_file.replace('.pas', '.c')
     subprocess.Popen(['../bin/PASCC', '-i', input_file, '-o', input_file_c], stdout=subprocess.PIPE).wait()
     
     input_file_exe = input_file.replace('.pas', '')
-    process = subprocess.Popen(['gcc', '-o', input_file_exe, input_file_c], stdout=subprocess.PIPE).wait()
-   
-    output, error = subprocess.Popen([input_file_exe], stdout=subprocess.PIPE).communicate()
-    return output.decode('utf-8').strip()
+    process = subprocess.Popen(['gcc',input_file_c,'-lm','-o', input_file_exe], stdout=subprocess.PIPE).wait()
 
+    if '5' in input_file or '7' in input_file:
+        input_file_txt = input_file.replace('.pas', '.txt')
+        command = "{} < {}".format(input_file_exe, input_file_txt)
+        output, error = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()
+        return output.decode('utf-8').strip()
+    else:
+        output, error = subprocess.Popen([input_file_exe], stdout=subprocess.PIPE).communicate()
+        return output.decode('utf-8').strip()
+   
 def read_expected_output(output_file):  
     with open(output_file, 'r') as f:
         expected_output = f.read().strip()

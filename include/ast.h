@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <stack>
 #include "json.hpp"
 #include "symbol_table.h"
 #include "pstdlib.h"
@@ -22,7 +23,9 @@ class Node {
  public:
   // constructor
   Node() : parent_(nullptr) {};
-  ~Node() {};
+  ~Node() {
+      for (auto child : child_list_) delete child;
+  };
 
   // static creator
   static Node* Create(std::string node_name, int sub_type = 0, int other_type = 0);
@@ -61,6 +64,10 @@ class Node {
 class AST {
  public:
   // getter and setter functions
+  ~AST(){
+    if(root_ != nullptr)
+      delete root_;
+  }
   Node* root() { return root_;}
   pstdlib::PStdLibs* libs() { return &libs_; }
   void set_root(Node* root) { root_ = root;}
@@ -159,10 +166,12 @@ class ConstDeclarationNode : public Node {
     VALUE,        //ConstDeclaration → id = const_var
     DECLARATION   //ConstDeclaration →ConstDeclaration; id = const_var
   };
-  ConstDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
+  ConstDeclarationNode(GrammarType gt,pascal_type::BasicType* bt) : grammar_type_(gt),type_(bt) {}
+  void print_type(FILE* dst);
   void Format(FILE* dst) override;
  private:
   GrammarType grammar_type_;
+  pascal_type::BasicType* type_;
 };
 
 class ConstVariableNode : public Node {
@@ -415,7 +424,7 @@ class VariableListNode : public Node {
   std::string FormatString();
   void Format(FILE* dst) override;
   void Format(bool ref, FILE* dst);
-  void GetType(std::vector<pascal_type::BasicType*> *type_list);
+  void set_types(std::vector<pascal_type::BasicType*> *type_list);
  private:
   //TODO get basic_type ptr lists
   std::vector<pascal_type::BasicType*> basic_types;
@@ -495,6 +504,7 @@ class ConstListNode : public Node {
 //  };
   // ConstListNode(GrammarType gt) : grammar_type_(gt) {}
   std::vector<Node*>* Consts() { return &child_list_; }
+  void Format_Constlist(FILE* dst,StatementNode* statement);
 };
 
 class UpdownNode : public Node {
@@ -548,7 +558,8 @@ class ExpressionListNode: public Node {
   ExpressionListNode(GrammarType gt) : grammar_type_(gt) {}
   std::string FormatString();
   void Format(FILE* dst) override;
-  bool GetType(std::vector<pascal_type::TypeTemplate*>* type_list);
+  bool set_types(std::vector<pascal_type::TypeTemplate*>* type_list);
+  void set_ref(std::stack<bool>* ref);
  private:
   //TODO get basic_type ptr lists
   std::vector<pascal_type::BasicType*> basic_types;
@@ -572,10 +583,13 @@ class ExpressionNode : public Node {
   };
   ExpressionNode() : target_type_(TargetType::EXPRESSION) {}
   ExpressionNode(TargetType tg) : target_type_(tg) {}
+  void set_is_ref() { is_ref_ = 1; }
   void set_expression_type(TargetType tg) { target_type_ = tg; }
   TargetType target_type() { return target_type_; }
+  void Format(FILE* dst) override;
  private:
   TargetType target_type_;
+  bool is_ref_ = 0;
 };
 
 class StrExpressionNode : public Node {

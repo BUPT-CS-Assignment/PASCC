@@ -5,6 +5,7 @@
 
 using std::string;
 using std::vector;
+using std::stack;
 using json = nlohmann::json;
 using namespace symbol_table;
 using namespace pascal_symbol;
@@ -108,17 +109,27 @@ vector<LeafNode*> IdListNode::Lists() {
 //     TransCodeAt(0);
 //   }
 // }
-
+void ConstDeclarationNode::print_type(FILE* dst){
+  if(type_ == pascal_type::TYPE_INT){
+    PRINT("int ")
+  } else if(type_ == pascal_type::TYPE_REAL){
+    PRINT("float ")
+  } else if(type_ == pascal_type::TYPE_CHAR){
+    PRINT("char ")
+  } 
+}
 void ConstDeclarationNode::Format(FILE* dst) {
   if (grammar_type_ == GrammarType::DECLARATION) {
     FormatAt(0, dst);
     PRINT("const ")
+    print_type(dst);
     FormatAt(1, dst);
     PRINT(" = ")
     FormatAt(2, dst);
     PRINT(";\n");
   } else if (grammar_type_ == GrammarType::VALUE) {
     PRINT("const ")
+    print_type(dst);
     FormatAt(0, dst);
     PRINT(" = ")
     FormatAt(1, dst);
@@ -192,11 +203,11 @@ void TypeDeclarationNode::Format(FILE* dst) {
   TypeNode* base_type = tnode->base_type();
   PRINT("typedef ")
   base_type->Format(dst);
+  PRINT(" ")
+  idnode->Format(dst);
   if (tnode->grammar_type() == TypeNode::GrammarType::ARRAY) {
     tnode->PeriodsFormat(dst);
   }
-  PRINT(" ")
-  idnode->Format(dst);
   PRINT(";\n")
   //  for (int idx = 0; idx < child_list_.size(); idx += 2) {
   //    child_list_[idx]->TransCode();
@@ -372,10 +383,15 @@ void StatementNode::Format(FILE* dst) {
       PRINT("}\n")
       break;
     }
-    case GrammarType::READ_STATEMENT: {
+    case GrammarType::READ_STATEMENT:
+    case GrammarType::READLN_STATEMENT:{
       // TODO readln(...)
       auto* vlnodes = child_list_[0]->DynamicCast<VariableListNode>();
-      PRINT("scanf(\"%s\", ", vlnodes->FormatString().c_str())
+      if(grammar_type_ == GrammarType::READLN_STATEMENT){
+        PRINT("scanf(\"%s\\n\", ", vlnodes->FormatString().c_str())
+      } else {
+        PRINT("scanf(\"%s\", ", vlnodes->FormatString().c_str())
+      }
       vlnodes->Format(true, dst);
       PRINT(");\n")
       break;
@@ -449,7 +465,8 @@ void VariableListNode::Format(bool ref, FILE *dst) {
   }
 }
 
-void VariableListNode::GetType(vector<BasicType*> *type_list) {
+void VariableListNode::set_types(
+    std::vector<pascal_type::BasicType *> *type_list) {
   basic_types.assign(type_list->begin(),type_list->end());
 }
 
@@ -474,14 +491,8 @@ void IDVarPartNode::Format(FILE* dst) {
 void BranchNode::Format(FILE* dst) {
   for (int id = 0; id < child_list_.size(); id += 2) {
     auto const_list = child_list_[id]->DynamicCast<ConstListNode>();
-    auto statement = child_list_[id + 1];
-    auto const_vars = const_list->Consts();
-    for (auto const_var : *const_vars) {
-      PRINT("case ")
-      const_var->Format(dst);
-      PRINT(":\n")
-      statement->Format(dst);
-    }
+    auto statement = child_list_[id + 1]->DynamicCast<StatementNode>();
+    const_list->Format_Constlist(dst,statement);
   }
 }
 
@@ -531,13 +542,33 @@ void ExpressionListNode::Format(FILE* dst) {
   }
 }
 
-bool ExpressionListNode::GetType(std::vector<pascal_type::TypeTemplate*>*type_list){
+bool ExpressionListNode::set_types(std::vector<pascal_type::TypeTemplate*>*type_list){
   if(!type_list) return true;
   for (auto i:*type_list){
-    if (i->template_type() != pascal_type::TypeTemplate::TYPE::BASIC) return false;
-    basic_types.push_back(dynamic_cast<BasicType*>(i));
+    if (is_basic(i)){
+      basic_types.push_back(dynamic_cast<BasicType*>(i));
+    }else if(i != TYPE_ERROR && i->StringLike()){
+      basic_types.push_back(TYPE_STRINGLIKE);
+    }else{
+      return false;
+    }
   }
   return true;
+}
+
+void ExpressionListNode::set_ref(std::stack<bool>* ref) {
+  if(grammar_type_ == GrammarType::EXP) {
+    if(ref->top()) child_list_[0]->DynamicCast<ExpressionNode>()->set_is_ref();
+  } else {
+    if(ref->top()) child_list_[1]->DynamicCast<ExpressionNode>()->set_is_ref();
+    ref->pop();
+    child_list_[0]->DynamicCast<ExpressionListNode>()->set_ref(ref);
+  }
+}
+
+void ExpressionNode::Format(FILE *dst) {
+  if(is_ref_) PRINT("&")
+  Node::Format(dst);
 }
 
 void StrExpressionNode::Format(FILE *dst) {
@@ -585,6 +616,24 @@ void FactorNode::Format(FILE* dst) {
       break;
   }
 }
+
+void ConstListNode::Format_Constlist(FILE* dst, StatementNode* statement) {
+  if (child_list_.size() == 1) {
+      PRINT("case ")
+      child_list_[0]->Format(dst);
+      PRINT(":\n")
+      statement->Format(dst);
+      PRINT("break;\n")
+    } else {
+      child_list_[0]->DynamicCast<ConstListNode>()->Format_Constlist(dst,statement);
+      PRINT("case ")
+      child_list_[1]->Format(dst);
+      PRINT(":\n")
+      statement->Format(dst);
+      PRINT("break;\n")
+    }
+}
+
 
 /////////////////////////////
 

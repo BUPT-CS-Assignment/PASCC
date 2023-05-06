@@ -5,6 +5,12 @@ using std::vector;
 using std::string;
 using namespace pascal_type;
 
+void ConstValue::set_unimus(){
+  if(m_Type == TYPE_INT) m_INT = -m_INT;
+  else if(m_Type == TYPE_REAL) m_REAL = -m_REAL;
+  else if(m_Type == TYPE_CHAR) m_CHAR = -m_CHAR;
+  else throw std::runtime_error("ConstValue : set_unimus : type not supported");
+}
 ConstValue::ConstValue(const ConstValue& other) {
   m_Type = other.m_Type;
   m_INT = other.m_INT;

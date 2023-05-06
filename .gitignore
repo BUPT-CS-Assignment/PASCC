@@ -13,10 +13,14 @@ test/__pycache__
 test/.pascc.*
 test/corrtest/input/*
 !test/corrtest/input/*.pas
+!test/corrtest/input/*.txt
 [Cc]MakeFile*
 scripts/parser.output
 scripts/parser.tab.c
-test/errtest/input/temp.pas
-test/corrtest/input/input*
+test/errtest/input/atemp.pas
 test/errtest/output/output*.txt
 test/errtest/input/input*.pas
+test/errtest/__pycache__/*.pyc
+scripts/__pycache__/*.pyc
+scripts/test.sh
+test/errtest/err_test.py
