@@ -206,6 +206,8 @@ const_declarations :{
 const_declaration :
     const_declaration ';' ID '=' const_variable
     {
+        if(error_flag)
+            break;
         if (!$5.is_right){
             break;
         }
@@ -215,9 +217,9 @@ const_declaration :
             yyerror(real_ast,"The identifier has been declared.\n");
         } 
         else{
-            if(error_flag)
-                break;
-            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION,$5.type_ptr);
+            // if(error_flag)
+            //     break;
+            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION);
             $$->append_child($1);
             LeafNode* leaf_node = new LeafNode($3.value);
             $$->append_child(leaf_node);
@@ -228,7 +230,8 @@ const_declaration :
     }
     | ID '=' const_variable
     {   
-        
+        if(error_flag)
+            break;
         // const_declaration -> id = const_variable.
         //TODO 插入符号表
         if (!$3.is_right){
@@ -239,9 +242,9 @@ const_declaration :
             yyerror(real_ast,"The identifier has been declared.");
         } 
         else {
-            if(error_flag)
-                break;
-            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE,$3.type_ptr);
+            // if(error_flag)
+            //     break;
+            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE);
             LeafNode* leaf_node = new LeafNode($1.value);
             $$->append_child(leaf_node);
             $$->append_child($3.const_variable_node);
@@ -624,7 +627,8 @@ var_declarations :
 var_declaration :
     var_declaration ';' id_list ':' type 
     {
-        
+         if(error_flag)
+            break;   
         // var_declaration -> var_declaration ; id_list : type.
         $$.record_info = $1.record_info;
         for (auto i : *($3.list_ref)){
@@ -633,8 +637,8 @@ var_declaration :
              yyerror(real_ast,"redefinition of variable");
             }
         }
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -932,6 +936,8 @@ statement_list :
 statement:
     variable ASSIGNOP expression
     {   
+        if(error_flag)
+            break;
         // 类型检查
         //此处赋值存在多种情况，结构体、数组等需要之后一一检查
         // statement -> variable assignop expression.
@@ -941,8 +947,8 @@ statement:
             yyerror(real_ast,"statement -> variable assignop expression\n");
         }
         std::string func_name = table_set_queue.top()->tag();
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         if(func_name == *$1.name){
             $$ = new StatementNode(StatementNode::GrammarType::FUNC_ASSIGN_OP_EXP);
         }else{
@@ -1139,6 +1145,8 @@ variable_list :
 variable:
     ID id_varparts
     {
+        if(error_flag)
+            break;
         // variable -> id id_varparts.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         string name = $1.value.get<string>();
@@ -1174,8 +1182,8 @@ variable:
             }
             $$.name = new std::string($1.value.get<string>());
         }
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.variable_node = new VariableNode();
         LeafNode *id_node = new LeafNode(name);
         $$.variable_node->append_child(id_node);
@@ -1801,7 +1809,7 @@ program:error
         }        
     };
 /*短语级恢复*/
-    program_head: PROGRAM error
+program_head: PROGRAM error
     {
         location_pointer_refresh();
         new_line_flag=false;
@@ -1816,7 +1824,7 @@ program:error
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
 
-    const_declaration: ID '=' error  
+const_declaration: ID '=' error  
     {
         location_pointer_refresh();
         new_line_flag=false;
@@ -1837,7 +1845,7 @@ program:error
         }
     }; 
      
-    const_declaration: const_declaration ';' ID '=' error
+const_declaration: const_declaration ';' ID '=' error
     {
         location_pointer_refresh();
         new_line_flag=false;
@@ -1855,7 +1863,7 @@ program:error
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
 
-    type_declaration: type_declaration ';' error
+type_declaration: type_declaration ';' error
     {
         location_pointer_refresh();
         new_line_flag=false;
@@ -1876,7 +1884,7 @@ program:error
     目前这是一种保底的恢复方法,这里会抛弃所有type定义;
     目标希望做到恢复到type_declaration级别;
     */
-    type_declarations: TYPE  error
+type_declarations: TYPE  error
     {
         location_pointer_refresh();
         new_line_flag=false;
@@ -1910,7 +1918,7 @@ program: program_head program_body error
         fprintf(stderr,"\t| %s",location_pointer);
     };
 
-    var_declaration: id_list ':' error
+var_declaration: id_list ':' error
     {
         location_pointer_refresh();
         new_line_flag=false;
@@ -1922,6 +1930,53 @@ program: program_head program_body error
             yychar = yylex();
         }
         if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+    }
+
+var_declaration: var_declaration ';' id_list ':' error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"A type identifier is expected here.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+
+factor: '(' error 
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"An ')' is expected.");
+        else
+            yyerror(real_ast,"Invaild expression!");
+        int left_num = 1;   // 括号匹配
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF ){
+            if(yychar=='(') left_num++;
+            if(yychar==')'&& left_num == 1) break; 
+            yychar = yylex();
+        }
+        if(yychar==')'){
+            yychar=yylex();
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(yychar==';'){
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
@@ -2149,6 +2204,7 @@ void location_pointer_refresh(){
     memset(location_pointer,' ',length);
     location_pointer[length]='^';
     location_pointer[length+1]='\n';
+    location_pointer[length+2]='\0';
 }
 // int main(){
 //     AST *real_ast = new AST();
