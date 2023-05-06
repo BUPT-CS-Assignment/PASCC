@@ -1,0 +1,8 @@
+procedure-test
+2023
+2023
+
+function-test
+2023
+6
+24 54

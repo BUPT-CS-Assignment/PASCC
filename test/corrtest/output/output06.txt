@@ -1,5 +1,9 @@
+const-test
 1
-3
+-3.14
+a
+-1
+ 
+type and var - test
 5
-7
-9
+1.1  2.2  3.3
