@@ -5,6 +5,7 @@
 
 using std::string;
 using std::vector;
+using std::stack;
 using json = nlohmann::json;
 using namespace symbol_table;
 using namespace pascal_symbol;
@@ -538,6 +539,21 @@ bool ExpressionListNode::GetType(std::vector<pascal_type::TypeTemplate*>*type_li
     basic_types.push_back(dynamic_cast<BasicType*>(i));
   }
   return true;
+}
+
+void ExpressionListNode::set_ref(std::stack<bool>* ref) {
+  if(grammar_type_ == GrammarType::EXP) {
+    if(ref->top()) child_list_[0]->DynamicCast<ExpressionNode>()->set_is_ref();
+  } else {
+    if(ref->top()) child_list_[1]->DynamicCast<ExpressionNode>()->set_is_ref();
+    ref->pop();
+    child_list_[0]->DynamicCast<ExpressionListNode>()->set_ref(ref);
+  }
+}
+
+void ExpressionNode::Format(FILE *dst) {
+  if(is_ref_) PRINT("&")
+  Node::Format(dst);
 }
 
 void StrExpressionNode::Format(FILE *dst) {

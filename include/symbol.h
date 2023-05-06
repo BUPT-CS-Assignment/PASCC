@@ -97,6 +97,7 @@ public:
   bool IsReference(std::string);
   void set_ref(bool r) override { is_ref_ = false; }
   bool is_ref() override { return false; }
+  std::vector<bool> ParamRefVec();
 
 private:
   std::vector<Parameter> params_;

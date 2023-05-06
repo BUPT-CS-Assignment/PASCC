@@ -1354,6 +1354,13 @@ call_procedure_statement:
         LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
         $$->append_child($3.expression_list_node);
+        auto ref_vec = tmp->ParamRefVec();
+        auto ref_stack = new std::stack<bool>();
+        for (auto i : ref_vec){
+            ref_stack->push(i);
+        }
+        $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
+        delete ref_stack;
     };
     | ID
     {   
@@ -1684,6 +1691,13 @@ factor:
         LeafNode *id_node = new LeafNode($1.value);
         $$.factor_node->append_child(id_node);
         $$.factor_node->append_child($3.expression_list_node);
+        auto ref_vec = tmp->ParamRefVec();
+        auto ref_stack = new std::stack<bool>();
+        for (auto i : ref_vec){
+            ref_stack->push(i);
+        }
+        $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
+        delete ref_stack;
 
     }
     | '(' expression ')'

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <stack>
 #include "json.hpp"
 #include "symbol_table.h"
 #include "pstdlib.h"
@@ -549,6 +550,7 @@ class ExpressionListNode: public Node {
   std::string FormatString();
   void Format(FILE* dst) override;
   bool GetType(std::vector<pascal_type::TypeTemplate*>* type_list);
+  void set_ref(std::stack<bool>* ref);
  private:
   //TODO get basic_type ptr lists
   std::vector<pascal_type::BasicType*> basic_types;
@@ -572,10 +574,13 @@ class ExpressionNode : public Node {
   };
   ExpressionNode() : target_type_(TargetType::EXPRESSION) {}
   ExpressionNode(TargetType tg) : target_type_(tg) {}
+  void set_is_ref() { is_ref_ = 1; }
   void set_expression_type(TargetType tg) { target_type_ = tg; }
   TargetType target_type() { return target_type_; }
+  void Format(FILE* dst) override;
  private:
   TargetType target_type_;
+  bool is_ref_;
 };
 
 class StrExpressionNode : public Node {

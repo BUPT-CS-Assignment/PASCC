@@ -69,4 +69,13 @@ bool FunctionSymbol::AssertParams(const vector<TypeTemplate *> &params_in,
   }
   return true;
 }
+
+std::vector<bool> FunctionSymbol::ParamRefVec() {
+  std::vector<bool> res;
+  for(auto& p : params_) {
+    res.push_back(p.second.second == PARAM_MODE::REFERENCE);
+  }
+  return res;
 }
+
+} // namespace pascal_symbol
