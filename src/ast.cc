@@ -465,7 +465,8 @@ void VariableListNode::Format(bool ref, FILE *dst) {
   }
 }
 
-void VariableListNode::GetType(vector<BasicType*> *type_list) {
+void VariableListNode::set_types(
+    std::vector<pascal_type::BasicType *> *type_list) {
   basic_types.assign(type_list->begin(),type_list->end());
 }
 
@@ -541,11 +542,16 @@ void ExpressionListNode::Format(FILE* dst) {
   }
 }
 
-bool ExpressionListNode::GetType(std::vector<pascal_type::TypeTemplate*>*type_list){
+bool ExpressionListNode::set_types(std::vector<pascal_type::TypeTemplate*>*type_list){
   if(!type_list) return true;
   for (auto i:*type_list){
-    if (i->template_type() != pascal_type::TypeTemplate::TYPE::BASIC) return false;
-    basic_types.push_back(dynamic_cast<BasicType*>(i));
+    if (is_basic(i)){
+      basic_types.push_back(dynamic_cast<BasicType*>(i));
+    }else if(i != TYPE_ERROR && i->StringLike()){
+      basic_types.push_back(TYPE_STRINGLIKE);
+    }else{
+      return false;
+    }
   }
   return true;
 }

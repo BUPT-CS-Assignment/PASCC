@@ -941,7 +941,12 @@ statement:
         //此处赋值存在多种情况，结构体、数组等需要之后一一检查
         // statement -> variable assignop expression.
         //基本情况
-        if(!($1.type_ptr==TYPE_REAL&&$3.type_ptr==TYPE_INT)&&!is_same($1.type_ptr,$3.type_ptr)){
+        bool var_flag = ($1.type_ptr==TYPE_REAL && $3.type_ptr==TYPE_INT) && !is_same($1.type_ptr,$3.type_ptr);
+        bool str_flag = ($1.type_ptr != TYPE_ERROR &&
+        		 $1.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY &&
+        		 $1.type_ptr->DynamicCast<ArrayType>()->StringLike() &&
+        		 $3.type_ptr==TYPE_STRINGLIKE);
+        if(!var_flag && !str_flag){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"statement -> variable assignop expression\n");
         }
@@ -1071,7 +1076,7 @@ statement:
     }
     |READ '(' variable_list ')'
     {
-        $3.variable_list_node->GetType($3.basic_types);
+        $3.variable_list_node->set_types($3.basic_types);
         if(error_flag)
             break;
         $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
@@ -1079,7 +1084,7 @@ statement:
     }
     |READLN '(' variable_list ')'
     {
-	$3.variable_list_node->GetType($3.basic_types);
+	$3.variable_list_node->set_types($3.basic_types);
 	if(error_flag)
 	    break;
 	$$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
@@ -1089,7 +1094,7 @@ statement:
     {
         if(error_flag)
             break;
-        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+        if(!$3.expression_list_node->set_types($3.type_ptr_list)){
             yyerror(real_ast,"BasicType is expexted in WRITE\n");
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
@@ -1099,7 +1104,7 @@ statement:
     {
         if(error_flag)
             break;
-        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+        if(!$3.expression_list_node->set_types($3.type_ptr_list)){
             yyerror(real_ast,"BasicType is expexted in WRITELN\n");
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
