@@ -114,12 +114,14 @@ void ConstDeclarationNode::Format(FILE* dst) {
   if (grammar_type_ == GrammarType::DECLARATION) {
     FormatAt(0, dst);
     PRINT("const ")
+    if (is_float_) PRINT("float ")
     FormatAt(1, dst);
     PRINT(" = ")
     FormatAt(2, dst);
     PRINT(";\n");
   } else if (grammar_type_ == GrammarType::VALUE) {
     PRINT("const ")
+    if (is_float_) PRINT("float ")
     FormatAt(0, dst);
     PRINT(" = ")
     FormatAt(1, dst);
@@ -193,11 +195,11 @@ void TypeDeclarationNode::Format(FILE* dst) {
   TypeNode* base_type = tnode->base_type();
   PRINT("typedef ")
   base_type->Format(dst);
+  PRINT(" ")
+  idnode->Format(dst);
   if (tnode->grammar_type() == TypeNode::GrammarType::ARRAY) {
     tnode->PeriodsFormat(dst);
   }
-  PRINT(" ")
-  idnode->Format(dst);
   PRINT(";\n")
   //  for (int idx = 0; idx < child_list_.size(); idx += 2) {
   //    child_list_[idx]->TransCode();

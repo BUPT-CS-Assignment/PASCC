@@ -219,6 +219,7 @@ const_declaration :
             if(error_flag)
                 break;
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION);
+            if ($5.type_ptr==pascal_type::TYPE_REAL) $$->set_float();
             $$->append_child($1);
             LeafNode* leaf_node = new LeafNode($3.value);
             $$->append_child(leaf_node);
@@ -243,6 +244,7 @@ const_declaration :
             if(error_flag)
                 break;
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE);
+            if ($3.type_ptr==pascal_type::TYPE_REAL) $$->set_float();
             LeafNode* leaf_node = new LeafNode($1.value);
             $$->append_child(leaf_node);
             $$->append_child($3.const_variable_node);
@@ -322,10 +324,13 @@ const_variable :
         //TODO
         // const_variable -> - num.
         $$.type_ptr = $2.type_ptr;
-        $$.value = $$.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL);
+        $2.value.set_unimus();
+        //$$.value = $$.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL);
+        $$.value = $2.value;
         if(error_flag)
             break; 
-        $$.const_variable_node = new LeafNode($2.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL));
+        //$$.const_variable_node = new LeafNode($2.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL));
+        $$.const_variable_node = new LeafNode($2.value);
     }
     | num
     {   
@@ -390,12 +395,11 @@ type_declarations :
 type_declaration :
     type_declaration ';' ID '=' type
     {
-        
         // TODO
         // type_declaration -> type_declaration ; id = type.
         if ($5.main_type == TypeAttr::BASIC) {
-            pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($5.type_ptr)->type());
-            if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),basic_type)){
+            //pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($5.type_ptr)->type());
+            if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),dynamic_cast<BasicType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
@@ -424,8 +428,8 @@ type_declaration :
         // TODO!
         // type_declaration -> id = type.
         if ($3.main_type == TypeAttr::BASIC) {
-            pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($3.type_ptr)->type());
-            if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),basic_type)){
+            //pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($3.type_ptr)->type());
+            if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),dynamic_cast<BasicType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
@@ -678,7 +682,7 @@ var_declaration :
         }
         if(error_flag)
             break;
-        $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
+        $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::ID);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
         LeafNode *leaf_node = new LeafNode($5.value);

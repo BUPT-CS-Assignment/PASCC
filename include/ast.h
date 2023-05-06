@@ -162,8 +162,10 @@ class ConstDeclarationNode : public Node {
   };
   ConstDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE* dst) override;
+  void set_float() { is_float_ = true; }
  private:
   GrammarType grammar_type_;
+  bool is_float_ = false;
 };
 
 class ConstVariableNode : public Node {
