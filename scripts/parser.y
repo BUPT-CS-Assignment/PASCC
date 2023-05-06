@@ -1168,7 +1168,7 @@ variable:
                 yyerror(real_ast,"variable -> id id_varparts.\n");
             }
             if(tmp->is_ref()){
-                $1.value.set("*("+$1.value.get<string>()+")");
+                name = "*("+name+")";
             }
             $$.name = new std::string($1.value.get<string>());
         }
