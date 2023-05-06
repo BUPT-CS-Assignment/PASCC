@@ -941,10 +941,9 @@ statement:
         //此处赋值存在多种情况，结构体、数组等需要之后一一检查
         // statement -> variable assignop expression.
         //基本情况
-        bool var_flag = ($1.type_ptr==TYPE_REAL && $3.type_ptr==TYPE_INT) && !is_same($1.type_ptr,$3.type_ptr);
+        bool var_flag = ($1.type_ptr==TYPE_REAL && $3.type_ptr==TYPE_INT) || is_same($1.type_ptr,$3.type_ptr);
         bool str_flag = ($1.type_ptr != TYPE_ERROR &&
-        		 $1.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY &&
-        		 $1.type_ptr->DynamicCast<ArrayType>()->StringLike() &&
+        		 $1.type_ptr->StringLike() &&
         		 $3.type_ptr==TYPE_STRINGLIKE);
         if(!var_flag && !str_flag){
             yyerror(real_ast,"Type check failed\n");

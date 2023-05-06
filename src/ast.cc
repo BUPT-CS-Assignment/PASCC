@@ -545,7 +545,7 @@ void ExpressionListNode::Format(FILE* dst) {
 bool ExpressionListNode::set_types(std::vector<pascal_type::TypeTemplate*>*type_list){
   if(!type_list) return true;
   for (auto i:*type_list){
-    if (is_basic(i)){
+    if (is_basic(i) || i == TYPE_STRINGLIKE){
       basic_types.push_back(dynamic_cast<BasicType*>(i));
     }else if(i != TYPE_ERROR && i->StringLike()){
       basic_types.push_back(TYPE_STRINGLIKE);
