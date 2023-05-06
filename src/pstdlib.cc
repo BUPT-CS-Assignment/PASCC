@@ -16,7 +16,7 @@ namespace pstdlib{
 PStdLibs::PStdLibs() {
   lib_map_["abs"] = {"#define abs(x) (x < 0 ? -x : x)", false};
   lib_map_["sqr"] = {"#define sqr(x) (x * x)", false};
-  lib_map_["odd"] = {"#define odd(x) (x % 2 == 1)", false};
+  lib_map_["odd"] = {"#define odd(x) ((x < 0 ? -x : x) % 2 == 1)", false};
   lib_map_["chr"] = {"#define chr(x) ((char)x)", false};
   lib_map_["ord"] = {"#define ord(x) ((int)x)", false};
   lib_map_["succ"] = {"#define succ(x) (x + 1)", false};
@@ -29,8 +29,8 @@ PStdLibs::PStdLibs() {
   lib_map_["ln"] = {"#define ln(x) (log((float)x))", false};
   lib_map_["sqrt"] = {"#define sqrt(x) (sqrt((float)x))", false};
   lib_map_["arctan"] = {"#define arctan(x) (atan((float)x))", false};
-  lib_map_["eof"] = {"#define eof() feof(stdin)", false};
-  lib_map_["eoln"] = {"int eoln() {\nint c = getchar();\nungetc(c,stdin);\nreturn c == '\\n' || c == EOF;\n}", false};
+  lib_map_["eof"] = {"#define eof() (feof(stdin)==0)", false};
+  lib_map_["eoln"] = {"int eoln() {if(feof(stdin)==0) return 1;\nint c = getc(stdin);\nungetc(c,stdin);\nreturn c == '\\n' || c == EOF;\n}", false};
 }
 
 

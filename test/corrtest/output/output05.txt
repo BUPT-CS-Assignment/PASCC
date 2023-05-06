@@ -1,6 +1,6 @@
 abs(-5) = 5
 sqr(-5) = 25
-odd(-5) = TRUE
+odd(-5) = 1
 chr(65) = A
 ord(B) = 66
 succ(B) = C
@@ -13,5 +13,5 @@ exp(2.00) =  7.39
 ln(10.00) =  2.30
 sqrt(16.00) =  4.00
 arctan(1.00) =  0.79
-eof = TRUE
-eoln = TRUE
+eof = 1
+eoln = 1
