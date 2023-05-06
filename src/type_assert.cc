@@ -17,6 +17,17 @@ BasicType* compute(BasicType* t1, BasicType* t2, string op){
   }
 }
 
+BasicType *compute(BasicType *t1, string op) {
+  if (t1 == nullptr)
+    return TYPE_ERROR;
+  auto res = operation_map.find(Operation(t1, NULL,op));
+  if (res != operation_map.end()) {
+    return (*res).second;
+  } else {
+    return TYPE_ERROR;
+  }
+}
+
 bool is_basic(TypeTemplate* t){
   if(t == nullptr) return false;
   if(t->template_type() != TypeTemplate::TYPE::BASIC) return false;
