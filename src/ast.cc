@@ -383,10 +383,15 @@ void StatementNode::Format(FILE* dst) {
       PRINT("}\n")
       break;
     }
-    case GrammarType::READ_STATEMENT: {
+    case GrammarType::READ_STATEMENT:
+    case GrammarType::READLN_STATEMENT:{
       // TODO readln(...)
       auto* vlnodes = child_list_[0]->DynamicCast<VariableListNode>();
-      PRINT("scanf(\"%s\", ", vlnodes->FormatString().c_str())
+      if(grammar_type_ == GrammarType::READLN_STATEMENT){
+        PRINT("scanf(\"%s\\n\", ", vlnodes->FormatString().c_str())
+      } else {
+        PRINT("scanf(\"%s\", ", vlnodes->FormatString().c_str())
+      }
       vlnodes->Format(true, dst);
       PRINT(");\n")
       break;

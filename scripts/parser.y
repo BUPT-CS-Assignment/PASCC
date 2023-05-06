@@ -84,7 +84,7 @@ void yynote(std::string msg,int line);
 %token PROGRAM FUNCTION PROCEDURE TO DOWNTO SUBCATALOG
 %token ARRAY TYPE CONST RECORD
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
-%token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP READ WRITE WRITELN
+%token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP READ READLN WRITE WRITELN
 %token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_ VAR
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
@@ -1071,6 +1071,14 @@ statement:
             break;
         $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
         $$->append_child($3.variable_list_node);
+    }
+    |READLN '(' variable_list ')'
+    {
+	$3.variable_list_node->GetType($3.basic_types);
+	if(error_flag)
+	    break;
+	$$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
+	$$->append_child($3.variable_list_node);
     }
     |WRITE '(' expression_list ')'
     {

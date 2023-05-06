@@ -61,6 +61,7 @@ TO                      "to"
 DOWNTO                  "downto"
 DO                      "do"
 READ                    "read"
+READLN                  "readln"
 WRITE                   "write"
 WRITELN                 "writeln"
 NOT                     "not"
@@ -128,6 +129,7 @@ SUBCATALOG              ".."
 {WRITE}                 { cache_line(); to_str(); return WRITE;}
 {WRITELN}               { cache_line(); to_str(); return WRITELN;}
 {READ}                  { cache_line(); to_str(); return READ;}
+{READLN}                { cache_line(); to_str(); return READLN;}
 
 {NOT}                   { cache_line(); to_str(); return NOT; }
 {BASIC_TYPE}            { cache_line(); to_str(); return BASIC_TYPE; }
