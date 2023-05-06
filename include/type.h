@@ -243,26 +243,12 @@ public:
   ConstValue(const char *v) { set(std::string(v)); }
   ConstValue(std::string v) { set(v); }
 
-  void set(int v) {
-    m_Type = pascal_type::TYPE_INT;
-    m_INT = v;
-  }
-  void set(float v) {
-    m_Type = pascal_type::TYPE_REAL;
-    m_REAL = v;
-  }
-  void set(bool v) {
-    m_Type = pascal_type::TYPE_BOOL;
-    m_BOOLEAN = v;
-  }
-  void set(char v) {
-    m_Type = pascal_type::TYPE_CHAR;
-    m_CHAR = v;
-  }
-  void set(std::string v) {
-    m_Type = pascal_type::TYPE_STRINGLIKE;
-    m_STRING = v;
-  }
+  void set(int v) {m_Type = pascal_type::TYPE_INT; m_INT = v;}
+  void set(float v) {m_Type = pascal_type::TYPE_REAL; m_REAL = v;}
+  void set(bool v) {m_Type = pascal_type::TYPE_BOOL; m_BOOLEAN = v;}
+  void set(char v) {m_Type = pascal_type::TYPE_CHAR; m_CHAR = v;}
+  void set(std::string v) {m_Type = pascal_type::TYPE_STRINGLIKE; m_STRING = v;}
+  void set_unimus();
 
   pascal_type::BasicType *type() { return m_Type; }
   template <typename T> T get() {

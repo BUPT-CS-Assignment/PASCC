@@ -14,12 +14,10 @@ extern "C"
 }
 extern std::string cur_line_info;
 extern std::string last_line_info;
-//AST real_ast;
-//symbol_table::SymbolTable *real_symbol_table = new symbol_table::SymbolTable();
+
 std::stack<symbol_table::TableSet*> table_set_queue;
 symbol_table::TableSet* top_table_set = new symbol_table::TableSet("main",nullptr);
-pstdlib::PStdLibs *pstdlibs = new pstdlib::PStdLibs();
-//table_set_queue.push(top_table_set);
+
 int error_flag=0;
 char location_pointer[256];
 void location_pointer_refresh();
@@ -86,7 +84,7 @@ void yynote(std::string msg,int line);
 %token PROGRAM FUNCTION PROCEDURE TO DOWNTO SUBCATALOG
 %token ARRAY TYPE CONST RECORD
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
-%token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP READ WRITE WRITELN
+%token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP READ READLN WRITE WRITELN
 %token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_ VAR
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
@@ -157,7 +155,7 @@ program_head :
         LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         table_set_queue.push(top_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());  
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());  
         
     }
 program_body :
@@ -208,6 +206,8 @@ const_declarations :{
 const_declaration :
     const_declaration ';' ID '=' const_variable
     {
+        if(error_flag)
+            break;
         if (!$5.is_right){
             break;
         }
@@ -217,9 +217,9 @@ const_declaration :
             yyerror(real_ast,"The identifier has been declared.\n");
         } 
         else{
-            if(error_flag)
-                break;
-            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION);
+            // if(error_flag)
+            //     break;
+            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION,$5.type_ptr);
             $$->append_child($1);
             LeafNode* leaf_node = new LeafNode($3.value);
             $$->append_child(leaf_node);
@@ -230,7 +230,8 @@ const_declaration :
     }
     | ID '=' const_variable
     {   
-        
+        if(error_flag)
+            break;
         // const_declaration -> id = const_variable.
         //TODO 插入符号表
         if (!$3.is_right){
@@ -241,9 +242,9 @@ const_declaration :
             yyerror(real_ast,"The identifier has been declared.");
         } 
         else {
-            if(error_flag)
-                break;
-            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE);
+            // if(error_flag)
+            //     break;
+            $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE,$3.type_ptr);
             LeafNode* leaf_node = new LeafNode($1.value);
             $$->append_child(leaf_node);
             $$->append_child($3.const_variable_node);
@@ -269,8 +270,7 @@ const_variable :
             $$.type_ptr = symbol->type();
             if(error_flag)
                 break;
-            $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));
-            
+            $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));     
         }
     }
     | UMINUS ID
@@ -323,10 +323,13 @@ const_variable :
         //TODO
         // const_variable -> - num.
         $$.type_ptr = $2.type_ptr;
-        $$.value = $$.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL);
+        $2.value.set_unimus();
+        //$$.value = $$.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL);
+        $$.value = $2.value;
         if(error_flag)
             break; 
-        $$.const_variable_node = new LeafNode($2.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL));
+        //$$.const_variable_node = new LeafNode($2.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL));
+        $$.const_variable_node = new LeafNode($2.value);
     }
     | num
     {   
@@ -391,21 +394,17 @@ type_declarations :
 type_declaration :
     type_declaration ';' ID '=' type
     {
-        
         // TODO
         // type_declaration -> type_declaration ; id = type.
         if ($5.main_type == TypeAttr::BASIC) {
-            pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($5.type_ptr)->type());
-            if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),basic_type)){
+            if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),dynamic_cast<BasicType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
-            //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($5.type_ptr,*($5.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),dynamic_cast<ArrayType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($5.record_info) {
-            //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($5.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),dynamic_cast<RecordType*>($5.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
@@ -425,17 +424,14 @@ type_declaration :
         // TODO!
         // type_declaration -> id = type.
         if ($3.main_type == TypeAttr::BASIC) {
-            pascal_type::BasicType *basic_type = new pascal_type::BasicType(dynamic_cast<BasicType*>($3.type_ptr)->type());
-            if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),basic_type)){
+            if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),dynamic_cast<BasicType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
-            //pascal_type::ArrayType *array_type = new pascal_type::ArrayType($3.array_type_ptr,*($3.bounds));
             if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),dynamic_cast<ArrayType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
         } else if ($3.record_info) {
-            //pascal_type::RecordType *record_type = new pascal_type::RecordType(*($3.record_info));
             if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),dynamic_cast<RecordType*>($3.type_ptr))){
                 yyerror(real_ast,"Error: redefinition of type.");
             } 
@@ -533,7 +529,6 @@ standrad_type :
     BASIC_TYPE
     {
         // standrad_type -> int|real|bool|char.
-        //std::cout<<"$1.value.get<string>():"<<$1.value.get<string>()<<std::endl;
         string typestr = $1.value.get<string>();
         if (typestr == "integer"){
             $$.type_ptr = pascal_type::TYPE_INT;
@@ -615,6 +610,8 @@ var_declarations :
     }
     | VAR var_declaration ';'
     {
+        if(error_flag)
+            break;
         for (auto i : *($2.record_info)){
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
@@ -623,15 +620,14 @@ var_declarations :
             }
         }
         // var_declarations -> var var_declaration.
-        if(error_flag)
-            break;
         $$ = new VariableDeclarationsNode();
         $$->append_child($2.variable_declaration_node);
     };
 var_declaration :
     var_declaration ';' id_list ':' type 
     {
-        
+         if(error_flag)
+            break;   
         // var_declaration -> var_declaration ; id_list : type.
         $$.record_info = $1.record_info;
         for (auto i : *($3.list_ref)){
@@ -640,8 +636,8 @@ var_declaration :
              yyerror(real_ast,"redefinition of variable");
             }
         }
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
@@ -679,7 +675,7 @@ var_declaration :
         }
         if(error_flag)
             break;
-        $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
+        $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::ID);
         $$.variable_declaration_node->append_child($1.variable_declaration_node);
         $$.variable_declaration_node->append_child($3.id_list_node);
         LeafNode *leaf_node = new LeafNode($5.value);
@@ -761,7 +757,7 @@ subprogram_head :
 
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
@@ -800,7 +796,7 @@ subprogram_head :
 
         symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(),table_set_queue.top());
         table_set_queue.push(now_table_set);
-        pstdlibs->Preset(table_set_queue.top()->symbols());
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
@@ -939,17 +935,24 @@ statement_list :
 statement:
     variable ASSIGNOP expression
     {   
+        if(error_flag)
+            break;
         // 类型检查
         //此处赋值存在多种情况，结构体、数组等需要之后一一检查
         // statement -> variable assignop expression.
         //基本情况
-        if(!($1.type_ptr==TYPE_REAL&&$3.type_ptr==TYPE_INT)&&!is_same($1.type_ptr,$3.type_ptr)){
+        bool var_flag = ($1.type_ptr==TYPE_REAL && $3.type_ptr==TYPE_INT) && !is_same($1.type_ptr,$3.type_ptr);
+        bool str_flag = ($1.type_ptr != TYPE_ERROR &&
+        		 $1.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY &&
+        		 $1.type_ptr->DynamicCast<ArrayType>()->StringLike() &&
+        		 $3.type_ptr==TYPE_STRINGLIKE);
+        if(!var_flag && !str_flag){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"statement -> variable assignop expression\n");
         }
         std::string func_name = table_set_queue.top()->tag();
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         if(func_name == *$1.name){
             $$ = new StatementNode(StatementNode::GrammarType::FUNC_ASSIGN_OP_EXP);
         }else{
@@ -1073,17 +1076,25 @@ statement:
     }
     |READ '(' variable_list ')'
     {
-        $3.variable_list_node->GetType($3.basic_types);
+        $3.variable_list_node->set_types($3.basic_types);
         if(error_flag)
             break;
         $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
         $$->append_child($3.variable_list_node);
     }
+    |READLN '(' variable_list ')'
+    {
+	$3.variable_list_node->set_types($3.basic_types);
+	if(error_flag)
+	    break;
+	$$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
+	$$->append_child($3.variable_list_node);
+    }
     |WRITE '(' expression_list ')'
     {
         if(error_flag)
             break;
-        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+        if(!$3.expression_list_node->set_types($3.type_ptr_list)){
             yyerror(real_ast,"BasicType is expexted in WRITE\n");
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
@@ -1093,7 +1104,7 @@ statement:
     {
         if(error_flag)
             break;
-        if(!$3.expression_list_node->GetType($3.type_ptr_list)){
+        if(!$3.expression_list_node->set_types($3.type_ptr_list)){
             yyerror(real_ast,"BasicType is expexted in WRITELN\n");
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
@@ -1138,9 +1149,11 @@ variable_list :
 variable:
     ID id_varparts
     {
+        if(error_flag)
+            break;
         // variable -> id id_varparts.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
-        
+        string name = $1.value.get<string>();
         if(tmp == nullptr) {
             $$.type_ptr = nullptr;
             yyerror(real_ast,"variable not defined");
@@ -1152,8 +1165,11 @@ variable:
                 tmp = dynamic_cast<ConstSymbol*>(tmp);
                 $$.is_lvalue = false;
             } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+                //TODO 函数调用 类型检查
                 tmp = dynamic_cast<FunctionSymbol*>(tmp);
+                name+="()";
                 $$.is_lvalue = false;
+                real_ast->libs()->Call(tmp->name());
             } else {
                 if (tmp->type()->template_type() == TypeTemplate::TYPE::ARRAY && !error_flag){
                     std::vector<ArrayType::ArrayBound> bounds = dynamic_cast<ArrayType*>(tmp->type())->bounds();
@@ -1166,14 +1182,14 @@ variable:
                 yyerror(real_ast,"variable -> id id_varparts.\n");
             }
             if(tmp->is_ref()){
-                $1.value.set("*("+$1.value.get<string>()+")");
+                name = "*("+name+")";
             }
             $$.name = new std::string($1.value.get<string>());
         }
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.variable_node = new VariableNode();
-        LeafNode *id_node = new LeafNode($1.value);
+        LeafNode *id_node = new LeafNode(name);
         $$.variable_node->append_child(id_node);
         $$.variable_node->append_child($2.id_varparts_node);
     };
@@ -1354,12 +1370,21 @@ call_procedure_statement:
         LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
         $$->append_child($3.expression_list_node);
+        auto ref_vec = tmp->ParamRefVec();
+        auto ref_stack = new std::stack<bool>();
+        for (auto i : ref_vec){
+            ref_stack->push(i);
+        }
+        $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
+        delete ref_stack;
+        real_ast->libs()->Call(tmp->name());
     };
     | ID
     {   
         //类型检查
+        //todo 类型检查
         // call_procedure_statement -> id.
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
+        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure\n");
         }
@@ -1368,6 +1393,7 @@ call_procedure_statement:
         $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID);
         LeafNode *id_node = new LeafNode($1.value);
         $$->append_child(id_node);
+        real_ast->libs()->Call(tmp->name());
     };
 expression_list:
     expression_list ',' expression
@@ -1684,6 +1710,14 @@ factor:
         LeafNode *id_node = new LeafNode($1.value);
         $$.factor_node->append_child(id_node);
         $$.factor_node->append_child($3.expression_list_node);
+        auto ref_vec = tmp->ParamRefVec();
+        auto ref_stack = new std::stack<bool>();
+        for (auto i : ref_vec){
+            ref_stack->push(i);
+        }
+        $3.expression_list_node->DynamicCast<ExpressionListNode>()->set_ref(ref_stack);
+        delete ref_stack;
+        real_ast->libs()->Call(tmp->name());
 
     }
     | '(' expression ')'
@@ -1760,30 +1794,25 @@ unsigned_const_variable :
 /*---------------.
 | Error handler  |
 `---------------*/
+/*紧急恢复*/
 program:error
-    {
-        fprintf(stderr,"\033[01;31m error\033[0m : %s\n","There are unrecoverable errors. Please check the code carefully!");
-        while (yychar != YYEOF){
-            yychar = yylex();
-        }
-        real_ast->set_root(nullptr);
-        error_flag =1;
-    };
-
-program_head:  error  
     {
         location_pointer_refresh();
         new_line_flag=false;
-        if(yychar==ID)
-            yyerror(real_ast,"Every program must begin with the symbol program!");
-        else
-            yyerror(real_ast,"unknown error!");
+        yyerror(real_ast,"There are unrecoverable errors. Please check the code carefully!");
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
-        fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-        fprintf(stderr,"\t| %s",location_pointer);
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        fprintf(stderr,"abort!\n");
+        while (yychar!= YYEOF){
+            yychar = yylex();
+        }        
     };
+/*短语级恢复*/
 program_head: PROGRAM error
     {
         location_pointer_refresh();
@@ -1797,186 +1826,358 @@ program_head: PROGRAM error
         }
         fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    };     
+    }; 
 
-program_body: error
+const_declaration: ID '=' error  
     {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==TRUE||yychar==FALSE)
+            yyerror(real_ast,"Const value cannot be Boolean.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+    }; 
+     
+const_declaration: const_declaration ';' ID '=' error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==TRUE||yychar==FALSE)
+            yyerror(real_ast,"Const value cannot be Boolean.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }; 
 
+type_declaration: type_declaration ';' error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar=='=')
+            yyerror(real_ast,"A type definition must begin with an identifier");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+    /*todo
+    目前这是一种保底的恢复方法,这里会抛弃所有type定义;
+    目标希望做到恢复到type_declaration级别;
+    */
+type_declarations: TYPE  error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar=='=')
+            yyerror(real_ast,"A type definition must begin with an identifier");
+        else
+            yyerror(real_ast,"There are unrecoverable errors in type_declarations. Please check the code carefully!");
+        while (new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        while (yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
+            yychar = yylex();
+        }
+    }
+
+/*
+    该产生式会导致program_body的FOLLOW集中出现error
+    程序中只会出现一次program_body应该不会引起冲突
+*/
+program: program_head program_body error
+    {
+        location_pointer_refresh();
+        table_set_queue.push(top_table_set);
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"A dot is expected at the end of the program !");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
     };
 
-const_declarations: CONST error
+var_declaration: id_list ':' error
     {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"A type identifier is expected here.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+    }
 
-    };
-
-type_declarations: TYPE error
+var_declaration: var_declaration ';' id_list ':' error
     {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"A type identifier is expected here.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
 
-    };
-
-var_declarations: VAR error
+factor: '(' error 
     {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"An ')' is expected.");
+        else
+            yyerror(real_ast,"Invaild expression!");
+        int left_num = 1;   // 括号匹配
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF ){
+            if(yychar=='(') left_num++;
+            if(yychar==')'&& left_num == 1) break; 
+            yychar = yylex();
+        }
+        if(yychar==')'){
+            yychar=yylex();
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+    }
+// program_head:  error  
+//     {
+//         location_pointer_refresh();
+//         new_line_flag=false;
+//         if(yychar==ID)
+//             yyerror(real_ast,"Every program must begin with the symbol program!");
+//         else
+//             yyerror(real_ast,"unknown error!");
+//         while (new_line_flag==false && yychar!= YYEOF){
+//             yychar = yylex();
+//         }
+//         fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+//         fprintf(stderr,"\t| %s",location_pointer);
+//     };
+ 
 
-    };
+// program_body: error
+//     {
+        
+//     };
 
-subprogram_declaration: FUNCTION error
-    {
+// const_declarations: CONST error
+//     {
 
-    };
+//     };
 
-subprogram_declaration: PROCEDURE error
-    {
+// type_declarations: TYPE error
+//     {
 
-    };  
+//     };
 
-statement : error
-    {
+// var_declarations: VAR error
+//     {
 
-    };
+//     };
+
+// subprogram_declaration: FUNCTION error
+//     {
+
+//     };
+
+// subprogram_declaration: PROCEDURE error
+//     {
+
+//     };  
+
+// statement : error
+//     {
+
+//     };
 /* A colon is expected. In declarations, the colon is followed by a type.*/
-var_declaration:
-    var_declaration ';' id_list error type_or_ID
-    {
-        yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
-    }
-    | var_declaration ';' error ':' type_or_ID
-    {
-        yyerror(real_ast, "An identifier is expected.");
-    }
-    | error ':' type_or_ID
-    {
-        yyerror(real_ast, "An identifier is expected.");
-    }
-    | id_list error type_or_ID
-    {
-        yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
-    };
-type_or_ID:
-    type
-    |ID;
+// var_declaration:
+//     var_declaration ';' id_list error type_or_ID
+//     {
+//         yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
+//     }
+//     | var_declaration ';' error ':' type_or_ID
+//     {
+//         yyerror(real_ast, "An identifier is expected.");
+//     }
+//     | error ':' type_or_ID
+//     {
+//         yyerror(real_ast, "An identifier is expected.");
+//     }
+//     | id_list error type_or_ID
+//     {
+//         yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
+//     };
+// type_or_ID:
+//     type
+//     |ID;
 
-/* The symbol of is expected.*/
-statement:
-    CASE error END
-    {
-        yyerror(real_ast,"The symbol of is expected");
-    };
-type:
-    ARRAY '[' periods ']' error type
-    {
-        yyerror(real_ast,"The symbol of is expected");
-    };
+// /* The symbol of is expected.*/
+// statement:
+//     CASE error END
+//     {
+//         yyerror(real_ast,"The symbol of is expected");
+//     };
+// type:
+//     ARRAY '[' periods ']' error type
+//     {
+//         yyerror(real_ast,"The symbol of is expected");
+//     };
 
-/* An opening parenthesis is expected.*/
-// program_head: PROGRAM ID error ';'
+// /* An opening parenthesis is expected.*/
+// // program_head: PROGRAM ID error ';'
+// //     {
+// //         yyerror(real_ast,"An opening parenthesis is expected.");
+// //     };
+// // formal_parameter: error ')'
+// //     {
+// //         yyerror(real_ast,"An opening parenthesis is expected.");
+// //     };
+// statement:
+//     READ error variable_list ')'
+//     {
+//         yyerror(real_ast,"An opening parenthesis is expected.");
+//     }
+//     | WRITE error expression_list ')'
+//     {
+//         yyerror(real_ast,"An opening parenthesis is expected.");
+//     }
+//     | WRITELN error expression_list ')'
 //     {
 //         yyerror(real_ast,"An opening parenthesis is expected.");
 //     };
-// formal_parameter: error ')'
-//     {
-//         yyerror(real_ast,"An opening parenthesis is expected.");
-//     };
-statement:
-    READ error variable_list ')'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    }
-    | WRITE error expression_list ')'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    }
-    | WRITELN error expression_list ')'
-    {
-        yyerror(real_ast,"An opening parenthesis is expected.");
-    };
-// factor:error expression ')'
-//      {
-//           yyerror(real_ast,"An opening parenthesis is expected.");
-//      }
-   | ID error ')'
-   {
-       yyerror(real_ast,"An opening parenthesis is expected.");
-   }
-    ;
+// // factor:error expression ')'
+// //      {
+// //           yyerror(real_ast,"An opening parenthesis is expected.");
+// //      }
+//    | ID error ')'
+//    {
+//        yyerror(real_ast,"An opening parenthesis is expected.");
+//    }
+//     ;
 
-    /* An opening bracket is expected ([).*/
-type: ARRAY error periods ']' OF type
-    {
-        yyerror(real_ast,"An opening bracket is expected ([).");
-    };
-
-    /* A closing bracket is expected (]).*/
-type: ARRAY '[' periods error OF type
-    {
-        yyerror(real_ast,"An closing bracket is expected (]).");
-    };
-// id_varpart: '[' expression_list error
+//     /* An opening bracket is expected ([).*/
+// type: ARRAY error periods ']' OF type
 //     {
-//        yyerror(real_ast,"An closing bracket is expected (]).");
+//         yyerror(real_ast,"An opening bracket is expected ([).");
 //     };
 
-    /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
-// program: program_head program_body error
+//     /* A closing bracket is expected (]).*/
+// type: ARRAY '[' periods error OF type
 //     {
-//         table_set_queue.push(top_table_set);
-//         pstdlibs->Preset(table_set_queue.top()->symbols());
-//         yyerror(real_ast,"A dot is expected at the end of the program. Check corresponding begin and end symbols!");
+//         yyerror(real_ast,"An closing bracket is expected (]).");
+//     };
+// // id_varpart: '[' expression_list error
+// //     {
+// //        yyerror(real_ast,"An closing bracket is expected (]).");
+// //     };
+
+//     /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
+
+
+//     /* Every program must begin with the symbol program.*/
+// // program_head: error ID '(' id_list ')' ';'
+// //     {
+// //         table_set_queue.push(top_table_set);
+// //         real_ast->libs()->Preset(table_set_queue.top()->symbols());
+// //         yyerror(real_ast,"Every program must begin with the symbol program.");
+// //     };
+
+//     /* The symbol then is expected.*/
+// // statement: IF error statement else_part
+// //     {
+// //         yyerror(real_ast,"The symbol then is expected.");
+// //     };
+//     /* The symbol until is expected.*/
+// // statement: REPEAT statement_list error expression
+// //     {
+// //         yyerror(real_ast,"The symbol until is expected.");
+// //     };
+
+//     /* The symbol do is expected.*/
+// statement: WHILE error statement
+//     {
+//         yyerror(real_ast,"The symbol do is expected.");
+//     }
+//     | FOR ID ASSIGNOP expression updown error statement
+//     {
+//         yyerror(real_ast,"The symbol do is expected.");
 //     };
 
-    /* Every program must begin with the symbol program.*/
-// program_head: error ID '(' id_list ')' ';'
+//     /* The symbol to (or downto) is expected.*/
+// statement: FOR ID ASSIGNOP error expression DO statement
 //     {
-//         table_set_queue.push(top_table_set);
-//         pstdlibs->Preset(table_set_queue.top()->symbols());
-//         yyerror(real_ast,"Every program must begin with the symbol program.");
+//         yyerror(real_ast,"The symbol to (or downto) is expected.");
 //     };
 
-    /* The symbol then is expected.*/
-// statement: IF error statement else_part
-//     {
-//         yyerror(real_ast,"The symbol then is expected.");
-//     };
-    /* The symbol until is expected.*/
-// statement: REPEAT statement_list error expression
-//     {
-//         yyerror(real_ast,"The symbol until is expected.");
-//     };
+//     /* The symbol begin is expected.*/
+// // compound_statement: error statement_list END
+// //     {
+// //         yyerror(real_ast,"The symbol begin is expected.");
+// //     };
 
-    /* The symbol do is expected.*/
-statement: WHILE error statement
-    {
-        yyerror(real_ast,"The symbol do is expected.");
-    }
-    | FOR ID ASSIGNOP expression updown error statement
-    {
-        yyerror(real_ast,"The symbol do is expected.");
-    };
+//     /* The symbol and is expected.*/
 
-    /* The symbol to (or downto) is expected.*/
-statement: FOR ID ASSIGNOP error expression DO statement
-    {
-        yyerror(real_ast,"The symbol to (or downto) is expected.");
-    };
-
-    /* The symbol begin is expected.*/
-// compound_statement: error statement_list END
+//     /* The symbol := is expected. */
+// statement: FOR ID error expression updown expression DO statement
 //     {
-//         yyerror(real_ast,"The symbol begin is expected.");
+//         yyerror(real_ast,"The symbol := is expected.");
 //     };
 
-    /* The symbol and is expected.*/
-
-    /* The symbol := is expected. */
-statement: FOR ID error expression updown expression DO statement
-    {
-        yyerror(real_ast,"The symbol := is expected.");
-    };
-
-statement: ID error ';'
-    {
-        yychar = ';';
-        yyerror(real_ast,"Syntax error, ';' expected .");
-    };
+// statement: ID error ';'
+//     {
+//         yychar = ';';
+//         yyerror(real_ast,"Syntax error, ';' expected .");
+//     };
 
 %%
  
@@ -2007,6 +2208,7 @@ void location_pointer_refresh(){
     memset(location_pointer,' ',length);
     location_pointer[length]='^';
     location_pointer[length+1]='\n';
+    location_pointer[length+2]='\0';
 }
 // int main(){
 //     AST *real_ast = new AST();

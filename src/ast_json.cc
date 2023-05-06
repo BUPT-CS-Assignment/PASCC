@@ -27,7 +27,7 @@ Node* Node::Create(std::string node_name, int sub_type, int other_type) {
   } else if (node_name == "const_decls") {
     return new ConstDeclarationsNode();
   } else if (node_name == "const_decl") {
-    return new ConstDeclarationNode((ConstDeclarationNode::GrammarType)sub_type);
+    //return new ConstDeclarationNode((ConstDeclarationNode::GrammarType)sub_type); // TODO
   } else if (node_name == "const_var") {
     return new ConstVariableNode();
   } else if (node_name == "var_decls") {
