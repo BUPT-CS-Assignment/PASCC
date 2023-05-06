@@ -496,6 +496,7 @@ class ConstListNode : public Node {
 //  };
   // ConstListNode(GrammarType gt) : grammar_type_(gt) {}
   std::vector<Node*>* Consts() { return &child_list_; }
+  void Format_Constlist(FILE* dst,StatementNode* statement);
 };
 
 class UpdownNode : public Node {

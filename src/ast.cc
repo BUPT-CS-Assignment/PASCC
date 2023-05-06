@@ -475,14 +475,8 @@ void IDVarPartNode::Format(FILE* dst) {
 void BranchNode::Format(FILE* dst) {
   for (int id = 0; id < child_list_.size(); id += 2) {
     auto const_list = child_list_[id]->DynamicCast<ConstListNode>();
-    auto statement = child_list_[id + 1];
-    auto const_vars = const_list->Consts();
-    for (auto const_var : *const_vars) {
-      PRINT("case ")
-      const_var->Format(dst);
-      PRINT(":\n")
-      statement->Format(dst);
-    }
+    auto statement = child_list_[id + 1]->DynamicCast<StatementNode>();
+    const_list->Format_Constlist(dst,statement);
   }
 }
 
@@ -601,6 +595,24 @@ void FactorNode::Format(FILE* dst) {
       break;
   }
 }
+
+void ConstListNode::Format_Constlist(FILE* dst, StatementNode* statement) {
+  if (child_list_.size() == 1) {
+      PRINT("case ")
+      child_list_[0]->Format(dst);
+      PRINT(":\n")
+      statement->Format(dst);
+      PRINT("break;\n")
+    } else {
+      child_list_[0]->DynamicCast<ConstListNode>()->Format_Constlist(dst,statement);
+      PRINT("case ")
+      child_list_[1]->Format(dst);
+      PRINT(":\n")
+      statement->Format(dst);
+      PRINT("break;\n")
+    }
+}
+
 
 /////////////////////////////
 
