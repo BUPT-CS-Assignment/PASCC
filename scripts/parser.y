@@ -1140,7 +1140,7 @@ variable:
     {
         // variable -> id id_varparts.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
-        
+        string name = $1.value.get<string>();
         if(tmp == nullptr) {
             $$.type_ptr = nullptr;
             yyerror(real_ast,"variable not defined");
@@ -1152,7 +1152,9 @@ variable:
                 tmp = dynamic_cast<ConstSymbol*>(tmp);
                 $$.is_lvalue = false;
             } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+                //TODO 函数调用 类型检查
                 tmp = dynamic_cast<FunctionSymbol*>(tmp);
+                name+="()";
                 $$.is_lvalue = false;
             } else {
                 if (tmp->type()->template_type() == TypeTemplate::TYPE::ARRAY && !error_flag){
@@ -1173,7 +1175,7 @@ variable:
         if(error_flag)
             break;
         $$.variable_node = new VariableNode();
-        LeafNode *id_node = new LeafNode($1.value);
+        LeafNode *id_node = new LeafNode(name);
         $$.variable_node->append_child(id_node);
         $$.variable_node->append_child($2.id_varparts_node);
     };
@@ -1365,6 +1367,7 @@ call_procedure_statement:
     | ID
     {   
         //类型检查
+        //todo 类型检查
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
