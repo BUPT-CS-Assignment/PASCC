@@ -109,19 +109,27 @@ vector<LeafNode*> IdListNode::Lists() {
 //     TransCodeAt(0);
 //   }
 // }
-
+void ConstDeclarationNode::print_type(FILE* dst){
+  if(type_ == pascal_type::TYPE_INT){
+    PRINT("int ")
+  } else if(type_ == pascal_type::TYPE_REAL){
+    PRINT("float ")
+  } else if(type_ == pascal_type::TYPE_CHAR){
+    PRINT("char ")
+  } 
+}
 void ConstDeclarationNode::Format(FILE* dst) {
   if (grammar_type_ == GrammarType::DECLARATION) {
     FormatAt(0, dst);
     PRINT("const ")
-    if (is_float_) PRINT("float ")
+    print_type(dst);
     FormatAt(1, dst);
     PRINT(" = ")
     FormatAt(2, dst);
     PRINT(";\n");
   } else if (grammar_type_ == GrammarType::VALUE) {
     PRINT("const ")
-    if (is_float_) PRINT("float ")
+    print_type(dst);
     FormatAt(0, dst);
     PRINT(" = ")
     FormatAt(1, dst);

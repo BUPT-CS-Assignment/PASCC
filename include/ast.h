@@ -160,12 +160,12 @@ class ConstDeclarationNode : public Node {
     VALUE,        //ConstDeclaration → id = const_var
     DECLARATION   //ConstDeclaration →ConstDeclaration; id = const_var
   };
-  ConstDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
+  ConstDeclarationNode(GrammarType gt,pascal_type::BasicType* bt) : grammar_type_(gt),type_(bt) {}
+  void print_type(FILE* dst);
   void Format(FILE* dst) override;
-  void set_float() { is_float_ = true; }
  private:
   GrammarType grammar_type_;
-  bool is_float_ = false;
+  pascal_type::BasicType* type_;
 };
 
 class ConstVariableNode : public Node {
