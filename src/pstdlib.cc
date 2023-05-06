@@ -30,7 +30,7 @@ PStdLibs::PStdLibs() {
   lib_map_["sqrt"] = {"sqrt(x) (sqrt((float)x))", false};
   lib_map_["arctan"] = {"arctan(x) (atan((float)x))", false};
   lib_map_["eof"] = {"eof() feof(stdin)", false};
-  lib_map_["eoln"] = {"bool eoln() {\nint c = getchar();\nungetc(c,stdin);\nreturn c == '\\n' || c == EOF;\n}", false};
+  lib_map_["eoln"] = {"bool eoln() {\\\nint c = getchar();\\\nungetc(c,stdin);\\\nreturn c == '\\n' || c == EOF;\\\n}", false};
 }
 
 
