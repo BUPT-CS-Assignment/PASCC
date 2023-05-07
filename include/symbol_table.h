@@ -48,7 +48,8 @@ public:
   ~TypeTable() {
     log_debug("~TypeTable(): delete %d symbols from '%s'", table_.size(), tag_.c_str());
     for(auto it = table_.begin(); it != table_.end(); ++it) {
-      delete it->second;
+      if(!(it->second->template_type() == TypeTemplate::TYPE::BASIC))
+        delete it->second;
     }
   }
 };
