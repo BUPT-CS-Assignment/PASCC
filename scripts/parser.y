@@ -442,9 +442,8 @@ type :
                     merged_bounds->push_back(i);
                 }
                 basic_type = $6.type_ptr->DynamicCast<ArrayType>()->base_type();
-                ArrayType::Collect($6.type_ptr->DynamicCast<ArrayType>());
             }
-
+            PtrCollect($6.type_ptr);
             $$.type_ptr = new ArrayType(basic_type, *merged_bounds);
             
             delete merged_bounds;
@@ -617,9 +616,7 @@ var_declaration :
         if($5.bounds) {
             delete $5.bounds;
         }
-        if($5.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY){
-            ArrayType::Collect($5.type_ptr->DynamicCast<ArrayType>());
-        }
+        PtrCollect($5.type_ptr);
 
     }
     | id_list ':' type 
@@ -641,9 +638,7 @@ var_declaration :
         if($3.bounds) {
             delete $3.bounds;
         }
-        if($3.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY){
-            ArrayType::Collect($3.type_ptr->DynamicCast<ArrayType>());
-        }
+        PtrCollect($3.type_ptr);
     }
     |var_declaration ';' id_list ':' ID
     {

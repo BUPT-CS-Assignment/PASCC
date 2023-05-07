@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string.h>
 #include <string>
+#include <memory>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
@@ -12,6 +13,7 @@ namespace pascals {
 
 class TypeTemplate {
 public:
+
   enum class TYPE { BASIC, RECORD, ARRAY };
   TypeTemplate() {}
   TypeTemplate(TYPE template_type) : template_type_(template_type) {}
@@ -66,13 +68,7 @@ extern BasicType *TYPE_STRINGLIKE;
 // Array type
 class ArrayType : public TypeTemplate {
 public:
-  static std::vector<ArrayType*>* TEMP_COLLECTOR;
-  static void Collect(ArrayType* t){ArrayType::TEMP_COLLECTOR->push_back(t);}
-  static void ReleaseTemp(){
-    for(auto t : *ArrayType::TEMP_COLLECTOR){
-      delete t;
-    }
-  }
+  
   // Array bound
   struct ArrayBound {
     BasicType *type_;
@@ -128,6 +124,18 @@ public:
 private:
   std::unordered_map<std::string, TypeTemplate *> types_map_;
 };
+
+
+extern std::shared_ptr<std::vector<TypeTemplate*>> PTR_COLLECTOR;
+static void PtrCollect(TypeTemplate* t){
+  if(t == TYPE_ERROR || t->template_type() == TypeTemplate::TYPE::BASIC) return;
+  PTR_COLLECTOR->push_back(t);
+}
+static void ReleaseTemp(){
+  for(auto t : *PTR_COLLECTOR.get()){
+    delete t;
+  }
+}
 
 class Operation {
 public:

@@ -20,7 +20,7 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
       // check array
       if (in_array) {
         auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
-        ArrayType::Collect(cur_array_type);
+        PtrCollect(cur_array_type);
         if (!cur_array_type->Valid()) {
           return TYPE_ERROR;
         }
@@ -41,7 +41,7 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
   }
   if (in_array) {
     auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
-    ArrayType::Collect(cur_array_type);
+    PtrCollect(cur_array_type);
     if (!cur_array_type->Valid()) {
       return TYPE_ERROR;
     }

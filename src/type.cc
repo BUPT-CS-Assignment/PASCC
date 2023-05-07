@@ -99,8 +99,6 @@ ConstValue ConstValue::operator/(const ConstValue& other) {
   }
 }
 
-std::vector<ArrayType*>* ArrayType::TEMP_COLLECTOR = new std::vector<ArrayType*>();
-
 ArrayType::ArrayBound& ArrayType::ArrayBound::operator=(const ArrayBound& b2) {
   type_ = b2.type_;
   lb_ = b2.lb_;
@@ -206,6 +204,8 @@ BasicType* TYPE_NONE;
 BasicType* TYPE_ERROR;
 BasicType* TYPE_STRINGLIKE;
 
+std::shared_ptr<std::vector<TypeTemplate*>> PTR_COLLECTOR = std::make_shared<std::vector<TypeTemplate*>>();
+
 OperationMap operation_map;
 
 void TypeInit() {
@@ -287,8 +287,7 @@ void TypeInit() {
 int _ = (TypeInit(), 0);
 
 void TypeRelease(){
-  ArrayType::ReleaseTemp();
-  delete ArrayType::TEMP_COLLECTOR;
+  ReleaseTemp();
   delete TYPE_CHAR;
   delete TYPE_INT;
   delete TYPE_REAL;
