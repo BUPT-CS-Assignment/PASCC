@@ -1428,6 +1428,8 @@ expression_list:
 expression:
     simple_expression RELOP simple_expression
     {
+        if(error_flag)
+            break;
         // 类型检查
         //从这里开始进行运算检查
         // expression -> simple_expression relop simple_expression.
@@ -1446,8 +1448,8 @@ expression:
         if($2.value.get<string>() == "<>") {
             relop = "!=";
         }
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.expression_node = new ExpressionNode();
         $$.expression_node->append_child($1.simple_expression_node);
         LeafNode *relop_node = new LeafNode(ConstValue(relop));
@@ -1715,6 +1717,8 @@ factor:
     }
     |ID '(' expression_list ')'
     {
+        if(error_flag)
+            break;
         // factor -> id (expression_list).
         // 类型检查
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
@@ -1727,8 +1731,8 @@ factor:
         }
         $$.is_lvalue = false;
         $$.type_ptr = tmp->type();
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::ID_EXP_LIST);
         LeafNode *id_node = new LeafNode($1.value);
         $$.factor_node->append_child(id_node);
@@ -2016,6 +2020,48 @@ factor: '(' error
             fprintf(stderr,"\t| %s",location_pointer);
         }
     }
+// todo 该产生式可能会引入冲突
+const_declaration: const_declaration error
+{
+    char msg[] = "A ';' is expected here." ;
+    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
+    fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+    memset(location_pointer,' ',last_line_info.size());
+    memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
+    fprintf(stderr,"\t| %s",location_pointer);
+} 
+ID '=' const_variable
+;
+
+type_declaration: type_declaration error 
+{
+    char msg[] = "A ';' is expected here." ;
+    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
+    fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+    memset(location_pointer,' ',last_line_info.size());
+    memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
+    fprintf(stderr,"\t| %s",location_pointer);
+}
+ID '=' type
+;
+
+var_declarations: VAR error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        yyerror(real_ast,"There are unrecoverable errors in var_declarations. Please check the code carefully!");
+        while (new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        while (yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
+            yychar = yylex();
+        }
+    };
+
 // program_head:  error  
 //     {
 //         location_pointer_refresh();
@@ -2047,10 +2093,7 @@ factor: '(' error
 
 //     };
 
-// var_declarations: VAR error
-//     {
 
-//     };
 
 // subprogram_declaration: FUNCTION error
 //     {
@@ -2209,13 +2252,9 @@ factor: '(' error
 %%
  
 
-void yyerror(AST* real_ast,const char *msg){
-if(!yydebug)
-    if(strcmp(msg,"syntax error")==0)
-        return;
-
-    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s", line_count,cur_line_info.size(),msg);
-        
+void yyerror(ast::AST* real_ast,const char *msg){
+    if(yydebug || strcmp(msg,"syntax error")!=0)   // 当非debug模式且传入的是默认报错时不输出 
+        fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count,cur_line_info.size(),msg);   
     error_flag = 1;
     real_ast->set_root(nullptr);
 }
