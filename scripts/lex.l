@@ -13,6 +13,7 @@ std::string last_line_info;
 void wrap();
 void process_anno();
 void cache_line();
+void print_error(const char *msg);
 
 void to_str();
 void to_str_case_sensitive();
@@ -157,14 +158,14 @@ SUBCATALOG              ".."
 {SEP}                   { cache_line(); to_str(); return yytext[0]; }
 {SUBCATALOG}            { cache_line(); to_str(); return SUBCATALOG; }
 
-('')                                            { cache_line(); printf("ERROR\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count); }
-('{letter}({letter}|[^{letter}'])+')            { cache_line(); printf("ERROR\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count); }
-('[^{letter}']({letter}|[^{letter}'])*')        { cache_line(); printf("ERROR\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count); }
+('')                                            { cache_line(); print_error("Illegal character constant"); }
+('{letter}({letter}|[^{letter}'])+')            { cache_line(); print_error("Illegal character constant"); }
+('[^{letter}']({letter}|[^{letter}'])*')        { cache_line(); print_error("Illegal character constant"); }
 
-(\{[^}]*)               { cache_line(); printf("ERROR\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count); }
-('[^']*)                { cache_line(); printf("ERROR\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count); }
+(\{[^}]*)               { cache_line(); print_error("Unclosed comment"); }
+('[^']*)                { cache_line(); print_error("Unclosed character constant"); }
 
-.                       { cache_line(); printf("ERROR\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count); char_count++; }
+.                       { cache_line(); print_error("Illegal character"); char_count++; }
 
 %%
 void wrap()
@@ -192,6 +193,11 @@ void cache_line()
 
 }
 
+void print_error(const char *msg)
+{
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s - %s\n", line_count, char_count, msg, yytext); 
+}
+
 void to_str()
 {
     // yylval.token_info.value.m_OTHERS = yytext;
@@ -202,6 +208,8 @@ void to_str()
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
+
+    char_count += yyleng;
 }
 
 void to_str_case_sensitive()
@@ -212,6 +220,8 @@ void to_str_case_sensitive()
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
+
+    char_count += yyleng;
 }
 
 void to_int()
@@ -220,6 +230,8 @@ void to_int()
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
+
+    char_count += yyleng;
 }
 
 void to_float()
@@ -228,6 +240,8 @@ void to_float()
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
+
+    char_count += yyleng;
 }
 
 void to_char()
@@ -236,6 +250,8 @@ void to_char()
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
+
+    char_count += yyleng;
 }
 
 void to_bool()
@@ -246,6 +262,8 @@ void to_bool()
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
     yylval.token_info.length = yyleng;
+
+    char_count += yyleng;
 }
 
 int yywrap()
