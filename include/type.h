@@ -127,7 +127,10 @@ public:
   Operation() {}
   Operation(BasicType *in_type1, BasicType *in_type2, std::string op)
       : in_type1(in_type1), in_type2(in_type2), op(std::move(op)) {}
-  ~Operation() {}
+  ~Operation() {
+    in_type1 = nullptr;
+    in_type2 = nullptr;
+  }
   bool operator==(const Operation &other) const {
     return in_type1 == other.in_type1 && in_type2 == other.in_type2 &&
            op == other.op;
@@ -144,7 +147,7 @@ struct OperationHash {
            std::hash<std::string>()(k.op);
   }
 };
-typedef std::unordered_map<Operation, BasicType *, OperationHash> OperationMap;
+typedef std::unordered_map<Operation, BasicType*, OperationHash> OperationMap;
 extern OperationMap operation_map;
 
 /********************************************

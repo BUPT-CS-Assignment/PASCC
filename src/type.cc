@@ -206,13 +206,10 @@ BasicType* TYPE_NONE;
 BasicType* TYPE_ERROR;
 BasicType* TYPE_STRINGLIKE;
 
-
-
-
 OperationMap operation_map;
 
 void TypeInit() {
-//  log_info("initializing pascal_type ...");
+  log_debug("initializing basic types and operation map");
   TYPE_ERROR = nullptr;
 
   TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
@@ -288,5 +285,15 @@ void TypeInit() {
   operation_map[Operation(TYPE_INT, TYPE_REAL, "<")] = TYPE_BOOL;
 }
 int _ = (TypeInit(), 0);
+
+void TypeDelete(){
+  delete TYPE_CHAR;
+  delete TYPE_INT;
+  delete TYPE_REAL;
+  delete TYPE_NONE;
+  delete TYPE_STRINGLIKE;
+  log_debug("delete global basic types");
+}
+int __ = (atexit(TypeDelete),0);
 
 } // namespace pascals
