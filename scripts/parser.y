@@ -203,6 +203,8 @@ const_declaration :
 const_variable :
     PLUS ID
     {   
+        if(error_flag)
+            break;
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
@@ -218,13 +220,15 @@ const_variable :
             }
             $$.value = symbol->value();
             $$.type_ptr = symbol->type();
-            if(error_flag)
-                break;
+            // if(error_flag)
+            //     break;
             $$.const_variable_node = new LeafNode(ConstValue("+" + $2.value.get<string>()));     
         }
     }
     | UMINUS ID
     {
+        if(error_flag)
+            break;
         // const_variable -> - id. todo -
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
@@ -241,13 +245,15 @@ const_variable :
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
-            if(error_flag)
-                break;
+            // if(error_flag)
+            //     break;
             $$.const_variable_node = new LeafNode(ConstValue("-" + $2.value.get<string>()));
         }
     }
     | ID
     {
+        if(error_flag)
+            break;
         // const_variable -> id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
@@ -264,8 +270,8 @@ const_variable :
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
         }
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.const_variable_node = new LeafNode($1.value);
     }
     |UMINUS num
@@ -343,6 +349,8 @@ type_declarations :
 type_declaration :
     type_declaration ';' ID '=' type
     {
+        if(error_flag)
+            break;
         // TODO
         // type_declaration -> type_declaration ; id = type.
         if ($5.main_type == TypeAttr::BASIC) {
@@ -359,8 +367,8 @@ type_declaration :
             } 
         }
 
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::MULTIPLE_DECL);
         $$->append_child($1);
@@ -374,6 +382,8 @@ type_declaration :
     }
     | ID '=' type
     {
+        if(error_flag)
+            break;
         // TODO!
         // type_declaration -> id = type.
         if ($3.main_type == TypeAttr::BASIC) {
@@ -390,8 +400,8 @@ type_declaration :
             } 
         }
 
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::SINGLE_DECL);
         LeafNode *leaf_node = new LeafNode($1.value);
         $$->append_child(leaf_node);
@@ -767,6 +777,8 @@ subprogram_head :
     }
     | PROCEDURE ID formal_parameter ';'
     {
+        if(error_flag)
+            break;
         // subprogram_head -> procedure id formal_parametert.
         FunctionSymbol* tmp ;
         if($3.parameters){
@@ -798,8 +810,8 @@ subprogram_head :
             }
         }
         
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$ = new SubprogramHeadNode(SubprogramHeadNode::GrammarType::PROCEDURE);
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
@@ -1872,12 +1884,78 @@ program_head: PROGRAM error
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
 
+program: program_head program_body error
+    {
+        location_pointer_refresh();
+        table_set_queue.push(top_table_set);
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
+        yyerror(real_ast,"A dot is expected at the end of the program !");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+const_declarations: CONST error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        yyerror(real_ast,"There are unrecoverable errors in const_declarations. ");
+        while (new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        while (yychar!=TYPE && yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
+            yychar = yylex();
+        }
+    };
+
+type_declarations: TYPE  error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar=='=')
+            yyerror(real_ast,"A type definition must begin with an identifier");
+        else
+            yyerror(real_ast,"There are unrecoverable errors in type_declarations.");
+        while (new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        while (yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
+            yychar = yylex();
+        }
+    }
+
+var_declarations: VAR error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        yyerror(real_ast,"There are unrecoverable errors in var_declarations.");
+        while (new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        while (yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
+            yychar = yylex();
+        }
+    };
+
 const_declaration: ID '=' error  
     {
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==TRUE||yychar==FALSE)
             yyerror(real_ast,"Const value cannot be Boolean.");
+        else if(yychar==';')
+            yyerror(real_ast,"A const value is expected here.");
         else
             yyerror(real_ast,"unknown error!");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
@@ -1899,6 +1977,8 @@ const_declaration: const_declaration ';' ID '=' error
         new_line_flag=false;
         if(yychar==TRUE||yychar==FALSE)
             yyerror(real_ast,"Const value cannot be Boolean.");
+        else if(yychar==';')
+            yyerror(real_ast,"A const value is expected here.");
         else
             yyerror(real_ast,"unknown error!");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
@@ -1911,12 +1991,12 @@ const_declaration: const_declaration ';' ID '=' error
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
 
-type_declaration: type_declaration ';' error
+const_declaration: const_declaration ';'error
     {
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar=='=')
-            yyerror(real_ast,"A type definition must begin with an identifier");
+            yyerror(real_ast,"An identifier is expected here!");
         else
             yyerror(real_ast,"unknown error!");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
@@ -1928,43 +2008,63 @@ type_declaration: type_declaration ';' error
             fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }
-    /*todo
-    目前这是一种保底的恢复方法,这里会抛弃所有type定义;
-    目标希望做到恢复到type_declaration级别;
-    */
-type_declarations: TYPE  error
+
+type_declaration: ID '=' error  
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"A TYPE is expected here.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+    }; 
+     
+type_declaration: type_declaration ';' ID '=' error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"A TYPE is expected here.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };     
+
+type_declaration: type_declaration ';' error
     {
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar=='=')
-            yyerror(real_ast,"A type definition must begin with an identifier");
+            yyerror(real_ast,"An identifier is expected here!");
         else
-            yyerror(real_ast,"There are unrecoverable errors in type_declarations. Please check the code carefully!");
-        while (new_line_flag==false && yychar!= YYEOF){
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
-        if(new_line_flag){
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
             fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-            fprintf(stderr,"\t| %s",location_pointer);
-        }
-        while (yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
-            yychar = yylex();
-        }
-    }
-
-/*
-    该产生式会导致program_body的FOLLOW集中出现error
-    程序中只会出现一次program_body应该不会引起冲突
-*/
-program: program_head program_body error
-    {
-        location_pointer_refresh();
-        table_set_queue.push(top_table_set);
-        real_ast->libs()->Preset(table_set_queue.top()->symbols());
-        yyerror(real_ast,"A dot is expected at the end of the program !");
-        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    };
+    }
 
 var_declaration: id_list ':' error
     {
@@ -1993,6 +2093,24 @@ var_declaration: var_declaration ';' id_list ':' error
         new_line_flag=false;
         if(yychar==';')
             yyerror(real_ast,"A type identifier is expected here.");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';')
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        else
+            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+
+var_declaration: var_declaration ';' error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==':')
+            yyerror(real_ast,"An identifier is expected here!");
         else
             yyerror(real_ast,"unknown error!");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
@@ -2034,46 +2152,29 @@ factor: '(' error
         }
     }
 // todo 该产生式可能会引入冲突
-const_declaration: const_declaration error
-{
-    char msg[] = "A ';' is expected here." ;
-    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
-    fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-    memset(location_pointer,' ',last_line_info.size());
-    memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
-    fprintf(stderr,"\t| %s",location_pointer);
-} 
-ID '=' const_variable
-;
+// const_declaration: const_declaration error
+// {
+//     char msg[] = "A ';' is expected here." ;
+//     fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
+//     fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+//     memset(location_pointer,' ',last_line_info.size());
+//     memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
+//     fprintf(stderr,"\t| %s",location_pointer);
+// } 
+// ID '=' const_variable
+// ;
 
-type_declaration: type_declaration error 
-{
-    char msg[] = "A ';' is expected here." ;
-    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
-    fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-    memset(location_pointer,' ',last_line_info.size());
-    memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
-    fprintf(stderr,"\t| %s",location_pointer);
-}
-ID '=' type
-;
-
-var_declarations: VAR error
-    {
-        location_pointer_refresh();
-        new_line_flag=false;
-        yyerror(real_ast,"There are unrecoverable errors in var_declarations. Please check the code carefully!");
-        while (new_line_flag==false && yychar!= YYEOF){
-            yychar = yylex();
-        }
-        if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-            fprintf(stderr,"\t| %s",location_pointer);
-        }
-        while (yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
-            yychar = yylex();
-        }
-    };
+// type_declaration: type_declaration error 
+// {
+//     char msg[] = "A ';' is expected here." ;
+//     fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
+//     fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+//     memset(location_pointer,' ',last_line_info.size());
+//     memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
+//     fprintf(stderr,"\t| %s",location_pointer);
+// }
+// ID '=' type
+// ;
 
 // program_head:  error  
 //     {
@@ -2089,39 +2190,8 @@ var_declarations: VAR error
 //         fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
 //         fprintf(stderr,"\t| %s",location_pointer);
 //     };
- 
-
-// program_body: error
-//     {
-        
-//     };
-
-// const_declarations: CONST error
-//     {
-
-//     };
-
-// type_declarations: TYPE error
-//     {
-
-//     };
 
 
-
-// subprogram_declaration: FUNCTION error
-//     {
-
-//     };
-
-// subprogram_declaration: PROCEDURE error
-//     {
-
-//     };  
-
-// statement : error
-//     {
-
-//     };
 /* A colon is expected. In declarations, the colon is followed by a type.*/
 // var_declaration:
 //     var_declaration ';' id_list error type_or_ID

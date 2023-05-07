@@ -170,8 +170,10 @@ SUBCATALOG              ".."
 %%
 void wrap()
 {
-    last_line_info = cur_line_info;
-    cur_line_info.clear();
+    if(cur_line_info.size()!=0){ // 跳过空行
+        last_line_info = cur_line_info;
+        cur_line_info.clear();
+    }
     line_count++; 
     char_count = 1;
 }
