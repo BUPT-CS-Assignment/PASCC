@@ -983,17 +983,14 @@ statement:
         if(error_flag)
             break;
         // 类型检查
-        //此处赋值存在多种情况，结构体、数组等需要之后一一检查
-        // statement -> variable assignop expression.
-        //基本情况
+        // statement -> variable assignop expression.d
         bool var_flag = ($1.type_ptr==TYPE_REAL && $3.type_ptr==TYPE_INT) || is_same($1.type_ptr,$3.type_ptr);
         bool str_flag = ($1.type_ptr != TYPE_ERROR &&
         		 $1.type_ptr->StringLike() &&
         		 $3.type_ptr==TYPE_STRINGLIKE);
         if(!var_flag && !str_flag){
-            semantic_error(real_ast,"Type check failed",line_count,0);
+            semantic_error(real_ast,"Type check failed. Type confilt for ASSIGN operation.",line_count,0);
             break;
-            //yyerror(real_ast,"statement -> variable assignop expression\n");
         }
         std::string func_name = table_set_queue.top()->tag();
         // if(error_flag)
@@ -1035,8 +1032,7 @@ statement:
             break;
         //类型检查
         if(!is_same($2.type_ptr,TYPE_BOOL)){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"IF expression THEN statement else_part\n");
+            semantic_error(real_ast,"Type check failed. Ilegal expression type for IF statement.",line_count,0);
         }
         // statement -> if expression then statement else_part.
         $$ = new StatementNode(StatementNode::GrammarType::IF_STATEMENT);
@@ -1051,8 +1047,7 @@ statement:
         //类型检查
         if(!is_same($4.type_ptr,TYPE_ERROR)){
             if((!is_same($2.type_ptr,$4.type_ptr))||is_same($2.type_ptr,TYPE_REAL)){
-                yyerror(real_ast,"Type check failed\n");
-                yyerror(real_ast,"CASE expression OF case_body END\n");
+                semantic_error(real_ast,"Type check failed. type confilt for CASE statement.",line_count,0);
             }
         }
         // statement -> case expression of case_body end.
@@ -1066,8 +1061,7 @@ statement:
             break;
         //类型检查
         if(!is_same($2.type_ptr,TYPE_BOOL)){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"WHILE expression DO statement\n");
+            semantic_error(real_ast,"Type check failed. Ilegal expression type for WHILE statement.",line_count,0);
         }
         // statement -> while expression do if_statement_1.
         $$ = new StatementNode(StatementNode::GrammarType::WHILE_STATEMENT);
@@ -1081,8 +1075,7 @@ statement:
             break;
         //类型检查
         if(!is_same($4.type_ptr,TYPE_BOOL)){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"REPEAT statement_list UNTIL expression\n");
+            semantic_error(real_ast,"Type check failed. Ilegal expression type for REPEAT statement.",line_count,0);
         }
         // statement -> repeat statement_list until expression.
         $$ = new StatementNode(StatementNode::GrammarType::REPEAT_STATEMENT);
@@ -1096,13 +1089,11 @@ statement:
         //类型检查
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($2.value.get<string>());
         if((!is_basic(tmp->type()))||(!is_same(tmp->type(),$4.type_ptr))){
-            yyerror(real_ast,"Type check failed\n");
-                yyerror(real_ast,"FOR ID ASSIGNOP expression updown expression DO statement\n");
+            semantic_error(real_ast,"Type check failed. ID not exist.",line_count,0);
         }
 
         if((!is_same($4.type_ptr,$6.type_ptr))||(is_same($4.type_ptr,TYPE_REAL))){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"FOR ID ASSIGNOP expression updown expression DO statement\n");
+            semantic_error(real_ast,"Type check failed. Ilegal expression type for FOR statement",line_count,0);
         }
         // statement -> for id assignop expression updown expression do statement.
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
@@ -1211,8 +1202,7 @@ variable:
                 //函数调用 类型检查
                 if (name!=table_set_queue.top()->tag()){
                     if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                    yyerror(real_ast,"Type check failed\n");
-                    yyerror(real_ast,"call_procedure_statement -> 'id'\n");
+                        semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
                     }
                 }            
                 name+="()";
@@ -1412,11 +1402,10 @@ call_procedure_statement:
         // call_procedure_statement -> id (expression_list).
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"Type check failed. Procedure not exist.",$1.line_num,$1.column_num);
         }
         if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
+            semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
         }
         if(error_flag)
             break;
@@ -1441,12 +1430,11 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"Type check failed. Procedure not exist.",$1.line_num,$1.column_num);
         } else if(ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                yyerror(real_ast,"Type check failed\n");
-                yyerror(real_ast,"call_procedure_statement -> 'id'\n");
+                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
             }
         }
         if(error_flag)
@@ -1459,7 +1447,6 @@ call_procedure_statement:
 expression_list:
     expression_list ',' expression
     {
-        //类型检查 检查是否为INT or CHAR???
         $$.type_ptr_list = $1.type_ptr_list;
         $$.type_ptr_list->push_back($3.type_ptr);
         $$.is_lvalue_list = $1.is_lvalue_list;
@@ -1473,8 +1460,6 @@ expression_list:
     }
     | expression
     {
-        //类型检查 检查是否为INT or CHAR  ???  
-        //这里应该是做不了的，但如果在声明的时候就有检查应该就不必做
         $$.type_ptr_list = new std::vector<TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
         $$.is_lvalue_list = new std::vector<bool>();
@@ -1494,7 +1479,7 @@ expression:
         //从这里开始进行运算检查
         // expression -> simple_expression relop simple_expression.
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation RELOP.",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, $2.value.get<string>());
         if(result==TYPE_ERROR){
@@ -1520,7 +1505,7 @@ expression:
     {
         // 类型检查
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+           semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '='.",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, "=");
         
@@ -1671,7 +1656,7 @@ simple_expression:
         if(error_flag)
             break;
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+           semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"+");
         if(result==TYPE_ERROR){
@@ -1694,7 +1679,7 @@ simple_expression:
         // 类型检查
         // simple_expression -> simple_expression - term.
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '-'.",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"-");
         if(result==TYPE_ERROR){
@@ -1725,7 +1710,7 @@ term:
         // term -> term mulop factor.
         // 类型检查
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            yyerror(real_ast,"Type check failed. Complex type in basic operation.\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation MULOP.",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,$2.value.get<string>());
         if(result==TYPE_ERROR){
@@ -1783,7 +1768,7 @@ factor:
         // 类型检查
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"No such function",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"Type check failed. Function not exist.",$1.line_num,$1.column_num);
         }
         if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
@@ -1824,8 +1809,7 @@ factor:
         // factor -> not factor.
         // 类型检查
         if(!is_basic($2.type_ptr)){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"factor -> not factor\n");
+            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation 'not'.",line_count,0);
         }
         auto result=compute((BasicType*)$2.type_ptr, "not");
         
