@@ -10,6 +10,15 @@ using std::vector;
 
 namespace pascals {
 
+FunctionSymbol::FunctionSymbol(const FunctionSymbol &f)
+    : ObjectSymbol(f.name_, f.type_, f.decl_line_){
+  params_.assign(f.params_.begin(), f.params_.end());
+  for(auto it = f.param_map_.begin(); it != f.param_map_.end(); ++it) {
+    param_map_[it->first] = it->second;
+  }
+  symbol_type_ = SYMBOL_TYPE::FUNCTION;
+}
+
 FunctionSymbol::FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
                                const std::vector<Parameter> &params)
     : ObjectSymbol(name, return_type, decl_line), params_(params) {

@@ -78,6 +78,7 @@ public:
   typedef std::pair<std::string, ParamType> Parameter;
 
   FunctionSymbol() {}
+  FunctionSymbol(const FunctionSymbol& f);
   FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
                  const std::vector<Parameter>& params);
   FunctionSymbol(std::string name, BasicType *return_type, int decl_line);

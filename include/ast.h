@@ -23,8 +23,9 @@ public:
   // constructor
   Node() : parent_(nullptr){};
   ~Node() {
-    for (auto child : child_list_)
+    for (auto child : child_list_) {
       delete child;
+    }
   };
 
   // static creator
@@ -68,6 +69,7 @@ class AST {
 public:
   // getter and setter functions
   ~AST() {
+    log_debug("~AST(): delete ast");
     if (root_ != nullptr)
       delete root_;
   }

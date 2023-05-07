@@ -96,6 +96,7 @@ program :
         } else {
             real_ast->set_root(nullptr); 
         }
+        delete top_table_set;
     };
 program_head :
     PROGRAM ID ';' {
@@ -651,7 +652,9 @@ subprogram_declarations :
         $$ = new SubprogramDeclarationsNode();
         $$->append_child($1);
         $$->append_child($2);
-        table_set_queue.pop();        
+        TableSet* top = table_set_queue.top();
+        table_set_queue.pop();
+        delete top;
     };
 subprogram_declaration :
     subprogram_head subprogram_body
@@ -692,7 +695,8 @@ subprogram_head :
         TableSet* now_table_set = new TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
-        table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
+        FunctionSymbol* tmp2 = new FunctionSymbol(*tmp);
+        table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp2);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
@@ -731,7 +735,8 @@ subprogram_head :
         TableSet* now_table_set = new TableSet($2.value.get<string>(),table_set_queue.top());
         table_set_queue.push(now_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
-        table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
+        FunctionSymbol* tmp2 = new FunctionSymbol(*tmp);
+        table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp2);
         if ($3.parameters){
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
@@ -1103,7 +1108,7 @@ variable:
                 if (name!=table_set_queue.top()->tag()){
                     if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
                     yyerror(real_ast,"Type check failed\n");
-                    yyerror(real_ast,"call_procedure_statement -> id'\n");
+                    yyerror(real_ast,"call_procedure_statement -> 'id'\n");
                     }
                 }            
                 name+="()";
@@ -1335,7 +1340,7 @@ call_procedure_statement:
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
                 yyerror(real_ast,"Type check failed\n");
-                yyerror(real_ast,"call_procedure_statement -> id'\n");
+                yyerror(real_ast,"call_procedure_statement -> 'id'\n");
             }
         }
         if(error_flag)
@@ -2162,7 +2167,7 @@ if(!yydebug)
     if(strcmp(msg,"syntax error")==0)
         return;
 
-    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count,cur_line_info.size(),msg);
+    fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s", line_count,cur_line_info.size(),msg);
         
     error_flag = 1;
     real_ast->set_root(nullptr);

@@ -5,6 +5,7 @@
 #include <string>
 #include "type.h"
 #include "symbol.h"
+#include "log.h"
 
 namespace pascals {
 
@@ -14,8 +15,15 @@ using namespace pascals;
 template <typename T>
 class SymbolTableTemplate {
  public:
-  SymbolTableTemplate() {}
-  ~SymbolTableTemplate() {}
+  SymbolTableTemplate(std::string tag = ""): tag_(tag) {
+    log_debug("SymbolTableTemplate(): create '%s'", tag_.c_str());
+  }
+  ~SymbolTableTemplate() {
+    log_debug("~SymbolTableTemplate(): delete %d symbols from '%s'", table_.size(), tag_.c_str());
+    for(auto it = table_.begin(); it != table_.end(); ++it) {
+      delete it->second;
+    }
+  }
   bool Insert(std::string name, T *symbol) {
     if (table_.find(name) != table_.end()) {
       return false;
@@ -35,17 +43,30 @@ class SymbolTableTemplate {
   }
 
  protected:
+  std::string tag_;
   std::unordered_map<std::string, T*> table_;
 };
 
-class TypeTable : public SymbolTableTemplate<TypeTemplate> {};
-class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {};
+class TypeTable : public SymbolTableTemplate<TypeTemplate> {
+public:
+  TypeTable(std::string tag = "") : SymbolTableTemplate(tag+"_type") {}
+};
+class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {
+public:
+  SymbolTable(std::string tag = "") : SymbolTableTemplate(tag+"_symbols") {}
+};
 
 // table set including symbol table and type table
 class TableSet {
  public:
-  TableSet(std::string tag, TableSet* pre_set) : tag_(tag), prev_table_set_(pre_set) {}
-  ~TableSet() {}
+  TableSet(std::string tag, TableSet* pre_set) : tag_(tag), prev_table_set_(pre_set),
+                                                 symbols_(SymbolTable(tag)), def_types_(TypeTable(tag)) {
+    log_debug("TableSet(): created '%s'", tag.c_str());
+  }
+  ~TableSet() {
+    prev_table_set_ = nullptr;
+    log_debug("~TableSet(): delete '%s'", tag_.c_str());
+  }
 
   SymbolTable *symbols() { return &symbols_; }
   TypeTable *def_types() { return &def_types_; }
