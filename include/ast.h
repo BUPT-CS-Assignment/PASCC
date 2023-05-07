@@ -263,7 +263,7 @@ public:
     std::string type_name = type_->type_name() + (ref ? "*" : "");
     return type_name;
   }
-  void set_type(BasicType *type) { type_ = type; }
+  void set_type(BasicType *type) { type_ = type;}
   void Format(FILE *dst) override;
 
 private:

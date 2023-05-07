@@ -15,15 +15,8 @@ using namespace pascals;
 template <typename T>
 class SymbolTableTemplate {
  public:
-  SymbolTableTemplate(std::string tag = ""): tag_(tag) {
-    log_debug("SymbolTableTemplate(): create '%s'", tag_.c_str());
-  }
-  ~SymbolTableTemplate() {
-    log_debug("~SymbolTableTemplate(): delete %d symbols from '%s'", table_.size(), tag_.c_str());
-    for(auto it = table_.begin(); it != table_.end(); ++it) {
-      delete it->second;
-    }
-  }
+  SymbolTableTemplate(std::string tag = ""): tag_(tag) {}
+  ~SymbolTableTemplate() {}
   bool Insert(std::string name, T *symbol) {
     if (table_.find(name) != table_.end()) {
       return false;
@@ -49,11 +42,27 @@ class SymbolTableTemplate {
 
 class TypeTable : public SymbolTableTemplate<TypeTemplate> {
 public:
-  TypeTable(std::string tag = "") : SymbolTableTemplate(tag+"_type") {}
+  TypeTable(std::string tag = "") : SymbolTableTemplate(tag+"_type") {
+    log_debug("TypeTable(): create '%s'", tag_.c_str());
+  }
+  ~TypeTable() {
+    log_debug("~TypeTable(): delete %d symbols from '%s'", table_.size(), tag_.c_str());
+    for(auto it = table_.begin(); it != table_.end(); ++it) {
+      delete it->second;
+    }
+  }
 };
 class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {
 public:
-  SymbolTable(std::string tag = "") : SymbolTableTemplate(tag+"_symbols") {}
+  SymbolTable(std::string tag = "") : SymbolTableTemplate(tag+"_symbols") {
+    log_debug("SymbolTable(): create '%s'", tag_.c_str());
+  }
+  ~SymbolTable() {
+    log_debug("~SymbolTable(): delete %d symbols from '%s'", table_.size(), tag_.c_str());
+    for(auto it = table_.begin(); it != table_.end(); ++it) {
+      delete it->second;
+    }
+  }
 };
 
 // table set including symbol table and type table

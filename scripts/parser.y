@@ -205,7 +205,7 @@ const_variable :
     {   
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
-        $$.type_ptr = TYPE_NONE;
+        $$.type_ptr = TYPE_ERROR;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
             $$.is_right = false;
@@ -227,7 +227,7 @@ const_variable :
     {
         // const_variable -> - id. todo -
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
-        $$.type_ptr = TYPE_NONE;
+        $$.type_ptr = TYPE_ERROR;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
             $$.is_right = false;
@@ -250,7 +250,7 @@ const_variable :
     {
         // const_variable -> id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
-        $$.type_ptr = TYPE_NONE;
+        $$.type_ptr = TYPE_ERROR;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
             $$.is_right = false;
@@ -1118,8 +1118,9 @@ variable:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         string name = $1.value.get<string>();
         if(tmp == nullptr) {
-            $$.type_ptr = TYPE_NONE;
+            $$.type_ptr = TYPE_ERROR;
             yyerror(real_ast,"variable not defined");
+            break;
         } else {
             //类型检查
             // Convert to a detailed type
@@ -1234,7 +1235,7 @@ else_part:
 case_body:
     {
         // case_body -> empty.
-        $$.type_ptr= TYPE_NONE;
+        $$.type_ptr= TYPE_ERROR;
         if(error_flag)
             break;
         $$.case_body_node = new CaseBodyNode();
