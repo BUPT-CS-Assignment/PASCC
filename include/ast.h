@@ -435,7 +435,7 @@ public:
   std::string FormatString();
   void Format(FILE *dst) override;
   void Format(bool ref, FILE *dst);
-  void set_types(std::vector<BasicType *> *type_list);
+  bool set_types(std::vector<TypeTemplate *> *type_list);
 
 private:
   // TODO get basic_type ptr lists

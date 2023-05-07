@@ -25,6 +25,15 @@ void location_pointer_refresh();
 void yyerror(AST* real_ast,const char *msg);
 void yyerror_var(AST* real_ast,int line);
 void yynote(std::string msg,int line);
+void semantic_error(AST* real_ast,std::string msg,int line,int row){
+    error_flag=1;
+    real_ast->set_root(nullptr);
+    if (row)
+        fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", line,row,msg.c_str());
+    else
+        fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line,msg.c_str());
+}
+
 
 %}
 
@@ -32,11 +41,12 @@ void yynote(std::string msg,int line);
 {}
 %parse-param {pascals::ast::AST *real_ast}
 %start program
-%token PROGRAM FUNCTION PROCEDURE TO DOWNTO SUBCATALOG
+%token PROGRAM FUNCTION PROCEDURE TO DOWNTO 
 %token ARRAY TYPE CONST RECORD
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
-%token ADDOP NOT PLUS UMINUS ASSIGNOP TRUE FALSE CONSTASSIGNOP READ READLN WRITE WRITELN
-%token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_ VAR
+%token ADDOP NOT PLUS UMINUS TRUE FALSE CONSTASSIGNOP  
+%token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_ VAR SUBCATALOG
+%token<token_info> ASSIGNOP WRITE WRITELN SEP READ READLN
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
 %type<periods_node_info> periods
@@ -124,7 +134,7 @@ program_body :
     };
 id_list :
     id_list ',' ID { 
-        $1.list_ref->push_back(std::make_pair($3.value.get<string>(),$3.line_num));
+        $1.list_ref->push_back(std::make_pair($3.value.get<string>(),$3.column_num));
         $$.list_ref = $1.list_ref;
         $$.id_list_node = new IdListNode(IdListNode::GrammarType::MULTIPLE_ID);
         if(error_flag)
@@ -134,7 +144,7 @@ id_list :
         $$.id_list_node->append_child(leaf_node);
     } | ID {
         $$.list_ref = new std::vector<std::pair<std::string,int>>();
-        $$.list_ref->push_back(std::make_pair($1.value.get<string>(),$1.line_num));
+        $$.list_ref->push_back(std::make_pair($1.value.get<string>(),$1.column_num));
         if(error_flag)
             break;
         $$.id_list_node = new IdListNode(IdListNode::GrammarType::SINGLE_ID);
@@ -165,7 +175,7 @@ const_declaration :
         ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
-            yyerror(real_ast,"The identifier has been declared.\n");
+            semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
         } 
         else{
             // if(error_flag)
@@ -190,7 +200,7 @@ const_declaration :
         ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
-            yyerror(real_ast,"The identifier has been declared.");
+            semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
         } 
         else {
             // if(error_flag)
@@ -210,12 +220,12 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            yyerror(real_ast,"The identifier has not been declared.");
+            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared.",$2.line_num,$2.column_num);
             $$.is_right = false;
         } else {
             // You cannot use variables to assign values to constants
             if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                yyerror(real_ast,"The identifier is not a const variable.");
+                semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' is not a const variable.",$2.line_num,$2.column_num);
                 $$.is_right = false;
                 break;
             }
@@ -234,12 +244,12 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            yyerror(real_ast,"The identifier has not been declared.");
+            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared.",$2.line_num,$2.column_num);
             $$.is_right = false;
         } else {
             // You cannot use variables to assign values to constants
             if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                yyerror(real_ast,"The identifier is not a const variable.");
+                semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' is not a const variable.",$2.line_num,$2.column_num);
                 $$.is_right = false;
                 break;
             }
@@ -259,12 +269,12 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            yyerror(real_ast,"The identifier has not been declared.");
+            semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has not been declared.",$1.line_num,$1.column_num);
             $$.is_right = false;
         } else {
             // You cannot use variables to assign values to constants
             if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                yyerror(real_ast,"The identifier is not a const variable.");
+                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' is not a const variable.",$1.line_num,$1.column_num);
                 $$.is_right = false;
                 break;
             }
@@ -356,15 +366,15 @@ type_declaration :
         // type_declaration -> type_declaration ; id = type.
         if ($5.main_type == TypeAttr::BASIC) {
             if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),dynamic_cast<BasicType*>($5.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type.");
+                semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
             }
         } else if ($5.main_type == TypeAttr::ARRAY) {
             if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),dynamic_cast<ArrayType*>($5.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type.");
+                semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
             } 
         } else if ($5.record_info) {
             if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),dynamic_cast<RecordType*>($5.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type.");
+                semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
             } 
         }
 
@@ -389,15 +399,15 @@ type_declaration :
         // type_declaration -> id = type.
         if ($3.main_type == TypeAttr::BASIC) {
             if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),dynamic_cast<BasicType*>($3.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type.");
+                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
             } 
         } else if ($3.main_type == TypeAttr::ARRAY) {
             if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),dynamic_cast<ArrayType*>($3.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type.");
+                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
             } 
         } else if ($3.record_info) {
             if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),dynamic_cast<RecordType*>($3.type_ptr))){
-                yyerror(real_ast,"Error: redefinition of type.");
+                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
             } 
         }
 
@@ -427,7 +437,6 @@ type :
     }
     | ARRAY '[' periods ']' OF type
     {
-        // TODO
         // type -> array [periods] of stype.
         $$.main_type = (TypeAttr::MainType)1;
         $$.base_type_node = $6.base_type_node;
@@ -449,7 +458,6 @@ type :
             
             delete merged_bounds;
         }
-        
         if(error_flag)
             break; 
         $$.type_node = new TypeNode(TypeNode::GrammarType::ARRAY);
@@ -457,6 +465,9 @@ type :
         $$.type_node->append_child($3.periods_node);
         $$.type_node->append_child($6.type_node);
         delete $6.bounds;
+        if ($6.record_info){
+            delete $6.record_info;
+        }
     }
     | RECORD record_body END
     {
@@ -492,6 +503,7 @@ record_body :
             break;
         $$.record_body_node = new RecordBodyNode();
         $$.record_body_node->append_child($1.variable_declaration_node);
+        delete $1.pos_info;
     };
 standrad_type :
     BASIC_TYPE
@@ -547,20 +559,21 @@ period :
         // TODO fix with bound_type
         $$.bound = new ArrayType::ArrayBound();
         if ($1.type_ptr == TYPE_INT&&$3.type_ptr == TYPE_INT){
-            arr_len = std::max(0,($3.value - $1.value).get<int>());
+            arr_len = ($3.value - $1.value).get<int>();
             $$.bound-> type_ = TYPE_INT;
             $$.bound->lb_ = $1.value.get<int>();
             $$.bound->ub_ = $3.value.get<int>();
         } else if($1.type_ptr == TYPE_CHAR&&$3.type_ptr == TYPE_CHAR){
-            arr_len = std::max(0,(int)($3.value - $1.value).get<char>());
+            arr_len = (int)($3.value - $1.value).get<char>();
             $$.bound-> type_ = TYPE_CHAR;
             $$.bound->lb_ = int($1.value.get<int>());
             $$.bound->ub_ = int($3.value.get<int>());
         } else {
-            yyerror(real_ast,"array bound must be integer or char");
+            semantic_error(real_ast,"array bound must be integer or char",$2.line_num,$2.column_num);
         }
         if(arr_len < 0){
-            yyerror(real_ast,"array bound must be positive");
+            arr_len = 0;
+            semantic_error(real_ast,"array bound must be positive",$2.line_num,$2.column_num);
         }
         if(error_flag){
             break;
@@ -571,11 +584,9 @@ period :
         $$.period_node->append_child($3.const_variable_node);
     };
 var_declarations : 
-
     {
         if(error_flag)
             break;
-        // var_declarations -> empty.
         $$ = new VariableDeclarationsNode();
     }
     | VAR var_declaration ';'
@@ -583,28 +594,33 @@ var_declarations :
         if(error_flag)
             break;
         for (auto i : *($2.record_info)){
-            ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,10);//TODO
+            int line = $2.pos_info->find(i.first)->second.first;
+            int row = $2.pos_info->find(i.first)->second.second;
+            ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,line);
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
-                yyerror_var(real_ast,$1.line_num);
+                semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line,row);
                 yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
             }
         }
-        // var_declarations -> var var_declaration.
         $$ = new VariableDeclarationsNode();
         $$->append_child($2.variable_declaration_node);
-        delete $2.record_info;
+        delete $2.pos_info;
+        if ($2.record_info){
+            delete $2.record_info;
+        }
     };
 var_declaration :
     var_declaration ';' id_list ':' type 
     {
          if(error_flag)
             break;   
-        // var_declaration -> var_declaration ; id_list : type.
         $$.record_info = $1.record_info;
+        $$.pos_info = $1.pos_info;
         for (auto i : *($3.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $5.type_ptr));
+            $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
             if (!res.second){
-             yyerror(real_ast,"redefinition of variable");
+                semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
             }
         }
         // if(error_flag)
@@ -617,6 +633,9 @@ var_declaration :
         if($5.bounds) {
             delete $5.bounds;
         }
+        if($5.record_info) {
+            delete $5.record_info;
+        }
         PtrCollect($5.type_ptr);
 
     }
@@ -625,11 +644,13 @@ var_declaration :
         if(error_flag)
            break;
         $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
+        $$.pos_info = new std::unordered_map<std::string, std::pair<int,int>>();
         for (auto i : *($1.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
+            $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
             if (!res.second){
-             yyerror(real_ast,"redefinition of variable");
-             }
+                semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
+            }
         }
         // var_declaration -> id : type.
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::TYPE);
@@ -639,6 +660,9 @@ var_declaration :
         if($3.bounds) {
             delete $3.bounds;
         }
+        if($3.record_info) {
+            delete $3.record_info;
+        }
         PtrCollect($3.type_ptr);
     }
     |var_declaration ';' id_list ':' ID
@@ -646,14 +670,16 @@ var_declaration :
         if(error_flag)
             break;
         $$.record_info = $1.record_info;
+        $$.pos_info = $1.pos_info;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
-            yyerror(real_ast,"undefined type");
+            semantic_error(real_ast,"undefined type",$5.line_num,$5.column_num);
         } else {
             for (auto i : *($3.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
+                $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
                 if (!res.second){
-                    yyerror(real_ast,"redefinition of variable");
+                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
                 }
             }
         }
@@ -672,13 +698,15 @@ var_declaration :
                 break;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
-            yyerror(real_ast,"undefined type");
+            semantic_error(real_ast,"undefined type",$3.line_num,$3.column_num);
         } else {
             $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
+            $$.pos_info = new std::unordered_map<std::string, std::pair<int,int>>();
             for (auto i : *($1.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
+                $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
                 if (!res.second){
-                    yyerror(real_ast,"redefinition of variable");
+                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
                 }
             }
         }
@@ -739,7 +767,7 @@ subprogram_head :
             tmp = new FunctionSymbol($2.value.get<string>(), $5.type_ptr, $2.line_num);
         }
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            yyerror(real_ast,"redefinition of function");
+            semantic_error(real_ast,"Redefinition of function",$2.line_num,$2.column_num);
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
@@ -749,15 +777,19 @@ subprogram_head :
         FunctionSymbol* tmp2 = new FunctionSymbol(*tmp);
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp2);
         if ($3.parameters){
+            int cnt = 0;
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if (i.second.second == FunctionSymbol::PARAM_MODE::REFERENCE){
                     tmp->set_ref(true);
                 }
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
-                    yyerror(real_ast,"redefinition of variable");
+                    int line = $3.pos_info->at(cnt).first;
+                    int row = $3.pos_info->at(cnt).second;
+                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line,row);
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
                 }
+                cnt++;
             }
         }
         if(error_flag)
@@ -769,6 +801,9 @@ subprogram_head :
         $$->append_child($5.standard_type_node);
         if($3.parameters){
             delete $3.parameters;
+        }
+        if($3.pos_info){
+            delete $3.pos_info;
         }
     }
     | PROCEDURE ID formal_parameter ';'
@@ -784,7 +819,7 @@ subprogram_head :
         }
         
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            yyerror(real_ast,"redefinition of function");
+            semantic_error(real_ast,"Redefinition of procedure",$2.line_num,$2.column_num);
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
@@ -794,15 +829,19 @@ subprogram_head :
         FunctionSymbol* tmp2 = new FunctionSymbol(*tmp);
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp2);
         if ($3.parameters){
+            int cnt = 0;
             for (auto i : *($3.parameters)){
                 ObjectSymbol *tmp = new ObjectSymbol(i.first, i.second.first, $2.line_num);
                 if (i.second.second == FunctionSymbol::PARAM_MODE::REFERENCE){
                     tmp->set_ref(true);
                 }
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
-                    yyerror(real_ast,"redefinition of variable");
+                    int line = $3.pos_info->at(cnt).first;
+                    int row = $3.pos_info->at(cnt).second;
+                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line,row);
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
                 }
+                cnt++;
             }
         }
         
@@ -813,20 +852,22 @@ subprogram_head :
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
         delete $3.parameters;
+        delete $3.pos_info;
     };
 formal_parameter :
     {   
         // formal_parameter -> empty.
-        $$.parameters = nullptr;
+        $$.parameters = new std::vector<FunctionSymbol::Parameter>();
+        $$.pos_info = new std::vector<std::pair<int,int>>();
         if(error_flag)
             break;
         $$.formal_parameter_node = new FormalParamNode();
-
     }
     | '(' parameter_lists ')'
     {
         // formal_parameter -> (parameter_lists).
         $$.parameters = $2.parameters;
+        $$.pos_info = $2.pos_info;
         if(error_flag)
             break;
         $$.formal_parameter_node = new FormalParamNode();
@@ -837,7 +878,9 @@ parameter_lists :
     {   
         // parameter_lists -> parameter_lists ; parameter_list.
         $$.parameters = $1.parameters;
+        $$.pos_info = $1.pos_info;
         $$.parameters->insert($$.parameters->end(), $3.parameters->begin(), $3.parameters->end());
+        $$.pos_info->insert($$.pos_info->end(),$3.pos_info->begin(), $3.pos_info->end());
         if(error_flag)
             break;
         $$.param_lists_node = new ParamListsNode(ParamListsNode::GrammarType::MULTIPLE_PARAM_LIST);
@@ -848,6 +891,7 @@ parameter_lists :
     {  
         // parameter_lists -> parameter_list.
         $$.parameters = $1.parameters;
+        $$.pos_info = $1.pos_info;
         if(error_flag)
             break;
         $$.param_lists_node = new ParamListsNode(ParamListsNode::GrammarType::SINGLE_PARAM_LIST);
@@ -858,6 +902,7 @@ parameter_list :
     {   
         // parameter_list -> var_parameter.
         $$.parameters = $1.parameters;
+        $$.pos_info = $1.pos_info;
         if(error_flag)
             break;
         $$.param_list_node = new ParamListNode();
@@ -867,6 +912,7 @@ parameter_list :
     {   
         // parameter_list -> value_parameter.
         $$.parameters = $1.parameters;
+        $$.pos_info = $1.pos_info;
         if(error_flag)
             break;
         $$.param_list_node = new ParamListNode();
@@ -881,6 +927,7 @@ var_parameter :
             $2.parameters->at(i).second.second = FunctionSymbol::PARAM_MODE::REFERENCE;
         }
         $$.parameters = $2.parameters;
+        $$.pos_info = $2.pos_info;
         if(error_flag)
             break;
         $$.var_parameter_node = new VarParamNode();
@@ -891,10 +938,12 @@ value_parameter :
     {   
         // value_parameter -> id_list : standrad_type.
         $$.parameters = new std::vector<FunctionSymbol::Parameter>();
+        $$.pos_info = new std::vector<std::pair<int,int>>();
         FunctionSymbol::ParamType tmp($3.type_ptr,FunctionSymbol::PARAM_MODE::VALUE);
         for (auto i : *($1.list_ref)){
             FunctionSymbol::Parameter tmp_pair(i.first,tmp);
             $$.parameters->push_back(tmp_pair);
+            $$.pos_info->push_back(std::make_pair(line_count,i.second));
         }
         
         if(error_flag)
@@ -954,7 +1003,7 @@ statement:
         }else{
             $$ = new StatementNode(StatementNode::GrammarType::VAR_ASSIGN_OP_EXP);
             if (!$1.is_lvalue){
-                yyerror(real_ast,"You can only assign values to lvalues");
+                semantic_error(real_ast,"The left-hand side of an assignment must be a variable.",$2.line_num,$2.column_num);
             }
         }
         if(error_flag)
@@ -1073,28 +1122,32 @@ statement:
     }
     |READ '(' variable_list ')'
     {
-        $3.variable_list_node->set_types($3.basic_types);
         if(error_flag)
             break;
+        if(!$3.variable_list_node->set_types($3.type_ptr_list)){
+            semantic_error(real_ast,"BasicType is expexted in READ",$1.line_num,$1.column_num);
+        }  
         $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
         $$->append_child($3.variable_list_node);
-        delete $3.basic_types;
+        delete $3.type_ptr_list;
     }
     |READLN '(' variable_list ')'
     {
         if(error_flag)
             break;
-        $3.variable_list_node->set_types($3.basic_types);
+        if(!$3.variable_list_node->set_types($3.type_ptr_list)){
+            semantic_error(real_ast,"BasicType is expexted in READLN",$1.line_num,$1.column_num);
+        }
         $$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
         $$->append_child($3.variable_list_node);
-        delete $3.basic_types;
+        delete $3.type_ptr_list;
     }
     |WRITE '(' expression_list ')'
     {
         if(error_flag)
             break;
         if(!$3.expression_list_node->set_types($3.type_ptr_list)){
-            yyerror(real_ast,"BasicType is expexted in WRITE\n");
+            semantic_error(real_ast,"BasicType is expexted in WRITE",$1.line_num,$1.column_num);
         }
         
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
@@ -1107,7 +1160,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.expression_list_node->set_types($3.type_ptr_list)){
-            yyerror(real_ast,"BasicType is expexted in WRITELN\n");
+            semantic_error(real_ast,"BasicType is expexted in WRITELN",$1.line_num,$1.column_num);
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
         $$->append_child($3.expression_list_node);
@@ -1118,29 +1171,16 @@ statement:
 variable_list :
     variable
     { 
-        $$.basic_types = new std::vector<BasicType*>();
-        if($1.type_ptr != nullptr){
-            if ($1.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
-                $$.basic_types->push_back(dynamic_cast<BasicType*>($1.type_ptr));
-            } else{
-                yyerror(real_ast,"It should be basic type\n");
-            }
-            
-        }
+        $$.type_ptr_list = new std::vector<TypeTemplate*>();
+        $$.type_ptr_list->push_back($1.type_ptr);
         if(error_flag)
             break;
         $$.variable_list_node = new VariableListNode(VariableListNode::GrammarType::VARIABLE);
         $$.variable_list_node->append_child($1.variable_node);
         if($1.name) delete $1.name;
     } | variable_list ',' variable{
-        $$.basic_types = $1.basic_types;
-        if($3.type_ptr != nullptr){
-            if ($3.type_ptr->template_type() == TypeTemplate::TYPE::BASIC){
-                $$.basic_types->push_back(dynamic_cast<BasicType*>($3.type_ptr));
-            } else{
-                yyerror(real_ast,"It should be basic type\n");
-            }
-        }
+        $$.type_ptr_list = $1.type_ptr_list;
+        $$.type_ptr_list->push_back($3.type_ptr);
         if(error_flag)
             break;
         $$.variable_list_node = new VariableListNode(VariableListNode::GrammarType::VARIABLE_LIST_VARIABLE);
@@ -1158,7 +1198,7 @@ variable:
         string name = $1.value.get<string>();
         if(tmp == nullptr) {
             $$.type_ptr = TYPE_ERROR;
-            yyerror(real_ast,"variable not defined");
+            semantic_error(real_ast,"Variable \'"+name+ "\' not defined",$1.line_num,$1.column_num);
             break;
         } else {
             //类型检查
@@ -1332,7 +1372,7 @@ const_list:
     {
         // const_list -> const_list , const_variable.
         if($1.type_ptr != $3.type_ptr) {
-           yyerror(real_ast,"const_list type not match");
+           semantic_error(real_ast,"Const_list type not match",line_count,0);
         }
         $$.type_ptr = $1.type_ptr;
         if(error_flag)
@@ -1372,7 +1412,7 @@ call_procedure_statement:
         // call_procedure_statement -> id (expression_list).
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure");
+            semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
         }
         if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
@@ -1401,7 +1441,7 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"call_procedure_statement: no such procedure\n");
+            semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
         } else if(ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
@@ -1743,7 +1783,7 @@ factor:
         // 类型检查
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            yyerror(real_ast,"factor -> no such procedure\n");
+            semantic_error(real_ast,"No such function",$1.line_num,$1.column_num);
         }
         if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
@@ -2387,15 +2427,6 @@ void location_pointer_refresh(){
     memset(location_pointer,' ',length);
     memcpy(location_pointer+length,"^\n\0",3);
 }
-// int main(){
-//     AST *real_ast = new AST();
-//     if(!yyparse(real_ast)&&error_flag){
-//         printf("successful analysis\n");
-//         Compiler compiler;
-//         compiler.Compile(real_ast,"basic_test");
-//     }
-// }
-
 int yywrap(){
     return 1;
 }

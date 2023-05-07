@@ -62,28 +62,34 @@ struct RecordAttr {
 struct VariableDeclarationAttr {
   std::unordered_map<std::string, pascals::TypeTemplate*>* record_info;
   pascals::ast::VariableDeclarationNode* variable_declaration_node;
+  std::unordered_map<std::string, std::pair<int,int>>* pos_info;
 };
 
 struct FormalParameterAttr {
   std::vector<pascals::FunctionSymbol::Parameter>* parameters;
+  std::vector<std::pair<int,int>>* pos_info;
   pascals::ast::FormalParamNode* formal_parameter_node;
 };
 
 struct ParameterListsAttr {
   std::vector<pascals::FunctionSymbol::Parameter>* parameters;
+  std::vector<std::pair<int,int>>* pos_info;
   pascals::ast::ParamListsNode* param_lists_node;
 };
 struct ParameterListAttr {
   std::vector<pascals::FunctionSymbol::Parameter>* parameters;
+  std::vector<std::pair<int,int>>* pos_info;
   pascals::ast::ParamListNode* param_list_node;
 };
 struct VarParameterAttr {
   std::vector<pascals::FunctionSymbol::Parameter>* parameters;
+  std::vector<std::pair<int,int>>* pos_info;
   pascals::ast::VarParamNode* var_parameter_node;
 };
 
 struct ValueParameterAttr {
   std::vector<pascals::FunctionSymbol::Parameter>* parameters;
+  std::vector<std::pair<int,int>>* pos_info;
   pascals::ast::ValueParamNode* value_parameter_node;
 };
 
@@ -95,7 +101,7 @@ struct VariableAttr {
 };
 
 struct VariableListAttr {
-  std::vector<pascals::BasicType*>* basic_types;
+  std::vector<pascals::TypeTemplate*>* type_ptr_list;
   pascals::ast::VariableListNode* variable_list_node;
 };
 

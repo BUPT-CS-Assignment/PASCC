@@ -475,9 +475,20 @@ void VariableListNode::Format(bool ref, FILE *dst) {
   }
 }
 
-void VariableListNode::set_types(
-    std::vector<BasicType *> *type_list) {
-  basic_types.assign(type_list->begin(), type_list->end());
+bool VariableListNode::set_types(
+    std::vector<TypeTemplate *> *type_list) {
+  if (!type_list)
+    return true;
+  for (auto i : *type_list) {
+    if (is_basic(i) || i == TYPE_STRINGLIKE) {
+      basic_types.push_back(dynamic_cast<BasicType *>(i));
+    } else if (i != TYPE_ERROR && i->StringLike()) {
+      basic_types.push_back(TYPE_STRINGLIKE);
+    } else {
+      return false;
+    }
+  }
+  return true;
 }
 
 void VariableNode::Format(bool ref, FILE *dst) {
