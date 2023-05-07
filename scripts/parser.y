@@ -882,6 +882,7 @@ value_parameter :
         $$.value_parameter_node = new ValueParamNode();
         $$.value_parameter_node->append_child($1.id_list_node);
         $$.value_parameter_node->append_child($3.standard_type_node);
+        delete $1.list_ref;
     };
 compound_statement :
     BEGIN_ statement_list END {
@@ -1076,9 +1077,6 @@ statement:
         
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
         $$->append_child($3.expression_list_node);
-        for(auto i : *($3.type_ptr_list)){
-            delete i;
-        }
         delete $3.type_ptr_list;
         delete $3.is_lvalue_list;
     }
