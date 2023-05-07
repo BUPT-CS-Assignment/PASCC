@@ -3,6 +3,7 @@
 #include "parser.h"
 #include "parser.tab.h"
 
+int last_line_count;    
 int line_count = 1;
 int char_count = 1;
 bool new_line_flag;
@@ -173,6 +174,7 @@ void wrap()
     if(cur_line_info.size()!=0){ // 跳过空行
         last_line_info = cur_line_info;
         cur_line_info.clear();
+        last_line_count= line_count;
     }
     line_count++; 
     char_count = 1;

@@ -10,6 +10,7 @@ extern "C"
     extern int line_count;
     extern bool new_line_flag;
     extern int yyleng;
+    extern int last_line_count;
 }
 extern std::string cur_line_info;
 extern std::string last_line_info;
@@ -1845,7 +1846,7 @@ unsigned_const_variable :
 /*---------------.
 | Error handler  |
 `---------------*/
-/*紧急恢复*/
+/*--紧急恢复--*/
 program:error
     {
         location_pointer_refresh();
@@ -1855,7 +1856,7 @@ program:error
             yychar = yylex();
         }
         if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
         fprintf(stderr,"abort!\n");
@@ -1863,7 +1864,10 @@ program:error
             yychar = yylex();
         }        
     };
-/*短语级恢复*/
+/*--短语级恢复--*/
+
+    /*PROGRAM相关错误*/
+
 program_head: PROGRAM error
     {
         location_pointer_refresh();
@@ -1875,9 +1879,24 @@ program_head: PROGRAM error
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
-        fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
+
+program_head: error  
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==ID)
+            yyerror(real_ast,"Every program must begin with the symbol program!");
+        else
+            yyerror(real_ast,"unknown error!");
+        while (new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
 
 program: program_head program_body error
     {
@@ -1889,18 +1908,44 @@ program: program_head program_body error
         fprintf(stderr,"\t| %s",location_pointer);
     };
 
+    /*定义语句相关*/
+
 const_declarations: CONST error
     {
-        location_pointer_refresh();
-        new_line_flag=false;
-        yyerror(real_ast,"There are unrecoverable errors in const_declarations. ");
-        while (new_line_flag==false && yychar!= YYEOF){
-            yychar = yylex();
+        if(yychar==TYPE || yychar==BEGIN_ || yychar==VAR || yychar==FUNCTION || yychar== PROCEDURE){
+            char msg[] = "A ';' is expected here.";
+            int length = last_line_info.size();
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+            break;
         }
-        if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        else if(yychar==ID){
+            char msg[] = "A ';' is expected here.";
+            int length = last_line_info.size();
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
+        else{
+            location_pointer_refresh();
+            new_line_flag=false;
+            if(yychar=='=')
+                yyerror(real_ast,"A const definition must begin with an identifier");
+            else
+                yyerror(real_ast,"There are unrecoverable errors in const_declarations. ");
+            while (new_line_flag==false && yychar!= YYEOF){
+                yychar = yylex();
+            }
+            if(new_line_flag){
+                fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+                fprintf(stderr,"\t| %s",location_pointer);
+            }
+        }    
         while (yychar!=TYPE && yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
             yychar = yylex();
         }
@@ -1908,18 +1953,39 @@ const_declarations: CONST error
 
 type_declarations: TYPE  error
     {
-        location_pointer_refresh();
-        new_line_flag=false;
-        if(yychar=='=')
-            yyerror(real_ast,"A type definition must begin with an identifier");
-        else
-            yyerror(real_ast,"There are unrecoverable errors in type_declarations.");
-        while (new_line_flag==false && yychar!= YYEOF){
-            yychar = yylex();
-        }
-        if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        if(yychar==BEGIN_ || yychar==VAR || yychar==FUNCTION || yychar== PROCEDURE){
+            char msg[] = "A ';' is expected here.";
+            int length = last_line_info.size();
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
+            break;
+        }
+        else if(yychar==ID){
+            char msg[] = "A ';' is expected here.";
+            int length = last_line_info.size();
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else{     
+            location_pointer_refresh();
+            new_line_flag=false;
+            if(yychar=='=')
+                yyerror(real_ast,"A type definition must begin with an identifier");
+            else
+                yyerror(real_ast,"There are unrecoverable errors in type_declarations.");
+            while (new_line_flag==false && yychar!= YYEOF){
+                yychar = yylex();
+            }
+            if(new_line_flag){
+                fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+                fprintf(stderr,"\t| %s",location_pointer);
+            }
         }
         while (yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
             yychar = yylex();
@@ -1928,19 +1994,44 @@ type_declarations: TYPE  error
 
 var_declarations: VAR error
     {
-        location_pointer_refresh();
-        new_line_flag=false;
-        yyerror(real_ast,"There are unrecoverable errors in var_declarations.");
-        while (new_line_flag==false && yychar!= YYEOF){
-            yychar = yylex();
+        if( yychar==BEGIN_ || yychar==FUNCTION || yychar== PROCEDURE){
+            char msg[] = "A ';' is expected here.";
+            int length = last_line_info.size();
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+            break;
         }
-        if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+        else if(yychar==ID){
+            char msg[] = "A ';' is expected here.";
+            int length = last_line_info.size();
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
-        while (yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
-            yychar = yylex();
+        else{
+            location_pointer_refresh();
+            new_line_flag=false;
+            if(yychar==':')
+                yyerror(real_ast,"A var definition must begin with an identifier");
+            else
+                yyerror(real_ast,"There are unrecoverable errors in var_declarations.");
+            while (new_line_flag==false && yychar!= YYEOF){
+                yychar = yylex();
+            }
+            if(new_line_flag){
+                fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+                fprintf(stderr,"\t| %s",location_pointer);
+            }
         }
+        while (yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
+           yychar = yylex();
+        }
+        
     };
 
 const_declaration: ID '=' error  
@@ -1961,7 +2052,7 @@ const_declaration: ID '=' error
             fprintf(stderr,"\t| %s",location_pointer);
         }
         else if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
     }; 
@@ -1982,7 +2073,7 @@ const_declaration: const_declaration ';' ID '=' error
         if(yychar==';')
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         else
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
 
@@ -2000,7 +2091,7 @@ const_declaration: const_declaration ';'error
         if(yychar==';')
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         else
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }
 
@@ -2020,7 +2111,7 @@ type_declaration: ID '=' error
             fprintf(stderr,"\t| %s",location_pointer);
         }
         else if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
     }; 
@@ -2039,7 +2130,7 @@ type_declaration: type_declaration ';' ID '=' error
         if(yychar==';')
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         else
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };     
 
@@ -2057,7 +2148,7 @@ type_declaration: type_declaration ';' error
         if(yychar==';')
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         else
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }
 
@@ -2077,7 +2168,7 @@ var_declaration: id_list ':' error
             fprintf(stderr,"\t| %s",location_pointer);
         }
         else if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
     }
@@ -2096,7 +2187,7 @@ var_declaration: var_declaration ';' id_list ':' error
         if(yychar==';')
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         else
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }
 
@@ -2114,9 +2205,21 @@ var_declaration: var_declaration ';' error
         if(yychar==';')
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         else
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }
+
+/*其他*/
+
+type: ARRAY '[' periods ']' error
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"The symbol 'of' is expected here!");
+    } type
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
 
 factor: '(' error 
     {
@@ -2142,72 +2245,16 @@ factor: '(' error
             fprintf(stderr,"\t| %s",location_pointer);
         }
         else if(new_line_flag){
-            fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
     }
-// todo 该产生式可能会引入冲突
-// const_declaration: const_declaration error
-// {
-//     char msg[] = "A ';' is expected here." ;
-//     fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
-//     fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-//     memset(location_pointer,' ',last_line_info.size());
-//     memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
-//     fprintf(stderr,"\t| %s",location_pointer);
-// } 
-// ID '=' const_variable
-// ;
-
-// type_declaration: type_declaration error 
-// {
-//     char msg[] = "A ';' is expected here." ;
-//     fprintf(stderr,"%d,%ld:\033[01;31m \terror\033[0m : %s\n", line_count-1,last_line_info.size(),msg);   
-//     fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-//     memset(location_pointer,' ',last_line_info.size());
-//     memcpy(location_pointer+last_line_info.size(),"^\n\0",3);
-//     fprintf(stderr,"\t| %s",location_pointer);
-// }
-// ID '=' type
-// ;
-
-// program_head:  error  
-//     {
-//         location_pointer_refresh();
-//         new_line_flag=false;
-//         if(yychar==ID)
-//             yyerror(real_ast,"Every program must begin with the symbol program!");
-//         else
-//             yyerror(real_ast,"unknown error!");
-//         while (new_line_flag==false && yychar!= YYEOF){
-//             yychar = yylex();
-//         }
-//         fprintf(stderr,"%d:\t| %s\n",line_count-1,last_line_info.c_str());
-//         fprintf(stderr,"\t| %s",location_pointer);
-//     };
 
 
-/* A colon is expected. In declarations, the colon is followed by a type.*/
-// var_declaration:
-//     var_declaration ';' id_list error type_or_ID
-//     {
-//         yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
-//     }
-//     | var_declaration ';' error ':' type_or_ID
-//     {
-//         yyerror(real_ast, "An identifier is expected.");
-//     }
-//     | error ':' type_or_ID
-//     {
-//         yyerror(real_ast, "An identifier is expected.");
-//     }
-//     | id_list error type_or_ID
-//     {
-//         yyerror(real_ast, "A colon is expected. In declarations, the colon is followed by a type.");
-//     };
-// type_or_ID:
-//     type
-//     |ID;
+
+
+
+/*statement相关*/
 
 // /* The symbol of is expected.*/
 // statement:
@@ -2216,10 +2263,7 @@ factor: '(' error
 //         yyerror(real_ast,"The symbol of is expected");
 //     };
 // type:
-//     ARRAY '[' periods ']' error type
-//     {
-//         yyerror(real_ast,"The symbol of is expected");
-//     };
+
 
 // /* An opening parenthesis is expected.*/
 // // program_head: PROGRAM ID error ';'
@@ -2269,16 +2313,7 @@ factor: '(' error
 // //        yyerror(real_ast,"An closing bracket is expected (]).");
 // //     };
 
-//     /* A dot is expected at the end of the program. Check corresponding begin and end symbols!*/
 
-
-//     /* Every program must begin with the symbol program.*/
-// // program_head: error ID '(' id_list ')' ';'
-// //     {
-// //         table_set_queue.push(top_table_set);
-// //         real_ast->libs()->Preset(table_set_queue.top()->symbols());
-// //         yyerror(real_ast,"Every program must begin with the symbol program.");
-// //     };
 
 //     /* The symbol then is expected.*/
 // // statement: IF error statement else_part
@@ -2350,9 +2385,7 @@ void yyerror_var(AST* real_ast,int line){
 void location_pointer_refresh(){
     auto length = cur_line_info.size()-yyleng;
     memset(location_pointer,' ',length);
-    location_pointer[length]='^';
-    location_pointer[length+1]='\n';
-    location_pointer[length+2]='\0';
+    memcpy(location_pointer+length,"^\n\0",3);
 }
 // int main(){
 //     AST *real_ast = new AST();
