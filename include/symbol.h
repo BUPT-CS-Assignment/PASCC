@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include "type.h"
 
-namespace pascal_symbol {
+namespace pascals {
 // Object Symbols for variables
 class ObjectSymbol {
 public:
@@ -22,12 +22,12 @@ public:
     FUNCTION,
   };
   ObjectSymbol () {}
-  ObjectSymbol (std::string name, pascal_type::TypeTemplate* type, int decl_line, bool is_ref = false)
+  ObjectSymbol (std::string name, TypeTemplate* type, int decl_line, bool is_ref = false)
       : name_(name), type_(type), decl_line_(decl_line), is_ref_(is_ref) {symbol_type_ = SYMBOL_TYPE::VAR;}
   ~ObjectSymbol() {}
 
   std::string name() {return name_;}
-  pascal_type::TypeTemplate* type() { return type_; }
+  TypeTemplate* type() { return type_; }
   int decl_line() { return decl_line_; }
   virtual void set_ref(bool r) { is_ref_ = r; }
   virtual bool is_ref() { return is_ref_; }
@@ -35,7 +35,7 @@ public:
 
 protected:
   std::string name_;
-  pascal_type::TypeTemplate* type_;
+  TypeTemplate* type_;
   bool is_ref_;
   int decl_line_;
   SYMBOL_TYPE symbol_type_;
@@ -57,7 +57,7 @@ public:
   // get value by int or char type
   ConstValue value() { return value_; }
   // get value type
-  pascal_type::BasicType* type() { return value_.type(); }
+  BasicType* type() { return value_.type(); }
   void set_ref(bool r) override { is_ref_ = false; }
   bool is_ref() override { return false; }
 
@@ -74,13 +74,13 @@ public:
     REFERENCE,
   };
 
-  typedef std::pair<pascal_type::BasicType*, PARAM_MODE> ParamType;
+  typedef std::pair<BasicType*, PARAM_MODE> ParamType;
   typedef std::pair<std::string, ParamType> Parameter;
 
   FunctionSymbol() {}
-  FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line,
+  FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
                  const std::vector<Parameter>& params);
-  FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line);
+  FunctionSymbol(std::string name, BasicType *return_type, int decl_line);
 
   // get parameters size
   int param_size() { return params_.size(); }
@@ -89,7 +89,7 @@ public:
   bool InsertParam(Parameter&);
 
   // passing parameter assertion
-  bool AssertParams(const std::vector<pascal_type::TypeTemplate *> &params,
+  bool AssertParams(const std::vector<TypeTemplate *> &params,
                     const std::vector<bool> value_type_in);
   bool AssertParams();
   // get param type
@@ -107,6 +107,6 @@ private:
 
 
 
-}
+} // namespace pascals
 
 #endif // PASCC_SYMBOL_H

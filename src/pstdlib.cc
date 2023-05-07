@@ -2,16 +2,7 @@
 // Created by jianxff on 2023/4/25.
 //
 #include "pstdlib.h"
-
-using symbol_table::SymbolTable;
-using pascal_symbol::FunctionSymbol;
-using pascal_type::TYPE_INT;
-using pascal_type::TYPE_CHAR;
-using pascal_type::TYPE_REAL;
-using pascal_type::TYPE_BOOL;
-using pascal_type::TYPE_NONE;
-
-namespace pstdlib{
+namespace pascals{
 
 PStdLibs::PStdLibs() {
   lib_map_["abs"] = {"#define abs(x) (x < 0 ? -x : x)", false};
@@ -35,15 +26,15 @@ PStdLibs::PStdLibs() {
 
 
 
-void PStdLibs::Preset(symbol_table::SymbolTable *st) {
+void PStdLibs::Preset(SymbolTable *st) {
   using Parameter = FunctionSymbol::Parameter;
   using ParamType = FunctionSymbol::ParamType;
   using ParamMode = FunctionSymbol::PARAM_MODE;
 
   struct param_struct{
     std::string name;
-    pascal_type::BasicType* return_type;
-    pascal_type::BasicType* param_type;
+    BasicType* return_type;
+    BasicType* param_type;
   };
 
   std::vector<param_struct> params = {
@@ -120,4 +111,4 @@ bool PStdLibs::CheckMathLib() {
 
 
 
-} // namespace pstdlib
+} // namespace pascals

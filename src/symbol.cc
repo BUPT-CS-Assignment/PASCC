@@ -5,13 +5,12 @@
 #include "symbol.h"
 #include "type.h"
 #include <cstdio>
-using namespace pascal_type;
 using std::string;
 using std::vector;
 
-namespace pascal_symbol {
+namespace pascals {
 
-FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line,
+FunctionSymbol::FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
                                const std::vector<Parameter> &params)
     : ObjectSymbol(name, return_type, decl_line), params_(params) {
   for(int i = 0; i < params.size(); i++) {
@@ -20,7 +19,7 @@ FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_
   symbol_type_ = SYMBOL_TYPE::FUNCTION;
 }
 
-FunctionSymbol::FunctionSymbol(std::string name, pascal_type::BasicType *return_type, int decl_line)
+FunctionSymbol::FunctionSymbol(std::string name, BasicType *return_type, int decl_line)
     : ObjectSymbol(name, return_type, decl_line) {symbol_type_ = SYMBOL_TYPE::FUNCTION;}
 
 bool FunctionSymbol::InsertParam(Parameter &p) {
@@ -82,4 +81,4 @@ std::vector<bool> FunctionSymbol::ParamRefVec() {
   return res;
 }
 
-} // namespace pascal_symbol
+} // namespace pascals

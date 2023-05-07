@@ -3,8 +3,8 @@
 
 using std::vector;
 using std::string;
-using namespace pascal_type;
 
+namespace pascals {
 void ConstValue::set_unimus(){
   if(m_Type == TYPE_INT) m_INT = -m_INT;
   else if(m_Type == TYPE_REAL) m_REAL = -m_REAL;
@@ -55,13 +55,13 @@ ConstValue ConstValue::operator+(const ConstValue& other) {
 ConstValue ConstValue::operator-(const ConstValue& other) {
   if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator- : type not match");
   ConstValue ret;
-  if (m_Type == pascal_type::TYPE_INT) {
+  if (m_Type == TYPE_INT) {
     ret.set((int)(m_INT - other.m_INT));
     return ret;
-  } else if (m_Type == pascal_type::TYPE_REAL) {
+  } else if (m_Type == TYPE_REAL) {
     ret.set((float)(m_REAL - other.m_REAL));
     return ret;
-  } else if(m_Type == pascal_type::TYPE_CHAR){
+  } else if(m_Type == TYPE_CHAR){
     ret.set((char)((int)m_CHAR - (int)other.m_CHAR));
     return ret;
   } else {
@@ -73,10 +73,10 @@ ConstValue ConstValue::operator-(const ConstValue& other) {
 ConstValue ConstValue::operator*(const ConstValue& other) {
   if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator* : type not match");
   ConstValue ret;
-  if (m_Type == pascal_type::TYPE_INT) {
+  if (m_Type == TYPE_INT) {
     ret.set((int)(m_INT * other.m_INT));
     return ret;
-  } else if (m_Type == pascal_type::TYPE_REAL) {
+  } else if (m_Type == TYPE_REAL) {
     ret.set((float)(m_REAL * other.m_REAL));
     return ret;
   } else {
@@ -88,10 +88,10 @@ ConstValue ConstValue::operator*(const ConstValue& other) {
 ConstValue ConstValue::operator/(const ConstValue& other) {
   if(m_Type != other.m_Type) throw std::runtime_error("ConstValue : operator* : type not match");
   ConstValue ret;
-  if (m_Type == pascal_type::TYPE_INT) {
+  if (m_Type == TYPE_INT) {
     ret.set((int)(m_INT / other.m_INT));
     return ret;
-  } else if (m_Type == pascal_type::TYPE_REAL) {
+  } else if (m_Type == TYPE_REAL) {
     ret.set((float)(m_REAL / other.m_REAL));
     return ret;
   } else {
@@ -100,7 +100,7 @@ ConstValue ConstValue::operator/(const ConstValue& other) {
 }
 
 
-namespace pascal_type {
+
 ArrayType::ArrayBound& ArrayType::ArrayBound::operator=(const ArrayBound& b2) {
   type_ = b2.type_;
   lb_ = b2.lb_;
@@ -143,7 +143,7 @@ ArrayType ArrayType::Visit(unsigned int v_layer) {
   return ArrayType(base_type_, bs);
 }
 
-bool ArrayType::operator==(const pascal_type::ArrayType &a2) const{
+bool ArrayType::operator==(const ArrayType &a2) const{
   if(base_type_ != a2.base_type_) return false;
   int dims = bounds_.size();
   if(dims != a2.bounds_.size()) return false;
@@ -178,7 +178,7 @@ bool TypeTemplate::StringLike() {
 }
 
 bool ArrayType::StringLike(int access_layer) {
-  if (base_type_ != pascal_type::TYPE_CHAR) return false;
+  if (base_type_ != TYPE_CHAR) return false;
   if (bounds_.size() != access_layer + 1) return false;
   return true;
 }
@@ -289,4 +289,4 @@ void TypeInit() {
 }
 int _ = (TypeInit(), 0);
 
-} // namespace pascal_type
+} // namespace pascals

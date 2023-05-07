@@ -7,13 +7,12 @@
 
 using std::vector;
 using std::string;
-using namespace symbol_table;
 using json = nlohmann::json;
-using namespace pascal_symbol;
 
+namespace pascals {
 namespace ast {
 /////////////////////////////
-Node* Node::Create(std::string node_name, int sub_type, int other_type) {
+Node *Node::Create(std::string node_name, int sub_type, int other_type) {
   if (node_name == "leaf") {
     return new LeafNode();
   } else if (node_name == "program") {
@@ -27,14 +26,15 @@ Node* Node::Create(std::string node_name, int sub_type, int other_type) {
   } else if (node_name == "const_decls") {
     return new ConstDeclarationsNode();
   } else if (node_name == "const_decl") {
-    //return new ConstDeclarationNode((ConstDeclarationNode::GrammarType)sub_type); // TODO
+    // return new ConstDeclarationNode((ConstDeclarationNode::GrammarType)sub_type); // TODO
   } else if (node_name == "const_var") {
     return new ConstVariableNode();
   } else if (node_name == "var_decls") {
     return new VariableDeclarationsNode();
   } else if (node_name == "var_decl") {
-    return new VariableDeclarationNode((VariableDeclarationNode::GrammarType)sub_type,
-                                       (VariableDeclarationNode::ListType)other_type);
+    return new VariableDeclarationNode(
+        (VariableDeclarationNode::GrammarType)sub_type,
+        (VariableDeclarationNode::ListType)other_type);
   } else if (node_name == "type_decls") {
     return new TypeDeclarationsNode();
   } else if (node_name == "type_decl") {
@@ -112,11 +112,13 @@ Node* Node::Create(std::string node_name, int sub_type, int other_type) {
   }
 }
 
-Node* Node::Create(nlohmann::json &json_node) {
+Node *Node::Create(nlohmann::json &json_node) {
   string type_name = json_node.at("type");
   int sub_type = 0, other_type = 0;
-  if(json_node.contains("sub_type")) sub_type = json_node.at("sub_type");
-  if(json_node.contains("other_type")) other_type = json_node.at("other_type");
+  if (json_node.contains("sub_type"))
+    sub_type = json_node.at("sub_type");
+  if (json_node.contains("other_type"))
+    other_type = json_node.at("other_type");
   return Create(type_name, sub_type, other_type);
 }
 
@@ -138,52 +140,53 @@ void AST::LoadFromJson(std::string file_name) {
   root_->LoadFromJson(ast_json);
 }
 
-
-void Node::LoadFromJson(const nlohmann::json & node_json) {
-  if(!node_json.contains("children")) return;
-  for(auto item : node_json.at("children")) {
+void Node::LoadFromJson(const nlohmann::json &node_json) {
+  if (!node_json.contains("children"))
+    return;
+  for (auto item : node_json.at("children")) {
 
     string type_name = item.at("type");
     int sub_type = 0, other_type = 0;
-    if(item.contains("sub_type")) sub_type = item.at("sub_type");
-    if(item.contains("other_type")) other_type = item.at("other_type");
+    if (item.contains("sub_type"))
+      sub_type = item.at("sub_type");
+    if (item.contains("other_type"))
+      other_type = item.at("other_type");
 
-    Node* node = Node::Create(type_name, sub_type, other_type);
-    if(type_name == "leaf") {
-      LeafNode* lf = node->StaticCast<LeafNode>();
+    Node *node = Node::Create(type_name, sub_type, other_type);
+    if (type_name == "leaf") {
+      LeafNode *lf = node->StaticCast<LeafNode>();
 
       string value_type = item.at("value_type");
-      if(value_type == "integer") {
+      if (value_type == "integer") {
         lf->set_value(ConstValue(item.at("value").get<int>()));
-      } else if(value_type == "real") {
+      } else if (value_type == "real") {
         lf->set_value(ConstValue(item.at("value").get<float>()));
-      } else if(value_type == "char") {
+      } else if (value_type == "char") {
         lf->set_value(ConstValue(item.at("value").get<char>()));
-      } else if(value_type == "bool") {
+      } else if (value_type == "bool") {
         lf->set_value(ConstValue(item.at("value").get<bool>()));
-      } else if(value_type == "string") {
+      } else if (value_type == "string") {
         lf->set_value(ConstValue(item.at("value").get<string>()));
       }
 
-    }
-    else if(type_name == "basic_type") {
-      BasicTypeNode* bt = node->StaticCast<BasicTypeNode>();
+    } else if (type_name == "basic_type") {
+      BasicTypeNode *bt = node->StaticCast<BasicTypeNode>();
       string value_type = item.at("value");
-      if(value_type == "integer") {
+      if (value_type == "integer") {
         bt->set_type(TYPE_INT);
-      } else if(value_type == "real") {
+      } else if (value_type == "real") {
         bt->set_type(TYPE_REAL);
-      } else if(value_type == "char") {
+      } else if (value_type == "char") {
         bt->set_type(TYPE_CHAR);
-      } else if(value_type == "bool") {
+      } else if (value_type == "bool") {
         bt->set_type(TYPE_BOOL);
       }
-    }else if(type_name == "type") {
-      TypeNode* tn = node->StaticCast<TypeNode>();
-      if(!item.contains("base_type")) {
+    } else if (type_name == "type") {
+      TypeNode *tn = node->StaticCast<TypeNode>();
+      if (!item.contains("base_type")) {
         tn->set_base_type_node(tn);
       } else {
-        Node* base_node = Node::Create(item.at("base_type"));
+        Node *base_node = Node::Create(item.at("base_type"));
         tn->set_base_type_node(base_node->DynamicCast<TypeNode>());
       }
     }
@@ -196,3 +199,4 @@ void Node::LoadFromJson(const nlohmann::json & node_json) {
 }
 
 } // namespace ast
+} // namespace pascals

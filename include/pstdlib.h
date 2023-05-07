@@ -10,13 +10,13 @@
 #ifndef PASCC_PSTDLIB_H
 #define PASCC_PSTDLIB_H
 
-namespace pstdlib{
+namespace pascals{
 class PStdLibs{
 public:
   PStdLibs();
   ~PStdLibs(){};
   void Format(FILE* dst);
-  void Preset(symbol_table::SymbolTable* st);
+  void Preset(SymbolTable* st);
   bool Call(std::string lib_name);
   bool UnCall(std::string lib_name);
 private:
@@ -28,6 +28,6 @@ private:
   std::unordered_map<std::string, Lib> lib_map_;
 };
 
-}// namespace pstdlib
+}// namespace pascals
 
 #endif //PASCC_PAS_STDLIB_H

@@ -5,7 +5,7 @@
 using std::string;
 using std::vector;
 
-namespace pascal_type{
+namespace pascals{
 
 BasicType* compute(BasicType* t1, BasicType* t2, string op){
   if(t1 == nullptr || t2 == nullptr) return TYPE_ERROR;
@@ -72,4 +72,4 @@ bool is_same(RecordType* t1, vector<string> n1, TypeTemplate* t2) {
   return is_same(temp_t1, t2);
 }
 
-}// namespace pascal_type
+}// namespace pascals

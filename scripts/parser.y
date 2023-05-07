@@ -1,8 +1,7 @@
 %{	
 #include"parser.h"
-using namespace ast;
-using namespace pascal_symbol;
-using namespace pascal_type;
+using namespace pascals;
+using namespace pascals::ast;
 using std::string;
 extern "C"			
 {					
@@ -15,72 +14,22 @@ extern "C"
 extern std::string cur_line_info;
 extern std::string last_line_info;
 
-std::stack<symbol_table::TableSet*> table_set_queue;
-symbol_table::TableSet* top_table_set = new symbol_table::TableSet("main",nullptr);
+std::stack<TableSet*> table_set_queue;
+TableSet* top_table_set = new TableSet("main",nullptr);
 
 int error_flag=0;
 char location_pointer[256];
 void location_pointer_refresh();
 
-void yyerror(ast::AST* real_ast,const char *msg);
-void yyerror_var(ast::AST* real_ast,int line);
+void yyerror(AST* real_ast,const char *msg);
+void yyerror_var(AST* real_ast,int line);
 void yynote(std::string msg,int line);
 
 %}
 
 %union
-{
-    Token token_info;
-    IdListAttr id_list_node_info;
-    ValueAttr value_node_info;
-    TypeAttr type_node_info;
-    StandardTypeAttr standared_type_node_info;
-    PeriodsAttr periods_node_info;
-    PeriodAttr period_node_info;
-    RecordAttr record_node_info;
-    FormalParameterAttr formal_parameter_node_info;
-    ParameterListsAttr parameter_lists_node_info;
-    ParameterListAttr parameter_list_node_info;
-    VarParameterAttr var_parameter_node_info;
-    ValueParameterAttr value_parameter_node_info;
-
-    VariableDeclarationAttr variable_declaration_node_info;
-    VariableAttr variable_node_info;
-    ExpressionAttr expression_node_info;
-    SimpleExpressionAttr simple_expression_node_info;
-    TermAttr term_node_info;
-    FactorAttr factor_node_info;
-    UnsignedConstantVarAttr unsigned_constant_var_node_info;
-    IDVarpartsAttr id_varparts_node_info;
-    IDVarpartAttr id_varpart_node_info;
-    ExpressionListAttr expression_list_node_info;
-    CaseBodyAttr case_body_node_info;
-    BranchListAttr branch_list_node_info;
-    BranchAttr branch_node_info;
-    ConstListAttr const_list_node_info;
-
-    ast::ProgramNode* program_node;
-    ast::ProgramHeadNode* program_head_node;
-    ast::ProgramBodyNode* program_body_node;
-    ast::ConstDeclarationsNode* const_declarations_node;
-    ast::ConstDeclarationNode* const_declaration_node;
-    ast::TypeDeclarationsNode* type_declarations_node;
-    ast::TypeDeclarationNode* type_declaration_node;
-    ast::BasicTypeNode* basic_type_node;
-    ast::VariableDeclarationsNode* variable_declarations_node;
-    ast::SubprogramDeclarationsNode* subprogram_declarations_node;
-    ast::SubprogramDeclarationNode* subprogram_declaration_node;
-    ast::SubprogramHeadNode* subprogram_head_node;
-    ast::SubprogramBodyNode* subprogram_body_node;
-    ast::CompoundStatementNode* compound_statement_node;
-    ast::StatementListNode* statement_list_node;
-    ast::StatementNode* statement_node;
-    ast::ElseNode* else_node;
-    ast::UpdownNode* updown_node;
-    ast::ProcedureCallNode* procedure_call_node;
-
-}
-%parse-param {ast::AST *real_ast}
+{}
+%parse-param {pascals::ast::AST *real_ast}
 %start program
 %token PROGRAM FUNCTION PROCEDURE TO DOWNTO SUBCATALOG
 %token ARRAY TYPE CONST RECORD
@@ -211,7 +160,7 @@ const_declaration :
         if (!$5.is_right){
             break;
         }
-        pascal_symbol::ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
+        ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
             yyerror(real_ast,"The identifier has been declared.\n");
@@ -233,7 +182,7 @@ const_declaration :
             break;
         // const_declaration -> id = const_variable.
         //TODO 插入符号表
-        pascal_symbol::ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
+        ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
             yyerror(real_ast,"The identifier has been declared.");
@@ -252,7 +201,7 @@ const_variable :
     {   
         // const_variable -> + id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
-        $$.type_ptr = pascal_type::TYPE_NONE;
+        $$.type_ptr = TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
         }else {
@@ -267,7 +216,7 @@ const_variable :
     {
         // const_variable -> - id. todo -
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
-        $$.type_ptr = pascal_type::TYPE_NONE;
+        $$.type_ptr = TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
         }else {
@@ -283,7 +232,7 @@ const_variable :
     {
         // const_variable -> id.
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
-        $$.type_ptr = pascal_type::TYPE_NONE;
+        $$.type_ptr = TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
         }else {
@@ -300,7 +249,7 @@ const_variable :
         // const_variable -> - num.
         $$.type_ptr = $2.type_ptr;
         $2.value.set_unimus();
-        //$$.value = $$.value * ConstValue(-1, $2.type_ptr==pascal_type::TYPE_REAL);
+        //$$.value = $$.value * ConstValue(-1, $2.type_ptr==TYPE_REAL);
         $$.value = $2.value;
         if(error_flag)
             break; 
@@ -330,7 +279,7 @@ const_variable :
     | CHAR
     {
         // const_variable -> 'letter'.
-        $$.type_ptr = pascal_type::TYPE_CHAR;
+        $$.type_ptr = TYPE_CHAR;
         $$.value = $1.value;
         if(error_flag)
             break; 
@@ -342,13 +291,13 @@ num :
     INT_NUM
     {
         // num -> int_num.
-        $$.type_ptr = pascal_type::TYPE_INT;
+        $$.type_ptr = TYPE_INT;
         $$.value = $1.value;
     }
     | REAL_NUM
     {   
         // num -> real_num.
-        $$.type_ptr = pascal_type::TYPE_REAL;
+        $$.type_ptr = TYPE_REAL;
         $$.value = $1.value;
     };
 type_declarations : 
@@ -447,14 +396,14 @@ type :
                     merged_bounds->push_back(i);
                 }
                 auto basic_type = $6.type_ptr;
-                if($6.type_ptr->template_type() == pascal_type::TypeTemplate::TYPE::ARRAY) {
+                if($6.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY) {
                     for (auto i : *($6.bounds)){
                         merged_bounds->push_back(i);
                     }
-                    basic_type = $6.type_ptr->DynamicCast<pascal_type::ArrayType>()->base_type();
+                    basic_type = $6.type_ptr->DynamicCast<ArrayType>()->base_type();
                 }
 
-                $$.type_ptr = new pascal_type::ArrayType(basic_type, *merged_bounds);
+                $$.type_ptr = new ArrayType(basic_type, *merged_bounds);
                 delete merged_bounds;
         }
         
@@ -472,9 +421,9 @@ type :
         $$.main_type = (TypeAttr::MainType)2;
         $$.record_info = $2.record_info;
         if ($2.record_info){
-            $$.type_ptr = new pascal_type::RecordType(*($2.record_info));
+            $$.type_ptr = new RecordType(*($2.record_info));
         } else{
-             $$.type_ptr = new pascal_type::RecordType();
+             $$.type_ptr = new RecordType();
         }
         if(error_flag)
             break; 
@@ -507,18 +456,18 @@ standrad_type :
         // standrad_type -> int|real|bool|char.
         string typestr = $1.value.get<string>();
         if (typestr == "integer"){
-            $$.type_ptr = pascal_type::TYPE_INT;
+            $$.type_ptr = TYPE_INT;
         } else if(typestr == "real"){
-            $$.type_ptr = pascal_type::TYPE_REAL;
+            $$.type_ptr = TYPE_REAL;
         } else if(typestr == "boolean"){
-            $$.type_ptr = pascal_type::TYPE_BOOL;
+            $$.type_ptr = TYPE_BOOL;
         } else{
-            $$.type_ptr = pascal_type::TYPE_CHAR;
+            $$.type_ptr = TYPE_CHAR;
         }
         if(error_flag)
             break;
         $$.standard_type_node = new BasicTypeNode();
-        $$.standard_type_node->set_type(dynamic_cast<pascal_type::BasicType*>($$.type_ptr));
+        $$.standard_type_node->set_type(dynamic_cast<BasicType*>($$.type_ptr));
     };
 periods :
     periods ',' period
@@ -553,15 +502,15 @@ period :
         
         int arr_len=0;
         // TODO fix with bound_type
-        $$.bound = new pascal_type::ArrayType::ArrayBound();
-        if ($1.type_ptr == pascal_type::TYPE_INT&&$3.type_ptr == pascal_type::TYPE_INT){
+        $$.bound = new ArrayType::ArrayBound();
+        if ($1.type_ptr == TYPE_INT&&$3.type_ptr == TYPE_INT){
             arr_len = std::max(0,($3.value - $1.value).get<int>());
-            $$.bound-> type_ = pascal_type::TYPE_INT;
+            $$.bound-> type_ = TYPE_INT;
             $$.bound->lb_ = $1.value.get<int>();
             $$.bound->ub_ = $3.value.get<int>();
-        } else if($1.type_ptr == pascal_type::TYPE_CHAR&&$3.type_ptr == pascal_type::TYPE_CHAR){
+        } else if($1.type_ptr == TYPE_CHAR&&$3.type_ptr == TYPE_CHAR){
             arr_len = std::max(0,(int)($3.value - $1.value).get<char>());
-            $$.bound-> type_ = pascal_type::TYPE_CHAR;
+            $$.bound-> type_ = TYPE_CHAR;
             $$.bound->lb_ = int($1.value.get<int>());
             $$.bound->ub_ = int($3.value.get<int>());
         } else {
@@ -627,7 +576,7 @@ var_declaration :
     {
         if(error_flag)
            break;
-        $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
+        $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
         for (auto i : *($1.list_ref)){
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
             if (!res.second){
@@ -673,7 +622,7 @@ var_declaration :
         if(tmp==nullptr){
             yyerror(real_ast,"undefined type");
         } else {
-            $$.record_info = new std::unordered_map<std::string, pascal_type::TypeTemplate*>();
+            $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
             for (auto i : *($1.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
                 if (!res.second){
@@ -740,7 +689,7 @@ subprogram_head :
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
-        symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(), table_set_queue.top());
+        TableSet* now_table_set = new TableSet($2.value.get<string>(), table_set_queue.top());
         table_set_queue.push(now_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
@@ -758,7 +707,7 @@ subprogram_head :
         }
         if(error_flag)
             break;
-        $$ = new SubprogramHeadNode(ast::SubprogramHeadNode::GrammarType::FUNCTION);
+        $$ = new SubprogramHeadNode(SubprogramHeadNode::GrammarType::FUNCTION);
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
@@ -779,7 +728,7 @@ subprogram_head :
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
-        symbol_table::TableSet* now_table_set = new symbol_table::TableSet($2.value.get<string>(),table_set_queue.top());
+        TableSet* now_table_set = new TableSet($2.value.get<string>(),table_set_queue.top());
         table_set_queue.push(now_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
         table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp);
@@ -798,7 +747,7 @@ subprogram_head :
         
         if(error_flag)
             break;
-        $$ = new SubprogramHeadNode(ast::SubprogramHeadNode::GrammarType::PROCEDURE);
+        $$ = new SubprogramHeadNode(SubprogramHeadNode::GrammarType::PROCEDURE);
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
@@ -880,10 +829,10 @@ value_parameter :
     id_list ':' standrad_type
     {   
         // value_parameter -> id_list : standrad_type.
-        $$.parameters = new std::vector<std::pair<std::string, std::pair<BasicType*,FunctionSymbol::PARAM_MODE>>>();
-        std::pair<BasicType*,FunctionSymbol::PARAM_MODE> tmp($3.type_ptr,FunctionSymbol::PARAM_MODE::VALUE);
+        $$.parameters = new std::vector<FunctionSymbol::Parameter>();
+        FunctionSymbol::ParamType tmp($3.type_ptr,FunctionSymbol::PARAM_MODE::VALUE);
         for (auto i : *($1.list_ref)){
-            std::pair<std::string, std::pair<BasicType*,FunctionSymbol::PARAM_MODE>> tmp_pair(i.first,tmp);
+            FunctionSymbol::Parameter tmp_pair(i.first,tmp);
             $$.parameters->push_back(tmp_pair);
         }
         
@@ -1140,16 +1089,16 @@ variable:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         string name = $1.value.get<string>();
         if(tmp == nullptr) {
-            $$.type_ptr = pascal_type::TYPE_NONE;
+            $$.type_ptr = TYPE_NONE;
             yyerror(real_ast,"variable not defined");
         } else {
             //类型检查
             // Convert to a detailed type
             $$.is_lvalue = true;
-            if (pascal_symbol::ObjectSymbol::SYMBOL_TYPE::CONST == tmp->symbol_type()){
+            if (ObjectSymbol::SYMBOL_TYPE::CONST == tmp->symbol_type()){
                 tmp = dynamic_cast<ConstSymbol*>(tmp);
                 $$.is_lvalue = false;
-            } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+            } else if(ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
                 //函数调用 类型检查
                 if (name!=table_set_queue.top()->tag()){
                     if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
@@ -1256,7 +1205,7 @@ else_part:
 case_body:
     {
         // case_body -> empty.
-        $$.type_ptr= pascal_type::TYPE_NONE;
+        $$.type_ptr= TYPE_NONE;
         if(error_flag)
             break;
         $$.case_body_node = new CaseBodyNode();
@@ -1382,7 +1331,7 @@ call_procedure_statement:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             yyerror(real_ast,"call_procedure_statement: no such procedure\n");
-        } else if(pascal_symbol::ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+        } else if(ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
                 yyerror(real_ast,"Type check failed\n");
@@ -1415,7 +1364,7 @@ expression_list:
     {
         //类型检查 检查是否为INT or CHAR  ???  
         //这里应该是做不了的，但如果在声明的时候就有检查应该就不必做
-        $$.type_ptr_list = new std::vector<pascal_type::TypeTemplate*>();
+        $$.type_ptr_list = new std::vector<TypeTemplate*>();
         $$.type_ptr_list->push_back($1.type_ptr);
         $$.is_lvalue_list = new std::vector<bool>();
         $$.is_lvalue_list->push_back($1.is_lvalue);
@@ -1484,7 +1433,7 @@ expression:
         $$.is_lvalue = $1.is_lvalue;
         if(error_flag)
             break;
-        if($$.type_ptr && $$.type_ptr->template_type() == pascal_type::TypeTemplate::TYPE::ARRAY) {
+        if($$.type_ptr && $$.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY) {
             $$.expression_node = new ExpressionNode(ExpressionNode::TargetType::VAR_ARRAY);
         } else {
             $$.expression_node = new ExpressionNode();
@@ -1506,7 +1455,7 @@ expression:
 str_expression :
     STRING_ {
         // str_expression -> string.
-        $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
+        $$.type_ptr = TYPE_STRINGLIKE;
         $$.length = $1.value.get<string>().length();
         $$.is_lvalue = false;
         if(error_flag)
@@ -1516,7 +1465,7 @@ str_expression :
         $$.str_expression_node->append_child(string_node);
     } | str_expression PLUS STRING_ {
         // str_expression -> str_expression + string.
-        $$.type_ptr = pascal_type::TYPE_STRINGLIKE;
+        $$.type_ptr = TYPE_STRINGLIKE;
         $$.length = $1.length + $3.value.get<string>().length();
         $$.is_lvalue = false;
         if(error_flag)
@@ -1789,7 +1738,7 @@ unsigned_const_variable :
     | CHAR
     {
         // unsigned_const_variable -> 'LETTER'
-        $$.type_ptr = pascal_type::TYPE_CHAR;
+        $$.type_ptr = TYPE_CHAR;
         if(error_flag)
             break;
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
@@ -1799,7 +1748,7 @@ unsigned_const_variable :
     |TRUE
     {
         // unsigned_const_variable -> true
-        $$.type_ptr = pascal_type::TYPE_BOOL;
+        $$.type_ptr = TYPE_BOOL;
         if(error_flag)
             break;
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
@@ -1809,7 +1758,7 @@ unsigned_const_variable :
     | FALSE
     {   
         // unsigned_const_variable -> false
-        $$.type_ptr = pascal_type::TYPE_BOOL;
+        $$.type_ptr = TYPE_BOOL;
         if(error_flag)
             break;
         $$.unsigned_constant_var_node = new UnsignConstVarNode();
@@ -2208,7 +2157,7 @@ factor: '(' error
 %%
  
 
-void yyerror(ast::AST* real_ast,const char *msg){
+void yyerror(AST* real_ast,const char *msg){
 if(!yydebug)
     if(strcmp(msg,"syntax error")==0)
         return;
@@ -2223,7 +2172,7 @@ void yynote(std::string msg ,int line){
     fprintf(stderr,"%d:\033[01;32m \tnote\033[0m : previous definition of \"%s\" was here\n", line, msg.c_str());
 }
 
-void yyerror_var(ast::AST* real_ast,int line){
+void yyerror_var(AST* real_ast,int line){
     fprintf(stderr,"%d:\033[01;31m \terror\033[0m : %s\n", line, "redifinition of variable");
     error_flag = 1;
     real_ast->set_root(nullptr);

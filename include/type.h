@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace pascal_type {
+namespace pascals {
 
 class TypeTemplate {
 public:
@@ -224,8 +224,6 @@ bool is_same(RecordType *t1, std::vector<std::string> n1, RecordType *t2,
  */
 bool is_same(RecordType *t1, std::vector<std::string> n1, TypeTemplate *t2);
 
-}; // namespace pascal_type
-
 class ConstValue {
 public:
   ConstValue() {}
@@ -243,14 +241,29 @@ public:
   ConstValue(const char *v) { set(std::string(v)); }
   ConstValue(std::string v) { set(v); }
 
-  void set(int v) {m_Type = pascal_type::TYPE_INT; m_INT = v;}
-  void set(float v) {m_Type = pascal_type::TYPE_REAL; m_REAL = v;}
-  void set(bool v) {m_Type = pascal_type::TYPE_BOOL; m_BOOLEAN = v;}
-  void set(char v) {m_Type = pascal_type::TYPE_CHAR; m_CHAR = v;}
-  void set(std::string v) {m_Type = pascal_type::TYPE_STRINGLIKE; m_STRING = v;}
+  void set(int v) {
+    m_Type = TYPE_INT;
+    m_INT = v;
+  }
+  void set(float v) {
+    m_Type = TYPE_REAL;
+    m_REAL = v;
+  }
+  void set(bool v) {
+    m_Type = TYPE_BOOL;
+    m_BOOLEAN = v;
+  }
+  void set(char v) {
+    m_Type = TYPE_CHAR;
+    m_CHAR = v;
+  }
+  void set(std::string v) {
+    m_Type = TYPE_STRINGLIKE;
+    m_STRING = v;
+  }
   void set_unimus();
 
-  pascal_type::BasicType *type() { return m_Type; }
+  BasicType *type() { return m_Type; }
   template <typename T> T get() {
     if (std::is_same<T, int>::value)
       return *(T *)(&m_INT);
@@ -280,7 +293,7 @@ public:
   ConstValue operator/(const ConstValue &other);
 
 private:
-  pascal_type::BasicType *m_Type = nullptr;
+  BasicType *m_Type = nullptr;
   union {
     int m_INT;
     float m_REAL;
@@ -289,5 +302,7 @@ private:
   };
   std::string m_STRING;
 };
+
+}// namespace pascals
 
 #endif // PASCC_TYPE_H_

@@ -2,11 +2,11 @@
 #include "type.h"
 #include <vector>
 
-using namespace pascal_type;
+using namespace pascals;
 TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
   //   std::cout << "variable type:" << base_type << std::endl;
   int in_array = 0;
-  std::vector<pascal_type::TypeTemplate *> vistor;
+  std::vector<TypeTemplate *> vistor;
   TypeTemplate *cur_type = base_type;
   
   for (int i = 0; i < var_parts->size(); i++) {
