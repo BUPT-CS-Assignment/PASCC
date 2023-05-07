@@ -761,6 +761,9 @@ subprogram_head :
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
         $$->append_child($5.standard_type_node);
+        if($3.parameters){
+            delete $3.parameters;
+        }
     }
     | PROCEDURE ID formal_parameter ';'
     {
