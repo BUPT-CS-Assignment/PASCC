@@ -428,6 +428,14 @@ class ArgumentParser{
   }
 
 public:
+  /**
+   * @brief Destroy the Argument Parser object
+   */
+  ~ArgumentParser(){
+    for(int i = 0; i < _args.size(); i++){
+      delete _args[i];
+    }
+  }
 
   /**
     * @brief Add new argument structure
