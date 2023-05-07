@@ -71,6 +71,7 @@ public:
     }
 
   };
+  virtual ~BasicArgument() = default;
 
 protected:
   /**
