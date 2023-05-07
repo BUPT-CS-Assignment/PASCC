@@ -368,6 +368,9 @@ type_declaration :
         $$->append_child(leaf_node);
         $$->append_child($5.type_node);
         delete $5.record_info;
+        if($5.bounds) {
+            delete $5.bounds;
+        }
     }
     | ID '=' type
     {
@@ -394,6 +397,9 @@ type_declaration :
         $$->append_child(leaf_node);
         $$->append_child($3.type_node);
         delete $3.record_info;
+        if($3.bounds) {
+            delete $3.bounds;
+        }
     };
 type :
     standrad_type
@@ -596,6 +602,9 @@ var_declaration :
         $$.variable_declaration_node->append_child($3.id_list_node);
         $$.variable_declaration_node->append_child($5.type_node);
         delete $3.list_ref;
+        if($5.bounds) {
+            delete $5.bounds;
+        }
     }
     | id_list ':' type 
     {
@@ -613,6 +622,9 @@ var_declaration :
         $$.variable_declaration_node->append_child($1.id_list_node);
         $$.variable_declaration_node->append_child($3.type_node);
         delete $1.list_ref;
+        if($3.bounds) {
+            delete $3.bounds;
+        }
     }
     |var_declaration ';' id_list ':' ID
     {
@@ -1064,7 +1076,11 @@ statement:
         
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
         $$->append_child($3.expression_list_node);
-        delete $3.type_ptr_list;//todo
+        for(auto i : *($3.type_ptr_list)){
+            delete i;
+        }
+        delete $3.type_ptr_list;
+        delete $3.is_lvalue_list;
     }
     |WRITELN'(' expression_list ')'
     {
@@ -1075,7 +1091,8 @@ statement:
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
         $$->append_child($3.expression_list_node);
-        delete $3.type_ptr_list;//todo
+        delete $3.type_ptr_list;
+        delete $3.is_lvalue_list;
     };
 
 variable_list :
@@ -1094,6 +1111,7 @@ variable_list :
             break;
         $$.variable_list_node = new VariableListNode(VariableListNode::GrammarType::VARIABLE);
         $$.variable_list_node->append_child($1.variable_node);
+        if($1.name) delete $1.name;
     } | variable_list ',' variable{
         $$.basic_types = $1.basic_types;
         if($3.type_ptr != nullptr){
@@ -1108,6 +1126,7 @@ variable_list :
         $$.variable_list_node = new VariableListNode(VariableListNode::GrammarType::VARIABLE_LIST_VARIABLE);
         $$.variable_list_node->append_child($1.variable_list_node);
         $$.variable_list_node->append_child($3.variable_node);
+        if($3.name) delete $3.name;
     };
 variable:
     ID id_varparts
@@ -1164,6 +1183,7 @@ variable:
         for (auto i : *($2.var_parts)){
             delete i.subscript;
         }
+        delete $2.var_parts;
     };
 
 id_varparts:
@@ -1204,6 +1224,7 @@ id_varpart:
             break;
         $$.id_varpart_node = new IDVarPartNode(IDVarPartNode::GrammarType::EXP_LIST);
         $$.id_varpart_node->append_child($2.expression_list_node);
+        delete $2.is_lvalue_list;
     }
     | '.' ID
     {
@@ -1690,6 +1711,7 @@ factor:
             break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::VARIABLE);
         $$.factor_node->append_child($1.variable_node);
+        if($1.name) delete $1.name;
     }
     |ID '(' expression_list ')'
     {
