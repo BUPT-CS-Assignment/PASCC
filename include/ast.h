@@ -37,11 +37,11 @@ public:
   template <typename T> T *DynamicCast() { return dynamic_cast<T *>(this); }
 
   // getter and setter functions
-  void set_parent(Node *parent) { parent_ = parent; }
-  Node *parent() { return parent_; }
+  //void set_parent(Node *parent) { parent_ = parent; }
+  //Node *parent() { return parent_; }
   // append child
   void append_child(Node *child) {
-    child->set_parent(this);
+    //child->set_parent(this);
     child_list_.emplace_back(child);
   }
 

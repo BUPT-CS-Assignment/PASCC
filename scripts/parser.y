@@ -19,6 +19,7 @@ std::stack<TableSet*> table_set_queue;
 TableSet* top_table_set = new TableSet("main",nullptr);
 
 int error_flag=0;
+int semantic_error_flag=0;
 char location_pointer[256];
 void location_pointer_refresh();
 
@@ -26,8 +27,9 @@ void yyerror(AST* real_ast,const char *msg);
 void yyerror_var(AST* real_ast,int line);
 void yynote(std::string msg,int line);
 void semantic_error(AST* real_ast,std::string msg,int line,int row){
-    error_flag=1;
-    real_ast->set_root(nullptr);
+    //error_flag=1;
+    semantic_error_flag=1;
+    real_ast->set_root(nullptr); 
     if (row)
         fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", line,row,msg.c_str());
     else
@@ -99,7 +101,7 @@ void semantic_error(AST* real_ast,std::string msg,int line,int row){
 program : 
     program_head program_body '.'
     {   
-        if(!error_flag){
+        if(!error_flag&&!semantic_error_flag){
             ProgramNode* node = new ProgramNode();
             node->append_child($1);
             node->append_child($2);
@@ -192,8 +194,6 @@ const_declaration :
     {   
         if(error_flag)
             break;
-        // const_declaration -> id = const_variable.
-        //TODO 插入符号表
         if (!$3.is_right){
             break;
         }
@@ -201,8 +201,7 @@ const_declaration :
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
             semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
-        } 
-        else {
+        } else {
             // if(error_flag)
             //     break;
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE,$3.type_ptr);
@@ -992,8 +991,9 @@ statement:
         		 $1.type_ptr->StringLike() &&
         		 $3.type_ptr==TYPE_STRINGLIKE);
         if(!var_flag && !str_flag){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"statement -> variable assignop expression\n");
+            semantic_error(real_ast,"Type check failed",line_count,0);
+            break;
+            //yyerror(real_ast,"statement -> variable assignop expression\n");
         }
         std::string func_name = table_set_queue.top()->tag();
         // if(error_flag)
