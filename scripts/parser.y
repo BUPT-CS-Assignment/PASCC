@@ -435,6 +435,7 @@ type :
                 }
 
                 $$.type_ptr = new ArrayType(basic_type, *merged_bounds);
+                ArrayType::Collect($$.type_ptr->DynamicCast<ArrayType>());
                 delete merged_bounds;
         }
         

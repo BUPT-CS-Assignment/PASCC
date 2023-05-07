@@ -99,7 +99,7 @@ ConstValue ConstValue::operator/(const ConstValue& other) {
   }
 }
 
-
+std::vector<ArrayType*>* ArrayType::TEMP_COLLECTOR = new std::vector<ArrayType*>();
 
 ArrayType::ArrayBound& ArrayType::ArrayBound::operator=(const ArrayBound& b2) {
   type_ = b2.type_;
@@ -286,7 +286,9 @@ void TypeInit() {
 }
 int _ = (TypeInit(), 0);
 
-void TypeDelete(){
+void TypeRelease(){
+  ArrayType::ReleaseTemp();
+  delete ArrayType::TEMP_COLLECTOR;
   delete TYPE_CHAR;
   delete TYPE_INT;
   delete TYPE_REAL;
@@ -294,6 +296,6 @@ void TypeDelete(){
   delete TYPE_STRINGLIKE;
   log_debug("delete global basic types");
 }
-int __ = (atexit(TypeDelete),0);
 
+int __ = (atexit(TypeRelease),0);
 } // namespace pascals

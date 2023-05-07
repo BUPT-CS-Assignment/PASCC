@@ -66,6 +66,13 @@ extern BasicType *TYPE_STRINGLIKE;
 // Array type
 class ArrayType : public TypeTemplate {
 public:
+  static std::vector<ArrayType*>* TEMP_COLLECTOR;
+  static void Collect(ArrayType* t){ArrayType::TEMP_COLLECTOR->push_back(t);}
+  static void ReleaseTemp(){
+    for(auto t : *ArrayType::TEMP_COLLECTOR){
+      delete t;
+    }
+  }
   // Array bound
   struct ArrayBound {
     BasicType *type_;
