@@ -104,7 +104,7 @@ void Compiler::Remove(std::string file_name, bool rm_all) {
 #ifdef WIN32
     sprintf(cmd_buf,"if exist \"%s\" del \"%s\"",fp,fp);
 #else
-    sprintf(cmd_buf,"if [ -f %s ]; then rm %s; fi;",fp,fp);
+    sprintf(cmd_buf,"find . -type f -name '%s' -delete",fp);
 #endif
 
     log_debug("compiler: remove command : %s",cmd_buf);
