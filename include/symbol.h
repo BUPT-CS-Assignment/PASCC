@@ -24,7 +24,7 @@ public:
   ObjectSymbol () {}
   ObjectSymbol (std::string name, TypeTemplate* type, int decl_line, bool is_ref = false)
       : name_(name), type_(type), decl_line_(decl_line), is_ref_(is_ref) {symbol_type_ = SYMBOL_TYPE::VAR;}
-  ~ObjectSymbol() {}
+  virtual ~ObjectSymbol() {}
 
   std::string name() {return name_;}
   TypeTemplate* type() { return type_; }

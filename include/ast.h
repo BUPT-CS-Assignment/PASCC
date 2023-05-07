@@ -22,7 +22,7 @@ class Node {
 public:
   // constructor
   Node() : parent_(nullptr){};
-  ~Node() {
+  virtual ~Node() {
     for (auto child : child_list_) {
       delete child;
     }
