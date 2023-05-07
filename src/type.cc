@@ -204,7 +204,7 @@ BasicType* TYPE_NONE;
 BasicType* TYPE_ERROR;
 BasicType* TYPE_STRINGLIKE;
 
-std::shared_ptr<std::vector<TypeTemplate*>> PTR_COLLECTOR = std::make_shared<std::vector<TypeTemplate*>>();
+std::vector<TypeTemplate*>* PTR_COLLECTOR = nullptr;
 
 OperationMap operation_map;
 
@@ -218,6 +218,8 @@ void TypeInit() {
   TYPE_REAL = new BasicType(BasicType::BASIC_TYPE::REAL);
   TYPE_NONE = new BasicType(BasicType::BASIC_TYPE::NONE);
   TYPE_STRINGLIKE = new BasicType(BasicType::BASIC_TYPE::CHAR);
+
+  PTR_COLLECTOR = new std::vector<TypeTemplate*>();
 
   //bool
   operation_map[Operation(TYPE_BOOL, TYPE_BOOL, "and")] = TYPE_BOOL;
@@ -293,6 +295,7 @@ void TypeRelease(){
   delete TYPE_REAL;
   delete TYPE_NONE;
   delete TYPE_STRINGLIKE;
+  delete PTR_COLLECTOR;
   log_debug("delete global basic types");
 }
 

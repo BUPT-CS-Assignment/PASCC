@@ -126,13 +126,13 @@ private:
 };
 
 
-extern std::shared_ptr<std::vector<TypeTemplate*>> PTR_COLLECTOR;
+extern std::vector<TypeTemplate*>* PTR_COLLECTOR;
 static void PtrCollect(TypeTemplate* t){
   if(t == TYPE_ERROR || t->template_type() == TypeTemplate::TYPE::BASIC) return;
   PTR_COLLECTOR->push_back(t);
 }
 static void ReleaseTemp(){
-  for(auto t : *PTR_COLLECTOR.get()){
+  for(auto t : *PTR_COLLECTOR){
     delete t;
   }
 }
