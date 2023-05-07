@@ -20,12 +20,11 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
       // check array
       if (in_array) {
         auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
+        ArrayType::Collect(cur_array_type);
         if (!cur_array_type->Valid()) {
-          delete cur_array_type;
           return TYPE_ERROR;
         }
         if(cur_array_type->dims() != 0){
-          delete cur_array_type;
           return TYPE_ERROR;
         }
         cur_type = cur_array_type->base_type();
