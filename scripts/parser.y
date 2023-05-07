@@ -1923,21 +1923,6 @@ program_head: PROGRAM error
         fprintf(stderr,"\t| %s",location_pointer);
     }; 
 
-program_head: error  
-    {
-        location_pointer_refresh();
-        new_line_flag=false;
-        if(yychar==ID)
-            yyerror(real_ast,"Every program must begin with the symbol program!");
-        else
-            yyerror(real_ast,"unknown error!");
-        while (new_line_flag==false && yychar!= YYEOF){
-            yychar = yylex();
-        }
-        fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
-        fprintf(stderr,"\t| %s",location_pointer);
-    };
-
 program: program_head program_body error
     {
         location_pointer_refresh();
@@ -2296,6 +2281,15 @@ factor: '(' error
 
 /*statement相关*/
 
+statement: variable ASSIGNOP type
+    {
+        yyerror(real_ast,"No type or procedure identifiers may occur as part of an expression.");
+        location_pointer_refresh();
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+
+
 // /* The symbol of is expected.*/
 // statement:
 //     CASE error END
@@ -2394,12 +2388,6 @@ factor: '(' error
 // statement: FOR ID error expression updown expression DO statement
 //     {
 //         yyerror(real_ast,"The symbol := is expected.");
-//     };
-
-// statement: ID error ';'
-//     {
-//         yychar = ';';
-//         yyerror(real_ast,"Syntax error, ';' expected .");
 //     };
 
 %%
