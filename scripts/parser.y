@@ -183,6 +183,9 @@ const_declaration :
             break;
         // const_declaration -> id = const_variable.
         //TODO 插入符号表
+        if (!$3.is_right){
+            break;
+        }
         ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
@@ -205,7 +208,14 @@ const_variable :
         $$.type_ptr = TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
-        }else {
+            $$.is_right = false;
+        } else {
+            // You cannot use variables to assign values to constants
+            if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
+                yyerror(real_ast,"The identifier is not a const variable.");
+                $$.is_right = false;
+                break;
+            }
             $$.value = symbol->value();
             $$.type_ptr = symbol->type();
             if(error_flag)
@@ -220,7 +230,14 @@ const_variable :
         $$.type_ptr = TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
-        }else {
+            $$.is_right = false;
+        } else {
+            // You cannot use variables to assign values to constants
+            if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
+                yyerror(real_ast,"The identifier is not a const variable.");
+                $$.is_right = false;
+                break;
+            }
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
@@ -236,7 +253,14 @@ const_variable :
         $$.type_ptr = TYPE_NONE;
         if(!symbol){
             yyerror(real_ast,"The identifier has not been declared.");
-        }else {
+            $$.is_right = false;
+        } else {
+            // You cannot use variables to assign values to constants
+            if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
+                yyerror(real_ast,"The identifier is not a const variable.");
+                $$.is_right = false;
+                break;
+            }
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
         }
@@ -437,7 +461,7 @@ type :
 record_body :
     {
         // record_body -> empty.
-        $$.record_info = nullptr;
+        $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
         if(error_flag)
             break;
         $$.record_body_node = new RecordBodyNode();
