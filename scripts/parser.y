@@ -1758,6 +1758,7 @@ factor:
         delete ref_stack;
         real_ast->libs()->Call(tmp->name());
         delete $3.type_ptr_list;
+        delete $3.is_lvalue_list;
 
     }
     | '(' expression ')'
