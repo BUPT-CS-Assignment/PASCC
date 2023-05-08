@@ -1928,9 +1928,20 @@ program: program_head program_body error
         location_pointer_refresh();
         table_set_queue.push(top_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
-        yyerror(real_ast,"A dot is expected at the end of the program .");
-        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
-        fprintf(stderr,"\t| %s",location_pointer);
+        int length=cur_line_info.size();
+        if(length==0){
+            length = last_line_info.size();
+            char msg[]="A dot is expected at the end of the program .";
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }else{        
+            yyerror(real_ast,"A dot is expected at the end of the program .");
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
     };
 
     /*定义语句相关*/
@@ -2499,7 +2510,9 @@ void yyerror_var(AST* real_ast,int line){
 }
 
 void location_pointer_refresh(){
-    auto length = cur_line_info.size()-yyleng;
+    int length = cur_line_info.size()-yyleng;
+    if(length<0)
+        length=0;
     memset(location_pointer,' ',length);
     memcpy(location_pointer+length,"^\n\0",3);
 }
