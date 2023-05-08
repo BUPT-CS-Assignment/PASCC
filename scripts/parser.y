@@ -2026,7 +2026,7 @@ type_declarations: TYPE  error
         while (yychar!= VAR && yychar!= YYEOF && yychar != FUNCTION && yychar!=PROCEDURE && yychar!=BEGIN_){
             yychar = yylex();
         }
-    }
+    };
 
 var_declarations: VAR error
     {
@@ -2102,7 +2102,7 @@ const_declaration: ID ASSIGNOP
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
     
 const_declaration: const_declaration ';' ID ASSIGNOP
     {
@@ -2113,7 +2113,7 @@ const_declaration: const_declaration ';' ID ASSIGNOP
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
      
 const_declaration: const_declaration ';' ID '=' error
     {
@@ -2151,7 +2151,7 @@ const_declaration: const_declaration ';'error
         else
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
 
 type_declaration: ID '=' error  
     {
@@ -2183,7 +2183,7 @@ type_declaration: ID ASSIGNOP
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
 
 type_declaration: type_declaration ';' ID ASSIGNOP 
     {
@@ -2194,7 +2194,7 @@ type_declaration: type_declaration ';' ID ASSIGNOP
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
      
 type_declaration: type_declaration ';' ID '=' error
     {
@@ -2230,7 +2230,7 @@ type_declaration: type_declaration ';' error
         else
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
 
 var_declaration: id_list ':' error
     {
@@ -2251,7 +2251,7 @@ var_declaration: id_list ':' error
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
-    }
+    };
 
 var_declaration: var_declaration ';' id_list ':' error
     {
@@ -2269,7 +2269,7 @@ var_declaration: var_declaration ';' id_list ':' error
         else
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
 
 var_declaration: var_declaration ';' error
     {
@@ -2287,7 +2287,7 @@ var_declaration: var_declaration ';' error
         else
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
+    };
 
 /*其他*/
 
@@ -2313,7 +2313,15 @@ type: ARRAY '[' error
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    };   
+    };
+
+type: ARRAY '[' periods ']'OF ID 
+    {
+        yyerror(real_ast,"Arrays of user-defined type are not supported");
+        location_pointer_refresh();
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }; 
 
 factor: '(' error 
     {
@@ -2342,10 +2350,24 @@ factor: '(' error
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
+    };
+
+statement: IF error
+    {
+        new_line_flag=false;
+        location_pointer_refresh();
+        yyerror(real_ast,"Invaild expression.");
+        while(yychar!=THEN && yychar!=';' && !new_line_flag)
+            yychar=yylex();
+    } 
+    THEN 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
     }
-
-
-
+    statement else_part
+    ;
+    
 
 
 /*statement相关*/
@@ -2389,105 +2411,6 @@ statement: variable ':'
         fprintf(stderr,"\t| %s",location_pointer);
     }
     ;    
-// /* The symbol of is expected.*/
-// statement:
-//     CASE error END
-//     {
-//         yyerror(real_ast,"The symbol of is expected");
-//     };
-// type:
-
-
-// /* An opening parenthesis is expected.*/
-// // program_head: PROGRAM ID error ';'
-// //     {
-// //         yyerror(real_ast,"An opening parenthesis is expected.");
-// //     };
-// // formal_parameter: error ')'
-// //     {
-// //         yyerror(real_ast,"An opening parenthesis is expected.");
-// //     };
-// statement:
-//     READ error variable_list ')'
-//     {
-//         yyerror(real_ast,"An opening parenthesis is expected.");
-//     }
-//     | WRITE error expression_list ')'
-//     {
-//         yyerror(real_ast,"An opening parenthesis is expected.");
-//     }
-//     | WRITELN error expression_list ')'
-//     {
-//         yyerror(real_ast,"An opening parenthesis is expected.");
-//     };
-// // factor:error expression ')'
-// //      {
-// //           yyerror(real_ast,"An opening parenthesis is expected.");
-// //      }
-//    | ID error ')'
-//    {
-//        yyerror(real_ast,"An opening parenthesis is expected.");
-//    }
-//     ;
-
-//     /* An opening bracket is expected ([).*/
-// type: ARRAY error periods ']' OF type
-//     {
-//         yyerror(real_ast,"An opening bracket is expected ([).");
-//     };
-
-//     /* A closing bracket is expected (]).*/
-// type: ARRAY '[' periods error OF type
-//     {
-//         yyerror(real_ast,"An closing bracket is expected (]).");
-//     };
-// // id_varpart: '[' expression_list error
-// //     {
-// //        yyerror(real_ast,"An closing bracket is expected (]).");
-// //     };
-
-
-
-//     /* The symbol then is expected.*/
-// // statement: IF error statement else_part
-// //     {
-// //         yyerror(real_ast,"The symbol then is expected.");
-// //     };
-//     /* The symbol until is expected.*/
-// // statement: REPEAT statement_list error expression
-// //     {
-// //         yyerror(real_ast,"The symbol until is expected.");
-// //     };
-
-//     /* The symbol do is expected.*/
-// statement: WHILE error statement
-//     {
-//         yyerror(real_ast,"The symbol do is expected.");
-//     }
-//     | FOR ID ASSIGNOP expression updown error statement
-//     {
-//         yyerror(real_ast,"The symbol do is expected.");
-//     };
-
-//     /* The symbol to (or downto) is expected.*/
-// statement: FOR ID ASSIGNOP error expression DO statement
-//     {
-//         yyerror(real_ast,"The symbol to (or downto) is expected.");
-//     };
-
-//     /* The symbol begin is expected.*/
-// // compound_statement: error statement_list END
-// //     {
-// //         yyerror(real_ast,"The symbol begin is expected.");
-// //     };
-
-//     /* The symbol and is expected.*/
-
-//     /* The symbol := is expected. */
-// statement: FOR ID error expression updown expression DO statement
-//     {
-//         yyerror(real_ast,"The symbol := is expected.");
-//     };
 
 %%
  
