@@ -1244,11 +1244,14 @@ variable:
                 //函数调用 类型检查
                 if (name!=table_set_queue.top()->tag()){
                     if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                    yyerror(real_ast,"Type check failed\n");
-                    yyerror(real_ast,"call_procedure_statement -> 'id'\n");
+                    	yyerror(real_ast,"Type check failed\n");
+                    	yyerror(real_ast,"call_procedure_statement -> 'id'\n");
+                    }else{
+                    	name += "()";
                     }
-                }          
-                name="__"+name+"__";
+                }else{
+                    name="__"+name+"__";
+                }
                 $$.is_lvalue = false;
                 real_ast->libs()->Call(tmp->name());
             } else {

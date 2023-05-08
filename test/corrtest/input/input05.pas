@@ -41,7 +41,7 @@ begin
   
   writeln("");
   writeln("function-test");  
-  a := testFunc();
+  a := testFunc;
   b := 24;
   writeln(gcd(a, b));
   swap(a, b);
