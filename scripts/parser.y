@@ -1248,6 +1248,8 @@ variable:
 
 id_varparts:
     {
+        if(error_flag)
+            break;
         // id_varparts -> empty.
         $$.var_parts = new std::vector<VarParts>();
         if(error_flag)
@@ -1256,6 +1258,8 @@ id_varparts:
     }
     | id_varparts id_varpart
     {
+        if(error_flag)
+            break;
         // id_varparts -> id_varparts id_varpart.
         //if($$.var_parts)
         if($1.var_parts){
@@ -1265,8 +1269,8 @@ id_varparts:
         }
         
         $$.var_parts->push_back(*($2.var_part));
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.id_varparts_node = new IDVarPartsNode();
         $$.id_varparts_node->append_child($1.id_varparts_node);
         $$.id_varparts_node->append_child($2.id_varpart_node);
@@ -1567,6 +1571,8 @@ expression:
 
 str_expression :
     STRING_ {
+        if(error_flag)
+            break;
         // str_expression -> string.
         $$.type_ptr = TYPE_STRINGLIKE;
         $$.length = $1.value.get<string>().length();
@@ -1581,8 +1587,8 @@ str_expression :
         $$.type_ptr = TYPE_STRINGLIKE;
         $$.length = $1.length + $3.value.get<string>().length();
         $$.is_lvalue = false;
-        if(error_flag)
-            break;
+        // if(error_flag)
+        //     break;
         $$.str_expression_node = new StrExpressionNode();
         $$.str_expression_node->append_child($1.str_expression_node);
         LeafNode *string_node = new LeafNode($3.value);
@@ -2308,7 +2314,7 @@ type_declaration: type_declaration ';' error
         fprintf(stderr,"\t| %s",location_pointer);
     };
     
-var_declaration:id_list ID
+var_declaration:id_list ID_or_type
     {
         location_pointer_refresh();
         yyerror(real_ast,"A ':' is expected.");
@@ -2316,23 +2322,7 @@ var_declaration:id_list ID
         fprintf(stderr,"\t| %s",location_pointer);
     };
 
-var_declaration:id_list type
-    {
-        location_pointer_refresh();
-        yyerror(real_ast,"A ':' is expected.");
-        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
-        fprintf(stderr,"\t| %s",location_pointer);
-    };    
-
-var_declaration: var_declaration ';' id_list type
-    {
-        location_pointer_refresh();
-        yyerror(real_ast,"A ':' is expected.");
-        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
-        fprintf(stderr,"\t| %s",location_pointer);
-    };
-
-var_declaration: var_declaration ';' id_list ID
+var_declaration: var_declaration ';' id_list ID_or_type
     {
         location_pointer_refresh();
         yyerror(real_ast,"A ':' is expected.");
@@ -2456,18 +2446,51 @@ type: ARRAY '[' periods ']' error
         fprintf(stderr,"\t| %s",location_pointer);
     };
 
-type: ARRAY '[' error
+type: ARRAY  error
     {
         new_line_flag=false;
         location_pointer_refresh();
         yyerror(real_ast,"Invaild periods.");
-        while(yychar!=']'&&yychar!=';'&&!new_line_flag)
+        while(yychar!=';' && !new_line_flag && yychar!=OF )
             yychar=yylex();
     }
-     ']' OF type 
+     OF type 
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+id_varpart: '[' error 
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';'|| yychar==ASSIGNOP)
+            yyerror(real_ast,"An ']' is expected.");
+        else
+            yyerror(real_ast,"Invaild expression.");
+        int left_num = 1;   // 括号匹配
+        while (yychar!=';' && yychar!=ASSIGNOP && new_line_flag==false && yychar!= YYEOF ){
+            if(yychar=='[') left_num++;
+            if(yychar==']'&& left_num == 1) break; 
+            yychar = yylex();
+        }
+        if(yychar==']'){
+            yychar=yylex();
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(yychar==ASSIGNOP){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
     };
 
 type: ARRAY '[' periods ']'OF ID 
