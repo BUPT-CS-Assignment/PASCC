@@ -1,11 +1,11 @@
 program testString;
 var
-  str: array[1..10] of char;
+  str: array[1..10] of array[1..20] of char;
   
 begin
-  read(str);
-  writeln(str);
+  read(str[1]);
+  writeln(str[1]);
   
-  str := "aaa" + "bbb" + "ccc";
-  writeln(str);
+  str[2] := "aaa" + "bbb" + "ccc";
+  writeln(str[2]);
 end.
