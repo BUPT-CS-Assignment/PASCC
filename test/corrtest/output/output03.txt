@@ -1,22 +1,4 @@
-if .. then .. else
-n < 5
-
-case .. of .. end
-n is between 1 and 3
-
-while .. do
-1
-2
 3
-
-repeat .. until
 1
 2
-
-for .. to/downto .. do
-3
-2
-1
-1
-2
-3
+a

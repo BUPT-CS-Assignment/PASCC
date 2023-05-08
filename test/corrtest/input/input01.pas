@@ -1,4 +1,4 @@
-program TestOperand;
+program TestOperator;
 var
   a, b: boolean;
   c, d: integer;

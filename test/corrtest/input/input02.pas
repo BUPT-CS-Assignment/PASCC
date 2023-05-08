@@ -1,11 +1,22 @@
-program TestArray;
+program TestRecord;
 var
-  a, b: array [1..10] of array ['a'..'z'] of record x: integer; y:char end;
+  rec1: record x: integer; y: char end;
+  rec2: record x: integer; y: char end; 
+  rec3: record x: record x1: integer; x2: real end; y: char end;
 begin
-  a[2]['a'].x := 10;
-  b := a;
-  b[3] := a[2];
-  b[5]['b'].y := 'c';
-  writeln(b[2]['a'].x);
-  writeln(b[5]['b'].y);
+  { record赋值 }
+  rec1.x := 2023;
+  rec1.y := 't';
+  rec2.x := rec1.x;
+  rec2.y := rec1.y;
+  writeln(rec2.x);
+  writeln(rec2.y);
+
+  { record嵌套 }
+  rec3.x.x1 := 2023;
+  rec3.x.x2 := 3.14;
+  rec3.y := 't';
+  writeln(rec3.x.x1);
+  writeln(rec3.x.x2);
+  writeln(rec3.y);
 end.

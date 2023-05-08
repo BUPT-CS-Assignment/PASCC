@@ -1,52 +1,11 @@
-program TestQsort;
+program testString;
+var
+  str: array[1..10] of array[1..20] of char;
   
-var 
-  n: integer;
-  a: array[0..10000] of integer;
+begin
+  read(str[1]);
+  writeln(str[1]);
   
-procedure quickSort(l, r: integer);
-var
-  i, j, pivot: integer;
-begin
-  if l < r then
-  begin
-    i := l;
-    j := r;
-    pivot := a[i];
-    while i < j do
-    begin
-      while (i < j) and (a[j] >= pivot) do
-        j := j - 1;
-      a[i] := a[j];
-      while (i < j) and (a[i] <= pivot) do
-        i := i + 1;
-      a[j] := a[i];
-    end;
-    a[i] := pivot;
-    quickSort(l, i - 1);
-    quickSort(i + 1, r);
-  end;
-end;
-
-procedure readData;
-var
-  i: integer;
-begin
-  read(n);
-  for i := 0 to n - 1 do
-    read(a[i]);
-end;
-
-procedure printData;
-var
-  i: integer;
-begin
-  for i := 0 to n - 1 do
-    write(a[i], " ");
-end;
-
-begin
-  readData;
-  quickSort(0, n - 1);
-  printData;
+  str[2] := "aaa" + "bbb" + "ccc";
+  writeln(str[2]);
 end.

@@ -1,44 +1,26 @@
-program TestFlowControl;
-var
-  n: integer;
+program TestArray;
+var  
+  arr1: array[1..3] of integer;  
+  arr2, arr3: array [1..10] of array ['a'..'z'] of record x: integer; y: char end; 
 begin
-  n := 3;
-
-  writeln("if .. then .. else");
-  if n <= 0 then writeln("n <= 0")
-  else 
-    if n >= 5 then writeln("n >= 5")
-    else writeln("n < 5");
-
-  writeln("");
-  writeln("case .. of .. end");
-  case n of
-    1, 2, 3: writeln("n is between 1 and 3");
-    4, 5, 6: writeln("n is between 4 and 6");
-    7: writeln("n is 7")
-  end;
-
-  writeln("");
-  writeln("while .. do");
-  n := 1;
-  while n <= 3 do
-  begin
-    writeln(n);
-    n := n + 1;
-  end;
-
-  writeln("");
-  writeln("repeat .. until");
-  n := 1;
-  repeat
-    writeln(n);
-    n := n + 1;
-  until n = 3;
-
-  writeln("");
-  writeln("for .. to/downto .. do");
-  for n := 3 downto 1 do
-    writeln(n);
-  for n := 1 to 3 do
-    writeln(n);
+  { 一维数组赋值 }
+  arr1[1] := 1;
+  arr1[2] := 2;
+  arr1[3] := 3;
+  writeln(arr1[3]);
+  
+  { 二维record数组赋值 }
+  arr2[1]['a'].x := 1;
+  arr2[1]['a'].y := 'a';
+  arr2[2]['b'].x := 2;
+  arr3[1]['a'].x := arr2[1]['a'].x;
+  writeln(arr3[1]['a'].x);
+  
+  { 二维数组行拷贝 }
+  arr3[2] := arr2[2];
+  writeln(arr3[2]['b'].x);
+  
+  { 二维数组拷贝 }
+  arr3 := arr2;
+  writeln(arr3[1]['a'].y);
 end.
