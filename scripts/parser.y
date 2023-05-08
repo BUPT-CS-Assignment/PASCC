@@ -697,7 +697,9 @@ var_declaration :
                 break;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
-            semantic_error(real_ast,"undefined type",$3.line_num,$3.column_num);
+            semantic_error(real_ast,"Undefined type",$3.line_num,$3.column_num);
+            $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
+            $$.pos_info = new std::unordered_map<std::string, std::pair<int,int>>();
         } else {
             $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
             $$.pos_info = new std::unordered_map<std::string, std::pair<int,int>>();
