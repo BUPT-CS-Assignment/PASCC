@@ -16,7 +16,7 @@ extern std::string cur_line_info;
 extern std::string last_line_info;
 
 std::stack<TableSet*> table_set_queue;
-TableSet* top_table_set = nullptr;
+TableSet* top_table_set = new TableSet("main",nullptr);
 
 int error_flag=0;
 int semantic_error_flag=0;
@@ -118,7 +118,6 @@ program_head :
         $$ = new ProgramHeadNode();
         LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
-        top_table_set = new TableSet("main",nullptr);
         table_set_queue.push(top_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());  
         
@@ -1937,7 +1936,6 @@ program_head: PROGRAM error
 program: program_head program_body error
     {
         location_pointer_refresh();
-        top_table_set = new TableSet("main",nullptr);
         table_set_queue.push(top_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
         int length=cur_line_info.size();
