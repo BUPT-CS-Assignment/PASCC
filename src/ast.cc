@@ -143,16 +143,19 @@ void VariableDeclarationNode::Format(FILE *dst) {
   // analyze current layer
   size_t last = child_list_.size() - 1;
   Node *tnode = child_list_[last];
-  vector<LeafNode *> idlist =
-      child_list_[last - 1]->DynamicCast<IdListNode>()->Lists();
+  vector<LeafNode *> idlist = child_list_[last - 1]->DynamicCast<IdListNode>()->Lists();
 
   if (list_type_ == ListType::ID) {
     tnode->Format(dst);
     PRINT(" ");
-    for (auto id : idlist)
-      id->Format(dst);
+    // idlist
+    for (int i = 0; i < idlist.size(); i++) {
+      idlist[i]->Format(dst);
+      if (i < idlist.size() - 1) {
+        PRINT(", ")
+      }
+    }
   } else {
-    // ListType::TYPE
     // TypeNode* tn = tnode->DynamicCast<TypeNode>()->base_type();
     TypeNode *tn = tnode->DynamicCast<TypeNode>();
     tn->base_type()->Format(dst);
@@ -169,22 +172,6 @@ void VariableDeclarationNode::Format(FILE *dst) {
     }
   }
   PRINT(";\n")
-
-  //  for (int idx = 0; idx < child_list_.size(); idx += 2) {
-  //    auto id_list_node = child_list_[idx]->DynamicCast<IdListNode>();
-  //    auto id_list = *id_list_node->IdList();
-  //    auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
-  //    auto base_type = type_node->base_type();
-  //    for (auto id_node : id_list) {
-  //      base_type->TransCode();
-  //      OUT(" ")
-  //      id_node->TransCode();
-  //      if (type_node->grammar_type() == TypeNode::GrammarType::ARRAY) {
-  //        type_node->PeriodsTransCode();
-  //      }
-  //      OUT(";\n")
-  //    }
-  //  }
 }
 
 // void TypeDeclarationsNode::TransCode() {
