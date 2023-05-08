@@ -3,7 +3,7 @@ const-test
 -3.14
 a
 -1
- 
+
 type and var - test
 2023
 1.10 2.20 3.30
