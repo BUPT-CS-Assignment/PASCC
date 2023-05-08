@@ -81,7 +81,8 @@ INT_NUM                 {digits}
 REAL_NUM                {digits}{fraction}
 
 /* 注释 */
-ANNO                    (\{[^}]*\})      
+ANNO_1                  (\{[^}]*\})      
+ANNO_2                  ("//"[^\n]*)
 
 /* 标识符 */
 ID                      ({letter}|[_])({letter}|{digit}|[_])*
@@ -146,7 +147,8 @@ SUBCATALOG              ".."
 {INT_NUM}               { cache_line(); to_int(); return INT_NUM; }
 {REAL_NUM}              { cache_line(); to_float(); return REAL_NUM; }
 
-{ANNO}                  { cache_line(); process_anno(); }
+{ANNO_1}                { cache_line(); process_anno(); }
+{ANNO_2}                { cache_line(); process_anno(); }
 
 {CHAR}                  { cache_line(); to_char(); return CHAR; }
 {STRING_}               { cache_line(); to_str_case_sensitive(); return STRING_; }
