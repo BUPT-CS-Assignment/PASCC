@@ -84,7 +84,7 @@ ANNO                    (\{[^}]*\})
 ID                      ({letter}|[_])({letter}|{digit}|[_])*
 
 /* 字符 */
-CHAR                    ('({letter}|{digit})')
+CHAR                    ('[^\\n]')
 /*字符串*/
 STRING_                  (\"([^\\\"\n]|(\\.))*\")
 
