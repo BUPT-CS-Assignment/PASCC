@@ -1212,6 +1212,7 @@ variable:
             }
             $$.type_ptr = tmp->type();
             $$.name = new std::string($1.value.get<string>());
+            real_ast->libs()->Call(*($$.name));
             string name = $1.value.get<string>()+"()";
             $$.variable_node = new VariableNode();
             LeafNode *id_node = new LeafNode(name);
