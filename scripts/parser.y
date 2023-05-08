@@ -1891,7 +1891,7 @@ program:error
     {
         location_pointer_refresh();
         new_line_flag=false;
-        yyerror(real_ast,"There are unrecoverable errors. Please check the code carefully!");
+        yyerror(real_ast,"There are unrecoverable errors. Please check the code carefully.");
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -1915,7 +1915,7 @@ program_head: PROGRAM error
         if(yychar==';')
             yyerror(real_ast,"An identifier is expected.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -1928,7 +1928,7 @@ program: program_head program_body error
         location_pointer_refresh();
         table_set_queue.push(top_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
-        yyerror(real_ast,"A dot is expected at the end of the program !");
+        yyerror(real_ast,"A dot is expected at the end of the program .");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
@@ -2068,7 +2068,7 @@ const_declaration: ID '=' error
         else if(yychar==';')
             yyerror(real_ast,"A const value is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2081,6 +2081,28 @@ const_declaration: ID '=' error
             fprintf(stderr,"\t| %s",location_pointer);
         }
     }; 
+
+const_declaration: ID ASSIGNOP 
+    {
+        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        location_pointer_refresh();
+    }
+    const_variable 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+    
+const_declaration: const_declaration ';' ID ASSIGNOP
+    {
+        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        location_pointer_refresh();
+    }
+    const_variable
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
      
 const_declaration: const_declaration ';' ID '=' error
     {
@@ -2091,7 +2113,7 @@ const_declaration: const_declaration ';' ID '=' error
         else if(yychar==';')
             yyerror(real_ast,"A const value is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2107,9 +2129,9 @@ const_declaration: const_declaration ';'error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar=='=')
-            yyerror(real_ast,"An identifier is expected here!");
+            yyerror(real_ast,"An identifier is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2127,7 +2149,7 @@ type_declaration: ID '=' error
         if(yychar==';')
             yyerror(real_ast,"A TYPE is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2151,6 +2173,17 @@ type_declaration: ID ASSIGNOP
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     }
+
+type_declaration: type_declaration ';' ID ASSIGNOP 
+    {
+        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        location_pointer_refresh();
+    }
+    type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
      
 type_declaration: type_declaration ';' ID '=' error
     {
@@ -2159,7 +2192,7 @@ type_declaration: type_declaration ';' ID '=' error
         if(yychar==';')
             yyerror(real_ast,"A TYPE is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2175,9 +2208,9 @@ type_declaration: type_declaration ';' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar=='=')
-            yyerror(real_ast,"An identifier is expected here!");
+            yyerror(real_ast,"An identifier is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2195,7 +2228,7 @@ var_declaration: id_list ':' error
         if(yychar==';')
             yyerror(real_ast,"A type identifier is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2216,7 +2249,7 @@ var_declaration: var_declaration ';' id_list ':' error
         if(yychar==';')
             yyerror(real_ast,"A type identifier is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2232,9 +2265,9 @@ var_declaration: var_declaration ';' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==':')
-            yyerror(real_ast,"An identifier is expected here!");
+            yyerror(real_ast,"An identifier is expected here.");
         else
-            yyerror(real_ast,"unknown error!");
+            yyerror(real_ast,"unknown error.");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2250,12 +2283,26 @@ var_declaration: var_declaration ';' error
 type: ARRAY '[' periods ']' error
     {
         location_pointer_refresh();
-        yyerror(real_ast,"The symbol 'of' is expected here!");
+        yyerror(real_ast,"The symbol 'of' is expected here.");
     } type
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
+
+type: ARRAY '[' error
+    {
+        new_line_flag=false;
+        location_pointer_refresh();
+        yyerror(real_ast,"Invaild periods.");
+        while(yychar!=']'&&yychar!=';'&&!new_line_flag)
+            yychar=yylex();
+    }
+     ']' OF type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };   
 
 factor: '(' error 
     {
@@ -2264,7 +2311,7 @@ factor: '(' error
         if(yychar==';')
             yyerror(real_ast,"An ')' is expected.");
         else
-            yyerror(real_ast,"Invaild expression!");
+            yyerror(real_ast,"Invaild expression.");
         int left_num = 1;   // 括号匹配
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF ){
             if(yychar=='(') left_num++;
