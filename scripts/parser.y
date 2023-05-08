@@ -2040,7 +2040,7 @@ var_declarations: VAR error
             fprintf(stderr,"\t| %s",location_pointer);
             break;
         }
-        else if(yychar==ID){
+        else if(yychar==ID){      
             char msg[] = "A ';' is expected here.";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
@@ -2070,6 +2070,22 @@ var_declarations: VAR error
         
     };
 
+const_declaration: ID const_variable
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A '=' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+const_declaration: const_declaration ';' ID const_variable
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A '=' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };     
+
 const_declaration: ID '=' error  
     {
         location_pointer_refresh();
@@ -2095,7 +2111,7 @@ const_declaration: ID '=' error
 
 const_declaration: ID ASSIGNOP 
     {
-        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        yyerror(real_ast,"Should be a '=', not a ':='.");
         location_pointer_refresh();
     }
     const_variable 
@@ -2106,7 +2122,7 @@ const_declaration: ID ASSIGNOP
     
 const_declaration: const_declaration ';' ID ASSIGNOP
     {
-        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        yyerror(real_ast,"Should be a '=', not a ':='.");
         location_pointer_refresh();
     }
     const_variable
@@ -2114,6 +2130,28 @@ const_declaration: const_declaration ';' ID ASSIGNOP
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
+
+const_declaration: ID ':' 
+    {
+        yyerror(real_ast,"Should be a '=', not a ':'.");
+        location_pointer_refresh();
+    }
+    const_variable 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+    
+const_declaration: const_declaration ';' ID ':'
+    {
+        yyerror(real_ast,"Should be a '=', not a ':'.");
+        location_pointer_refresh();
+    }
+    const_variable
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };    
      
 const_declaration: const_declaration ';' ID '=' error
     {
@@ -2153,6 +2191,22 @@ const_declaration: const_declaration ';'error
         fprintf(stderr,"\t| %s",location_pointer);
     };
 
+type_declaration: ID type
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A '=' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+type_declaration: type_declaration ';' ID type
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A '=' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };    
+
 type_declaration: ID '=' error  
     {
         location_pointer_refresh();
@@ -2176,7 +2230,7 @@ type_declaration: ID '=' error
 
 type_declaration: ID ASSIGNOP 
     {
-        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        yyerror(real_ast,"Should be a '=', not a ':='.");
         location_pointer_refresh();
     }
     type 
@@ -2187,7 +2241,7 @@ type_declaration: ID ASSIGNOP
 
 type_declaration: type_declaration ';' ID ASSIGNOP 
     {
-        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        yyerror(real_ast,"Should be a '=', not a ':='.");
         location_pointer_refresh();
     }
     type 
@@ -2195,6 +2249,28 @@ type_declaration: type_declaration ';' ID ASSIGNOP
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
+
+type_declaration: ID ':' 
+    {
+        yyerror(real_ast,"Should be a '=', not a ':'.");
+        location_pointer_refresh();
+    }
+    type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+type_declaration: type_declaration ';' ID ':' 
+    {
+        yyerror(real_ast,"Should be a '=', not a ':'.");
+        location_pointer_refresh();
+    }
+    type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };    
      
 type_declaration: type_declaration ';' ID '=' error
     {
@@ -2231,6 +2307,38 @@ type_declaration: type_declaration ';' error
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
+    
+var_declaration:id_list ID
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A ':' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+var_declaration:id_list type
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A ':' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };    
+
+var_declaration: var_declaration ';' id_list type
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A ':' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+var_declaration: var_declaration ';' id_list ID
+    {
+        location_pointer_refresh();
+        yyerror(real_ast,"A ':' is expected.");
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };     
 
 var_declaration: id_list ':' error
     {
@@ -2289,6 +2397,53 @@ var_declaration: var_declaration ';' error
         fprintf(stderr,"\t| %s",location_pointer);
     };
 
+var_declaration: id_list ASSIGNOP 
+    {
+        yyerror(real_ast,"Should be a '=', not a ':='.");
+        location_pointer_refresh();
+    }
+    ID_or_type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+var_declaration: var_declaration ';' id_list ASSIGNOP 
+    {
+        yyerror(real_ast,"Should be a '=', not a ':='.");
+        location_pointer_refresh();
+    }
+    ID_or_type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+var_declaration: ID '=' 
+    {
+        yyerror(real_ast,"Should be a ':', not a '='.");
+        location_pointer_refresh();
+    }
+    ID_or_type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+var_declaration: var_declaration ';' ID '=' 
+    {
+        yyerror(real_ast,"Should be a ':', not a '='.");
+        location_pointer_refresh();
+    }
+    ID_or_type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+ID_or_type:ID
+    | type
+    ;       
 /*其他*/
 
 type: ARRAY '[' periods ']' error
