@@ -1173,6 +1173,19 @@ statement:
         delete $3.type_ptr_list;
         delete $3.is_lvalue_list;
     };
+    | WRITELN '(' ')'
+    {
+	if(error_flag)
+	break;
+	$$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
+    }
+    | WRITELN
+    {
+	if(error_flag)
+	break;
+	$$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
+    };
+
 
 variable_list :
     variable
@@ -1630,7 +1643,20 @@ str_expression :
         $$.str_expression_node->append_child($1.str_expression_node);
         LeafNode *string_node = new LeafNode($3.value);
         $$.str_expression_node->append_child(string_node);
-    };
+    } | str_expression PLUS CHAR  {
+	// str_expression -> str_expression + char.
+	$$.type_ptr = TYPE_STRINGLIKE;
+	$$.length = $1.length + 1;
+	char c = $3.value.get<char>();
+	$3.value.set(std::string(1, c));
+	$$.is_lvalue = false;
+	// if(error_flag)
+	//     break;
+	$$.str_expression_node = new StrExpressionNode();
+	$$.str_expression_node->append_child($1.str_expression_node);
+	LeafNode *string_node = new LeafNode($3.value);
+	$$.str_expression_node->append_child(string_node);
+    }
 simple_expression:
     term
     {   

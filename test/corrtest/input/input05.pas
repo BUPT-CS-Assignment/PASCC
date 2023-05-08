@@ -35,15 +35,15 @@ begin
 end;
 
 begin
-  writeln("procedure-test");
+  writeln('procedure-test');
   testPro1;
   testPro2(2022);
   
-  writeln("");
-  writeln("function-test");  
+  writeln();
+  writeln('function-test');  
   a := testFunc;
   b := 24;
   writeln(gcd(a, b));
   swap(a, b);
-  writeln(a, " ", b);
+  writeln(a, ' ', b);
 end.
