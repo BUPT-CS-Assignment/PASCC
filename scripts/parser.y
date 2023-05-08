@@ -494,7 +494,7 @@ record_body :
             break;
         $$.record_body_node = new RecordBodyNode();
     }
-    | var_declaration
+    | var_declaration ';'
     {
         // record_body -> var_declaration.
         $$.record_info = $1.record_info;
@@ -672,7 +672,7 @@ var_declaration :
         $$.pos_info = $1.pos_info;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
-            semantic_error(real_ast,"undefined type",$5.line_num,$5.column_num);
+            semantic_error(real_ast,"Undefined type",$5.line_num,$5.column_num);
         } else {
             for (auto i : *($3.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
@@ -1446,12 +1446,14 @@ call_procedure_statement:
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
-        } else if(ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+        } else if (ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
                 yyerror(real_ast,"Type check failed\n");
                 yyerror(real_ast,"call_procedure_statement -> 'id'\n");
             }
+        } else {
+            semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
         }
         if(error_flag)
             break;

@@ -1,8 +1,8 @@
 program TestRecord;
 var
-  rec1: record x: integer; y: char end;
-  rec2: record x: integer; y: char end; 
-  rec3: record x: record x1: integer; x2: real end; y: char end;
+  rec1: record x: integer; y: char; end;
+  rec2: record x: integer; y: char; end; 
+  rec3: record x: record x1: integer; x2: real; end; y: char; end;
 begin
   { record赋值 }
   rec1.x := 2023;

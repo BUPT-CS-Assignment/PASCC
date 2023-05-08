@@ -9,8 +9,8 @@ const
 type 
   t1 = integer;
   t2 = array[1..3] of real;
-  t3 = record x: integer; y: char end;
-  t4 = record m1: t2; m2: t3 end;
+  t3 = record x: integer; y: char; end;
+  t4 = record m1: t2; m2: t3; end;
 
 var
   v1: t1;

@@ -1,7 +1,7 @@
 program TestArray;
 var  
   arr1: array[1..3] of integer;  
-  arr2, arr3: array [1..10] of array ['a'..'z'] of record x: integer; y: char end; 
+  arr2, arr3: array [1..10] of array ['a'..'z'] of record x: integer; y: char; end; 
 begin
   { 一维数组赋值 }
   arr1[1] := 1;
