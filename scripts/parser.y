@@ -1228,8 +1228,9 @@ variable:
             break;
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         string name = $1.value.get<string>();
+        $$.name = new std::string($1.value.get<string>());
+        $$.type_ptr = TYPE_ERROR;
         if(tmp == nullptr) {
-            $$.type_ptr = TYPE_ERROR;
             semantic_error(real_ast,"Variable \'"+name+ "\' not defined",$1.line_num,$1.column_num);
             break;
         } else {
@@ -1264,7 +1265,6 @@ variable:
             if(tmp->is_ref()){
                 name = "*("+name+")";
             }
-            $$.name = new std::string($1.value.get<string>());
         }
         // if(error_flag)
         //     break;
@@ -1819,17 +1819,16 @@ factor:
     {
         if(error_flag)
             break;
-        // factor -> id (expression_list).
-        // 类型检查
+        $$.is_lvalue = false;
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
-        if(tmp == nullptr) {
+        if(tmp == nullptr || tmp->symbol_type() != ObjectSymbol::SYMBOL_TYPE::FUNCTION) {
             semantic_error(real_ast,"No such function",$1.line_num,$1.column_num);
         }
         if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
+            break;
         }
-        $$.is_lvalue = false;
         $$.type_ptr = tmp->type();
         // if(error_flag)
         //     break;
