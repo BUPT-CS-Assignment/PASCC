@@ -25,19 +25,20 @@ class SymbolTableTemplate {
     return true;
   }
 
-  T *Find(std::string name) {
+  T *FindName(std::string name) {
     auto it = table_.find(name);
     if (it != table_.end()) return it->second;
     return nullptr;
   }
 
   T* operator[](std::string name) {
-    return Find(name);
+    return FindName(name);
   }
 
  protected:
   std::string tag_;
   std::unordered_map<std::string, T*> table_;
+
 };
 
 class TypeTable : public SymbolTableTemplate<TypeTemplate> {
@@ -52,7 +53,21 @@ public:
         delete it->second;
     }
   }
+
+  template <typename T>
+  T* Find(std::string name) {
+    auto entry = (*this)[name];
+    if(entry == nullptr) return nullptr;
+    if(std::is_same<T, TypeTemplate>::value ||
+       std::is_same<T, BasicType>::value && entry->template_type() == TypeTemplate::TYPE::BASIC ||
+       std::is_same<T, ArrayType>::value && entry->template_type() == TypeTemplate::TYPE::ARRAY ||
+       std::is_same<T, RecordType>::value && entry->template_type() == TypeTemplate::TYPE::RECORD){
+      return dynamic_cast<T*>(entry);
+    }
+    return nullptr;
+  }
 };
+
 class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {
 public:
   SymbolTable(std::string tag = "") : SymbolTableTemplate(tag+"_symbols") {
@@ -63,6 +78,18 @@ public:
     for(auto it = table_.begin(); it != table_.end(); ++it) {
       delete it->second;
     }
+  }
+
+  template <typename T>
+  T* Find(std::string name) {
+    auto entry = (*this)[name];
+    if(entry == nullptr) return nullptr;
+    if(std::is_same<T, ObjectSymbol>::value ||
+       std::is_same<T, FunctionSymbol>::value && entry->symbol_type()== ObjectSymbol::SYMBOL_TYPE::FUNCTION ||
+       std::is_same<T, ConstSymbol>::value && entry->symbol_type() == ObjectSymbol::SYMBOL_TYPE::CONST ){
+      return dynamic_cast<T*>(entry);
+    }
+    return nullptr;
   }
 };
 
@@ -85,19 +112,15 @@ class TableSet {
 
   template<typename T>
   bool Insert(std::string name,T* symbol){
-    ObjectSymbol* object_flag = symbols_.Find(name);
+    ObjectSymbol* object_flag = symbols_.FindName(name);
     TypeTemplate* type_flag = SearchEntry<TypeTemplate>(name);
     if (object_flag != nullptr || type_flag != nullptr) {
       return false;
     }
-    if(std::is_same<T,ObjectSymbol>::value||
-       std::is_same<T,ConstSymbol>::value||
-       std::is_same<T,FunctionSymbol>::value) {
+    if(std::is_same<T,ObjectSymbol>::value|| std::is_same<T,ConstSymbol>::value|| std::is_same<T,FunctionSymbol>::value) {
       symbols_.Insert(name, (ObjectSymbol*)symbol);
-    } else if (std::is_same<T, TypeTemplate>::value ||
-               std::is_same<T, ArrayType>::value ||
-               std::is_same<T,BasicType>::value ||
-               std::is_same<T, RecordType>::value) {
+    } else if (std::is_same<T, TypeTemplate>::value || std::is_same<T, ArrayType>::value ||
+               std::is_same<T,BasicType>::value || std::is_same<T, RecordType>::value) {
       def_types_.Insert(name, (TypeTemplate*)symbol);
     }
     return true;
@@ -112,17 +135,13 @@ class TableSet {
    */
   template <typename T> T* SearchEntry(std::string name, bool* local_zone = nullptr) {
     if(local_zone != nullptr) *local_zone = true;
-    if(std::is_same<T,ObjectSymbol>::value||
-       std::is_same<T,ConstSymbol>::value||
-       std::is_same<T,FunctionSymbol>::value) {
-      auto symbol_entry = symbols_.Find(name);
+    if(std::is_same<T,ObjectSymbol>::value|| std::is_same<T,ConstSymbol>::value|| std::is_same<T,FunctionSymbol>::value) {
+      auto symbol_entry = symbols_.Find<T>(name);
       if (symbol_entry != nullptr)  return (T*)symbol_entry;
-    } else if (std::is_same<T, TypeTemplate>::value ||
-               std::is_same<T, ArrayType>::value ||
-               std::is_same<T, BasicType>::value ||
-               std::is_same<T, RecordType>::value) {
-      auto type_entry = def_types_.Find(name);
-      if (type_entry != nullptr)  return (T*)type_entry;
+    } else if (std::is_same<T, TypeTemplate>::value || std::is_same<T, ArrayType>::value ||
+               std::is_same<T, BasicType>::value || std::is_same<T, RecordType>::value) {
+      auto type_entry = def_types_.Find<T>(name);
+      if(type_entry != nullptr) return (T*)type_entry;
     }
 
     if(local_zone != nullptr) *local_zone = false;

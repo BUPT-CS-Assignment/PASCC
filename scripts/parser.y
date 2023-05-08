@@ -236,15 +236,10 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared.",$2.line_num,$2.column_num);
+            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared or  is not a const variable.",$2.line_num,$2.column_num);
             $$.is_right = false;
         } else {
             // You cannot use variables to assign values to constants
-            if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' is not a const variable.",$2.line_num,$2.column_num);
-                $$.is_right = false;
-                break;
-            }
             $$.value = symbol->value();
             $$.type_ptr = symbol->type();
             // if(error_flag)
@@ -260,15 +255,10 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared.",$2.line_num,$2.column_num);
+            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared or is not a const variable.",$2.line_num,$2.column_num);
             $$.is_right = false;
         } else {
             // You cannot use variables to assign values to constants
-            if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' is not a const variable.",$2.line_num,$2.column_num);
-                $$.is_right = false;
-                break;
-            }
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
             //$$.const_value = -(symbol->value());
@@ -285,15 +275,9 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has not been declared.",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has not been declared or is not a const variable.",$1.line_num,$1.column_num);
             $$.is_right = false;
         } else {
-            // You cannot use variables to assign values to constants
-            if (ObjectSymbol::SYMBOL_TYPE::CONST != symbol->symbol_type()){
-                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' is not a const variable.",$1.line_num,$1.column_num);
-                $$.is_right = false;
-                break;
-            }
             $$.type_ptr = symbol->type();
             $$.value = symbol->value();
         }
@@ -1483,7 +1467,7 @@ call_procedure_statement:
         if(tmp == nullptr) {
             semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
         }
-        if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
+        if(!tmp || !tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
         }
@@ -1510,15 +1494,13 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
-        } else if (ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
+            semantic_error(real_ast,"No such procedure named " + $1.value.get<string>(),$1.line_num,$1.column_num);
+        } else {
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
                 yyerror(real_ast,"Type check failed\n");
                 yyerror(real_ast,"call_procedure_statement -> 'id'\n");
             }
-        } else {
-            semantic_error(real_ast,"No such procedure",$1.line_num,$1.column_num);
         }
         if(error_flag)
             break;
@@ -1867,17 +1849,17 @@ factor:
             break;
         $$.is_lvalue = false;
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
-        if(tmp == nullptr || tmp->symbol_type() != ObjectSymbol::SYMBOL_TYPE::FUNCTION) {
-            semantic_error(real_ast,"No such function",$1.line_num,$1.column_num);
-        }
-        if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
+        if(tmp == nullptr) {
+            semantic_error(real_ast,"No such function named " + $1.value.get<string>(),$1.line_num,$1.column_num);
+            break;
+        }else if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
             yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
             break;
         }
+        //if(error_flag)
+        //   break;
         $$.type_ptr = tmp->type();
-        // if(error_flag)
-        //     break;
         $$.factor_node = new FactorNode(FactorNode::GrammarType::ID_EXP_LIST);
         LeafNode *id_node = new LeafNode($1.value);
         $$.factor_node->append_child(id_node);
