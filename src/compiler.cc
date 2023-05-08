@@ -36,8 +36,13 @@ Compiler::Compiler(std::string dir) {
 int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   AST ast;
-  bool res;
-  yyparse(&ast);
+  try{
+    yyparse(&ast);
+  }catch (std::exception& e){
+    log_error("internal error: %s", e.what());
+    return -1;
+  }
+
   if(ast.Valid()){
     log_info("syntax assert success.");
   }else{
