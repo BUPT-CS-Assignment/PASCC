@@ -25,7 +25,7 @@ begin
   else gcd := gcd(b, a mod b);
 end;
 
-function swap(var x, y: integer): integer;
+procedure swap(var x, y: integer);
 var
   temp: integer;
 begin
@@ -41,7 +41,7 @@ begin
   
   writeln("");
   writeln("function-test");  
-  a := testFunc;
+  a := testFunc();
   b := 24;
   writeln(gcd(a, b));
   swap(a, b);

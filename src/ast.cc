@@ -239,9 +239,23 @@ void BasicTypeNode::Format(FILE *dst) {
 void PeriodNode::Format(FILE *dst) { PRINT("[%d]", len_) }
 
 void SubprogramDeclarationNode::Format(FILE *dst) {
+  auto headnode = child_list_[0]->DynamicCast<SubprogramHeadNode>();
+  bool func_flag = (headnode->grammar_type() == SubprogramHeadNode::GrammarType::FUNCTION);
+  string id;
+  BasicType* type = nullptr;
+  if(func_flag){
+    id = headnode->id();
+    id = "__" + id + "__";
+    type = headnode->get(2)->DynamicCast<BasicTypeNode>()->type();
+  }
+
   FormatAt(0, dst);
   PRINT("{\n")
+  if(func_flag)
+    PRINT("%s %s;\n", type->type_name().c_str(), id.c_str())
   FormatAt(1, dst);
+  if(func_flag)
+    PRINT("return %s;\n",id.c_str())
   PRINT("}\n")
 }
 
@@ -309,7 +323,8 @@ void StatementNode::Format(FILE *dst) {
   switch (grammar_type_) {
   case GrammarType::EPSILON:
     return;
-  case GrammarType::VAR_ASSIGN_OP_EXP: {
+  case GrammarType::VAR_ASSIGN_OP_EXP:
+  case GrammarType::FUNC_ASSIGN_OP_EXP:{
     auto exp = child_list_[1]->DynamicCast<ExpressionNode>();
     switch (exp->target_type()) {
     case ExpressionNode::TargetType::EXPRESSION: { // other expression
@@ -340,12 +355,12 @@ void StatementNode::Format(FILE *dst) {
     PRINT(";\n")
     break;
   }
-  case GrammarType::FUNC_ASSIGN_OP_EXP: {
-    PRINT("return ")
-    FormatAt(1, dst);
-    PRINT(";\n");
-    break;
-  }
+//  case GrammarType::FUNC_ASSIGN_OP_EXP: {
+//    PRINT("return ")
+//    FormatAt(1, dst);
+//    PRINT(";\n");
+//    break;
+//  }
   case GrammarType::PROCEDURE_CALL:
   case GrammarType::COMPOUND_STATEMENT: {
     FormatAt(0, dst);

@@ -776,7 +776,10 @@ subprogram_head :
         table_set_queue.push(now_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
         FunctionSymbol* tmp2 = new FunctionSymbol(*tmp);
-        table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp2);
+        string tag = $2.value.get<string>();
+        table_set_queue.top()->Insert<FunctionSymbol>(tag, tmp2);
+        ObjectSymbol* tmp3 = new ObjectSymbol("__"+tag+"__", $5.type_ptr, $2.line_num);
+        table_set_queue.top()->Insert<ObjectSymbol>("__"+tag+"__", tmp3);
         if ($3.parameters){
             int cnt = 0;
             for (auto i : *($3.parameters)){
@@ -796,7 +799,7 @@ subprogram_head :
         if(error_flag)
             break;
         $$ = new SubprogramHeadNode(SubprogramHeadNode::GrammarType::FUNCTION);
-        $$.set_id($2.value.get<string>());
+        $$->set_id($2.value.get<string>());
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
