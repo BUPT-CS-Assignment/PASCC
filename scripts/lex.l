@@ -1,6 +1,7 @@
 %option case-insensitive
 %{   
 #include "parser.h"
+#include "log.h"
 #include "parser.tab.h"
 
 int last_line_count;    
@@ -204,7 +205,7 @@ void wrap()
 
 void process_anno()
 {
-    printf("ANNO\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count);
+    log_debug("ANNO\t\t%s\t\t\t%d\t\t%d", yytext, line_count, char_count);
     for(i = 0; i < strlen(yytext); i++)
     {
         if(yytext[i] == '\n') wrap();

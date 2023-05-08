@@ -209,7 +209,7 @@ std::vector<TypeTemplate*>* PTR_COLLECTOR = nullptr;
 OperationMap operation_map;
 
 void TypeInit() {
-  log_debug("initializing basic types and operation map");
+  log_set_level(LOG_INFO);
   TYPE_ERROR = nullptr;
 
   TYPE_BOOL = new BasicType(BasicType::BASIC_TYPE::BOOL);
