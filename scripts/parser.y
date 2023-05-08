@@ -2140,6 +2140,17 @@ type_declaration: ID '=' error
             fprintf(stderr,"\t| %s",location_pointer);
         }
     }; 
+
+type_declaration: ID ASSIGNOP 
+    {
+        yyerror(real_ast,"The symbol := is used in assignment statements only, but not in declarations.");
+        location_pointer_refresh();
+    }
+    type 
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
      
 type_declaration: type_declaration ';' ID '=' error
     {
@@ -2287,9 +2298,39 @@ statement: variable ASSIGNOP type
         location_pointer_refresh();
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
+    };
+
+statement: variable ASSIGNOP error
+    {
+        location_pointer_refresh();
+        new_line_flag=false;
+        if(yychar==';')
+            yyerror(real_ast,"A expression is expected here.");
+        else
+            yyerror(real_ast,"Invaild expression.");
+        while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
+            yychar = yylex();
+        }
+        if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else if(new_line_flag){
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+    };
+
+statement: variable ':' 
+    {
+        yyerror(real_ast,"No space between : and =.");
+        location_pointer_refresh();
+    } '=' expression
+    {
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
     }
-
-
+    ;    
 // /* The symbol of is expected.*/
 // statement:
 //     CASE error END
