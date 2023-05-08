@@ -73,6 +73,7 @@ void ProgramBodyNode::Format(FILE *dst) {
   FormatAt(3, dst); // sub prog decl
   PRINT("int main() {\n")
   FormatAt(4, dst); // comp stat
+  PRINT("return 0;\n")
   PRINT("}\n")
 }
 
