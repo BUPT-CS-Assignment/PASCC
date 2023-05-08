@@ -796,6 +796,7 @@ subprogram_head :
         if(error_flag)
             break;
         $$ = new SubprogramHeadNode(SubprogramHeadNode::GrammarType::FUNCTION);
+        $$.set_id($2.value.get<string>());
         LeafNode *leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         $$->append_child($3.formal_parameter_node);
@@ -1191,11 +1192,36 @@ variable_list :
         if($3.name) delete $3.name;
     };
 variable:
-    ID id_varparts
+    ID '('')'
+    {
+        if (error_flag) break;
+        FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
+        $$.type_ptr = TYPE_ERROR;
+        $$.is_lvalue = false;
+        if(tmp == nullptr){
+            semantic_error(real_ast,"Function \'"+$1.value.get<string>()+"\' not defined",$1.line_num,$1.column_num);
+            break;
+        }
+        if(tmp->type() != nullptr && tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::FUNCTION){
+            if(!tmp->AssertParams()){
+                semantic_error(real_ast,"Function call failed",$1.line_num,$1.column_num);
+                break;
+            }
+            $$.type_ptr = tmp->type();
+            $$.name = new std::string($1.value.get<string>());
+            string name = $1.value.get<string>()+"()";
+            $$.variable_node = new VariableNode();
+            LeafNode *id_node = new LeafNode(name);
+            $$.variable_node->append_child(id_node);
+        } else {
+            semantic_error(real_ast,"Function \'"+$1.value.get<string>()+"\' not defined",$1.line_num,$1.column_num);
+        }
+         
+    }
+    | ID id_varparts
     {
         if(error_flag)
             break;
-        // variable -> id id_varparts.
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($1.value.get<string>());
         string name = $1.value.get<string>();
         if(tmp == nullptr) {
@@ -1216,8 +1242,8 @@ variable:
                     yyerror(real_ast,"Type check failed\n");
                     yyerror(real_ast,"call_procedure_statement -> 'id'\n");
                     }
-                }            
-                name+="()";
+                }          
+                name="__"+name+"__";
                 $$.is_lvalue = false;
                 real_ast->libs()->Call(tmp->name());
             } else {
