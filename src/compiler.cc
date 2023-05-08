@@ -29,7 +29,7 @@ Compiler::Compiler(std::string dir) {
   }else{
     cur_dir_ = dir;
   }
-  log_info("compiler: current dir : %s", cur_dir_.c_str());
+  log_debug("compiler: current dir : %s", cur_dir_.c_str());
 }
 
 

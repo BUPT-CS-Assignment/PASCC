@@ -1,4 +1,5 @@
-%{	
+%{
+#include "log.h"
 #include"parser.h"
 using namespace pascals;
 using namespace pascals::ast;
@@ -16,6 +17,7 @@ extern std::string cur_line_info;
 extern std::string last_line_info;
 
 std::stack<TableSet*> table_set_queue;
+int _ = (log_set_level(LOG_INFO), 0);
 TableSet* top_table_set = new TableSet("main",nullptr);
 
 int error_flag=0;
