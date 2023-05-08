@@ -2534,25 +2534,60 @@ factor: '(' error
         }
     };
 
+
+/*statement相关*/
+// compound_statement: BEGIN_ statement_list END
+
+// IF expression THEN statement else_part
 statement: IF error
     {
         new_line_flag=false;
         location_pointer_refresh();
-        yyerror(real_ast,"Invaild expression.");
-        while(yychar!=THEN && yychar!=';' && !new_line_flag)
+        while(yychar!=THEN && !new_line_flag&&yychar!=';')
             yychar=yylex();
-    } 
-    THEN 
+        if(yychar==THEN){
+            yyerror(real_ast,"Invaild expression.");
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+            yychar=yylex();
+        }
+        else if(yychar==';'){
+            char msg[] = "Invaild statement.There might be A 'THEN' missing";
+            int length = last_line_info.size();
+            fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+            memset(location_pointer,' ',length);
+            memcpy(location_pointer+length,"^\n\0",3);
+            fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        else{
+            yyerror(real_ast,"unknown error.");
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+        }
+        while(yychar!=';'&&yychar!=END)
+            yychar=yylex();
+    }
+    ;
+// REPEAT statement_list UNTIL expression
+statement: REPEAT error 
     {
+        new_line_flag=false;
+        if(yychar=='='||yychar==RELOP||yychar==END)
+            yyerror(real_ast,"Invaild statement.There might be A 'UNTIL' missing");
+        else
+            yyerror(real_ast,"unknown error");
+        location_pointer_refresh();
+        while(yychar!=';'&&!new_line_flag && yychar!=END)
+            yychar=yylex();
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
-    }
-    statement else_part
-    ;
-    
+    };
 
+// statement:FOR ID ASSIGNOP expression updown expression DO statement 
 
-/*statement相关*/
+// WHILE expression DO statement
+ 
 
 statement: variable ASSIGNOP type
     {

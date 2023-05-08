@@ -6,6 +6,8 @@
 int last_line_count;    
 int line_count = 1;
 int char_count = 1;
+int left_brackets_num=0;
+int left_Mbrackets_num=0;
 bool new_line_flag;
 int i;
 std::string cur_line_info;
@@ -97,7 +99,7 @@ MULOP                   ("*"|"/"|"div"|"mod"|"and")
 ASSIGNOP                ":="
 
 /* 分隔符 */
-SEP                     (";"|"."|"("|")"|","|":"|"["|"]")
+SEP                     (";"|"."|","|":")
 SUBCATALOG              ".."
   
 %% 
@@ -159,13 +161,33 @@ SUBCATALOG              ".."
 {SEP}                   { cache_line(); to_str(); return yytext[0]; }
 {SUBCATALOG}            { cache_line(); to_str(); return SUBCATALOG; }
 
+("[")                   { cache_line(); to_str(); left_Mbrackets_num++;return yytext[0];}    
+("(")                   { cache_line(); to_str(); left_brackets_num++;return yytext[0];}
+("]")                   { 
+                            cache_line(); to_str(); 
+                            left_Mbrackets_num--;
+                            if(left_Mbrackets_num<0){
+                                left_Mbrackets_num=0;
+                                print_error("A'[' is expected.");
+                            }
+                            return yytext[0];
+                        }
+(")")                   { 
+                            cache_line(); to_str(); 
+                            left_brackets_num--;
+                            if(left_brackets_num<0){
+                                left_brackets_num=0;
+                                print_error("A'(' is expected.");
+                            }
+                            return yytext[0];
+                        }
+
 ('')                                            { cache_line(); print_error("Illegal character constant"); }
 ('{letter}({letter}|[^{letter}'])+')            { cache_line(); print_error("Illegal character constant"); }
 ('[^{letter}']({letter}|[^{letter}'])*')        { cache_line(); print_error("Illegal character constant"); }
 
 (\{[^}]*)               { cache_line(); print_error("Unclosed comment"); }
 ('[^']*)                { cache_line(); print_error("Unclosed character constant"); }
-
 .                       { cache_line(); print_error("Illegal character"); char_count++; }
 
 %%
