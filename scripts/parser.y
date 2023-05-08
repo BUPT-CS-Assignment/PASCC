@@ -1125,7 +1125,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.variable_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expexted in READ",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"BasicType is expected in READ",$1.line_num,$1.column_num);
         }  
         $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
         $$->append_child($3.variable_list_node);
@@ -1136,7 +1136,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.variable_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expexted in READLN",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"BasicType is expected in READLN",$1.line_num,$1.column_num);
         }
         $$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
         $$->append_child($3.variable_list_node);
@@ -1147,7 +1147,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.expression_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expexted in WRITE",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"BasicType is expected in WRITE",$1.line_num,$1.column_num);
         }
         
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
@@ -1160,7 +1160,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.expression_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expexted in WRITELN",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"BasicType is expected in WRITELN",$1.line_num,$1.column_num);
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
         $$->append_child($3.expression_list_node);
