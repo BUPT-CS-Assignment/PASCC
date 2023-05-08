@@ -36,11 +36,12 @@ Compiler::Compiler(std::string dir) {
 int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   AST ast;
-
-  if(yyparse(&ast) == 0){
-    log_info("syntax assert no-error");
+  bool res;
+  yyparse(&ast);
+  if(ast.Valid()){
+    log_info("syntax assert success.");
   }else{
-    log_error("syntax error");
+    log_error("syntax error.");
     return -1;
   }
   // ast format

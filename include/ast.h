@@ -73,6 +73,7 @@ public:
     if (root_ != nullptr)
       delete root_;
   }
+  bool Valid(){return root_ != nullptr;}
   Node *root() { return root_; }
   PStdLibs *libs() { return &libs_; }
   void set_root(Node *root) { root_ = root; }
