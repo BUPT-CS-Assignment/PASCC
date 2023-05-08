@@ -112,15 +112,30 @@ program :
         delete top_table_set;
     };
 program_head :
-    PROGRAM ID ';' {
+    PROGRAM ID '(' id_list ')' ';' {
+    	if(error_flag)
+	    break;
+        $$ = new ProgramHeadNode();
+        LeafNode* leaf_node = new LeafNode($2.value);
+        $$->append_child(leaf_node);
+        table_set_queue.push(top_table_set);
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
+    } | PROGRAM ID '('  ')' ';' {
+	if(error_flag)
+	    break;
+        $$ = new ProgramHeadNode();
+        LeafNode* leaf_node = new LeafNode($2.value);
+        $$->append_child(leaf_node);
+        table_set_queue.push(top_table_set);
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
+    } | PROGRAM ID ';' {
         if(error_flag)
             break;
         $$ = new ProgramHeadNode();
         LeafNode* leaf_node = new LeafNode($2.value);
         $$->append_child(leaf_node);
         table_set_queue.push(top_table_set);
-        real_ast->libs()->Preset(table_set_queue.top()->symbols());  
-        
+        real_ast->libs()->Preset(table_set_queue.top()->symbols());
     }
 program_body :
     const_declarations type_declarations var_declarations 
