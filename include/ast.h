@@ -526,9 +526,8 @@ public:
   //    SINGLE_CON,   //constlist → const_variable
   //    MULTIPLE_CON, //constlist → constlist , const_variable
   //  };
-  // ConstListNode(GrammarType gt) : grammar_type_(gt) {}
-  std::vector<Node *> *Consts() { return &child_list_; }
-  void Format_Constlist(FILE *dst, StatementNode *statement);
+  void Format(FILE *dst) override;
+
 };
 
 class UpdownNode : public Node {

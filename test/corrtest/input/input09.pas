@@ -42,7 +42,7 @@ var
   i: integer;
 begin
   for i := 0 to n - 1 do
-    write(a[i], " ");
+    write(a[i], ' ');
 end;
 
 begin

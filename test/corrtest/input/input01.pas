@@ -14,7 +14,7 @@ begin
   g := 'a';
   h := 'b';
 
-  writeln("bool operand");
+  writeln('bool operand');
   writeln(a and b);
   writeln(a or b);
   writeln(not a);
@@ -25,7 +25,7 @@ begin
   writeln(a <= b);
   writeln(a >= b);
 
-  writeln("int operand");
+  writeln('int operand');
   writeln(+c);
   writeln(-c);
   writeln(c + d);
@@ -41,7 +41,7 @@ begin
   writeln(c <= d);
   writeln(c >= d);
 
-  writeln("real operand");
+  writeln('real operand');
   writeln(e + f);
   writeln(e - f);
   writeln(e * f);
@@ -53,7 +53,7 @@ begin
   writeln(e <= f);
   writeln(e >= f);
 
-  writeln("char operand");
+  writeln('char operand');
   writeln(g = h);
   writeln(g <> h);
   writeln(g < h);
@@ -61,7 +61,7 @@ begin
   writeln(g > h);
   writeln(g >= h);
 
-  writeln("real int operand");
+  writeln('real int operand');
   writeln(e + c);
   writeln(e - c);
   writeln(e * c);
@@ -73,7 +73,7 @@ begin
   writeln(e <= c);
   writeln(e >= c);
 
-  writeln("int real operand");
+  writeln('int real operand');
   writeln(c + e);
   writeln(c - e);
   writeln(c * e);

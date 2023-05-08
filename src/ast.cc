@@ -411,6 +411,10 @@ void StatementNode::Format(FILE *dst) {
   }
   case GrammarType::WRITE_STATEMENT:
   case GrammarType::WRITELN_STATEMENT: {
+    if(child_list_.size() == 0){
+      PRINT("printf(\"\\n\");\n")
+      break;
+    }
     auto *elnode = child_list_[0]->DynamicCast<ExpressionListNode>();
     if (grammar_type_ == GrammarType::WRITELN_STATEMENT) {
       PRINT("printf(\"%s\\n\"", elnode->FormatString().c_str())
@@ -460,7 +464,7 @@ string VariableListNode::FormatString() {
                        ? "%c"
                        : throw std::runtime_error(
                              "ExpressionListNode: FormatString() : error type");
-    format += chfmt + " ";
+    format += chfmt;
   }
   return format;
 }
@@ -516,11 +520,18 @@ void IDVarPartNode::Format(FILE *dst) {
 }
 
 void BranchNode::Format(FILE *dst) {
-  for (int id = 0; id < child_list_.size(); id += 2) {
-    auto const_list = child_list_[id]->DynamicCast<ConstListNode>();
-    auto statement = child_list_[id + 1]->DynamicCast<StatementNode>();
-    const_list->Format_Constlist(dst, statement);
-  }
+  FormatAt(0, dst);
+  PRINT("{\n")
+  FormatAt(1, dst);
+  PRINT("break;\n}\n")
+}
+
+void ConstListNode::Format(FILE *dst) {
+  if(child_list_.size() == 2)
+    FormatAt(0, dst);
+  PRINT("case ")
+  FormatAt(-1, dst);
+  PRINT(":")
 }
 
 void ProcedureCallNode::Format(FILE *dst) {
@@ -648,24 +659,6 @@ void FactorNode::Format(FILE *dst) {
 
   default:
     break;
-  }
-}
-
-void ConstListNode::Format_Constlist(FILE *dst, StatementNode *statement) {
-  if (child_list_.size() == 1) {
-    PRINT("case ")
-    child_list_[0]->Format(dst);
-    PRINT(":\n")
-    statement->Format(dst);
-    PRINT("break;\n")
-  } else {
-    child_list_[0]->DynamicCast<ConstListNode>()->Format_Constlist(dst,
-                                                                   statement);
-    PRINT("case ")
-    child_list_[1]->Format(dst);
-    PRINT(":\n")
-    statement->Format(dst);
-    PRINT("break;\n")
   }
 }
 

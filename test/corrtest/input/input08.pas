@@ -5,7 +5,6 @@ var
 begin
   read(str[1]);
   writeln(str[1]);
-  
-  str[2] := "aaa" + "bbb" + "ccc";
+  str[2] := 'aaa' + 'b' + 'b' + 'b' + 'ccc';
   writeln(str[2]);
 end.

@@ -90,7 +90,7 @@ ID                      ({letter}|[_])({letter}|{digit}|[_])*
 /* 字符 */
 CHAR                    ('[^\\n]')
 /*字符串*/
-STRING_                  (\"([^\\\"\n]|(\\.))*\")
+STRING_                  (\'([^\\\'\n]|(\\.)){2,}\')
 
 
 /* 运算符 */
@@ -224,7 +224,7 @@ void cache_line()
 
 void print_error(const char *msg)
 {
-    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s - %s\n", line_count, char_count, msg, yytext); 
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s: %s\n", line_count, char_count, msg, yytext);
 }
 
 void to_str()
