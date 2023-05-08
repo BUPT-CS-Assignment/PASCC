@@ -81,7 +81,7 @@ REAL_NUM                {digits}{fraction}
 ANNO                    (\{[^}]*\})      
 
 /* 标识符 */
-ID                      {letter}({letter}|{digit})*
+ID                      ({letter}|[_])({letter}|{digit}|[_])*
 
 /* 字符 */
 CHAR                    ('({letter}|{digit})')
