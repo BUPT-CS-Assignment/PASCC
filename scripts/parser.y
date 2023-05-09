@@ -992,11 +992,11 @@ statement:
         // 类型检查
         // statement -> variable assignop expression.d
         bool var_flag = ($1.type_ptr==TYPE_REAL && $3.type_ptr==TYPE_INT) || is_same($1.type_ptr,$3.type_ptr);
-        bool str_flag = ($1.type_ptr != TYPE_ERROR &&
+        bool str_flag = ($1.type_ptr != TYPE_ERROR &&c
         		 $1.type_ptr->StringLike() &&
         		 $3.type_ptr==TYPE_STRINGLIKE);
         if(!var_flag && !str_flag){
-            semantic_error(real_ast,"Type check failed. Type confilt for ASSIGN operation.",line_count,0);
+            semantic_error(real_ast,"Type check failed. Type conflict for ASSIGN operation.",line_count,0);
             break;
         }
         std::string func_name = table_set_queue.top()->tag();
@@ -1054,7 +1054,7 @@ statement:
         //类型检查
         if(!is_same($4.type_ptr,TYPE_ERROR)){
             if((!is_same($2.type_ptr,$4.type_ptr))||is_same($2.type_ptr,TYPE_REAL)){
-                semantic_error(real_ast,"Type check failed. type confilt for CASE statement.",line_count,0);
+                semantic_error(real_ast,"Type check failed. Type conflict for CASE statement.",line_count,0);
             }
         }
         // statement -> case expression of case_body end.
