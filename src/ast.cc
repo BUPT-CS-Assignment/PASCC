@@ -327,7 +327,6 @@ void StatementNode::Format(FILE *dst) {
     case GrammarType::PROCEDURE_CALL:
     case GrammarType::COMPOUND_STATEMENT: {
       FormatAt(0, dst);
-      PRINT("\n")
       break;
     }
     case GrammarType::IF_STATEMENT: {
