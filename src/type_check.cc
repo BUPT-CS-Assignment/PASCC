@@ -19,6 +19,9 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
     } else { //结构体
       // check array
       if (in_array) {
+        if (cur_type->template_type() != TypeTemplate::TYPE::ARRAY) {
+          return TYPE_ERROR;
+        }
         auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
         PtrCollect(cur_array_type);
         if (!cur_array_type->Valid()) {
@@ -34,12 +37,16 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
       // check record
       cur_type =
           cur_type->DynamicCast<RecordType>()->Find((*var_parts)[i].name);
-      if (cur_type == TYPE_ERROR) {
+      if (cur_type == TYPE_ERROR ||
+          cur_type->template_type() != TypeTemplate::TYPE::RECORD) {
         return TYPE_ERROR;
       }
     }
   }
   if (in_array) {
+    if (cur_type->template_type() != TypeTemplate::TYPE::ARRAY) {
+      return TYPE_ERROR;
+    }
     auto cur_array_type = new ArrayType(cur_type->DynamicCast<ArrayType>()->Visit(vistor));
     PtrCollect(cur_array_type);
     if (!cur_array_type->Valid()) {
