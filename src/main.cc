@@ -7,6 +7,7 @@
 #include "log.h"
 #include "parser.h"
 #include "parser.tab.h"
+#include <algorithm>
 using std::string;
 
 /*  test command examples

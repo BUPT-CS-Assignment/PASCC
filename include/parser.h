@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stack>
 #include <string>
+#include <algorithm>
 
 #include "compiler.h"
 #include "type.h"

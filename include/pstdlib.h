@@ -11,14 +11,23 @@
 #define PASCC_PSTDLIB_H
 
 namespace pascals {
+
+/**
+ * @brief standard library for pascal-s
+ */
 class PStdLibs {
  public:
   PStdLibs();
   ~PStdLibs(){};
-  void Format(FILE* dst);
-  void Preset(SymbolTable* st);
+  // set call
   bool Call(std::string lib_name);
   bool UnCall(std::string lib_name);
+
+  // pre-insert to table
+  void Preset(SymbolTable* st);
+
+  // static formater
+  void Format(FILE* dst);
 
  private:
   bool CheckMathLib();

@@ -15,11 +15,14 @@ const std::string stdin_ = "";
 void yyinput(const char* in);
 void yydebug_(int level);
 
+/**
+ * @brief Compiler class
+*/
 class Compiler {
  public:
   Compiler() : cur_dir_(".") {}
   Compiler(std::string dir);
-  static std::set<std::string> CODE_STYLES;
+  static std::set<std::string> CODE_STYLES; // styles for clang-format
 
   int Compile(std::string in, std::string out = stdout_,
               std::string st = "google");

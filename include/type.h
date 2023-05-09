@@ -11,7 +11,9 @@
 #include <vector>
 
 namespace pascals {
-
+/**
+ * @brief base TypeTemplate of all types
+ */
 class TypeTemplate {
  public:
   enum class TYPE { BASIC, RECORD, ARRAY };
@@ -24,13 +26,15 @@ class TypeTemplate {
   }
 
   TYPE template_type() { return template_type_; }
-  bool StringLike();
+  bool StringLike();  // check if stringlike (array of char)
 
  protected:
   TYPE template_type_;
 };
 
-// basic type including INT, REAL, CHAR, BOOL
+/**
+ * @brief basic type, including INT, REAL, CHAR, BOOL
+ */
 class BasicType : public TypeTemplate {
  public:
   enum class BASIC_TYPE { INT, REAL, BOOL, CHAR, NONE };
@@ -41,6 +45,7 @@ class BasicType : public TypeTemplate {
 
   ~BasicType() {}
 
+  // getter and setter
   BASIC_TYPE type() { return basic_type_; }
   std::string type_name() {
     switch (basic_type_) {
@@ -60,6 +65,8 @@ class BasicType : public TypeTemplate {
  private:
   BASIC_TYPE basic_type_;
 };
+
+/* **************** global basic type **************** */
 extern BasicType *TYPE_INT;
 extern BasicType *TYPE_REAL;
 extern BasicType *TYPE_BOOL;
@@ -68,7 +75,9 @@ extern BasicType *TYPE_NONE;
 extern BasicType *TYPE_ERROR;
 extern BasicType *TYPE_STRINGLIKE;
 
-// Array type
+/**
+ * @brief array type
+ */
 class ArrayType : public TypeTemplate {
  public:
   // Array bound
@@ -95,6 +104,7 @@ class ArrayType : public TypeTemplate {
   ArrayType(const ArrayType &a2);
   ~ArrayType() {}
 
+  // getter and setter
   TypeTemplate *base_type() { return base_type_; }
   bool Valid() { return base_type_ != TYPE_NONE && base_type_ != TYPE_ERROR; }
   size_t dims() { return bounds_.size(); }               // get dimensions
@@ -105,6 +115,8 @@ class ArrayType : public TypeTemplate {
 
   ArrayType &operator=(const ArrayType &a2);
   bool operator==(const ArrayType &a2) const;
+
+  // visitor by layer or by types
   ArrayType Visit(std::vector<TypeTemplate *> v_types);  // visit array
   ArrayType Visit(unsigned int v_layer);                 // visit array
 
@@ -113,7 +125,9 @@ class ArrayType : public TypeTemplate {
   std::vector<ArrayBound> bounds_;  // multi-dims bounds
 };
 
-// Record type
+/**
+ * @brief record type
+ */
 class RecordType : public TypeTemplate {
  public:
   RecordType() : TypeTemplate(TYPE::RECORD) {}
@@ -121,14 +135,18 @@ class RecordType : public TypeTemplate {
       : TypeTemplate(TYPE::RECORD), types_map_(std::move(types_map)) {}
   ~RecordType() {}
 
+  // add elements
   bool add(std::string name, TypeTemplate *type);
+  // find by names
   TypeTemplate *Find(std::string name);
+  // visit by names
   TypeTemplate *Visit(std::vector<std::string> names);
 
  private:
   std::unordered_map<std::string, TypeTemplate *> types_map_;
 };
 
+/* **************** global ptr collector **************** */
 extern std::vector<TypeTemplate *> *PTR_COLLECTOR;
 static void PtrCollect(TypeTemplate *t) {
   if (t == TYPE_ERROR || t->template_type() == TypeTemplate::TYPE::BASIC)
@@ -141,6 +159,9 @@ static void ReleaseTemp() {
   }
 }
 
+/**
+ * @brief operation class
+ */
 class Operation {
  public:
   Operation() {}
@@ -181,9 +202,6 @@ extern OperationMap operation_map;
  */
 BasicType *compute(BasicType *type1, BasicType *type2, std::string op);
 
-/********************************************
- *             Type Assertion              *
- ********************************************/
 /**
  * @brief compute the result type of one basic type
  * @param type1 type 1
@@ -246,6 +264,9 @@ bool is_same(RecordType *t1, std::vector<std::string> n1, RecordType *t2,
  */
 bool is_same(RecordType *t1, std::vector<std::string> n1, TypeTemplate *t2);
 
+/**
+ * @brief const value
+ */
 class ConstValue {
  public:
   ConstValue() {}
@@ -286,6 +307,8 @@ class ConstValue {
   void set_unimus();
 
   BasicType *type() { return m_Type; }
+
+  // get by type
   template <typename T>
   T get() {
     if (std::is_same<T, int>::value)
@@ -304,7 +327,7 @@ class ConstValue {
                                " not supported");
     }
   }
-
+  // copy by =
   ConstValue &operator=(const ConstValue &other);
   // operation +
   ConstValue operator+(const ConstValue &other);

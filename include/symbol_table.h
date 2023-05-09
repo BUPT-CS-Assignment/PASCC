@@ -18,6 +18,7 @@ class SymbolTableTemplate {
  public:
   SymbolTableTemplate(std::string tag = "") : tag_(tag) {}
   ~SymbolTableTemplate() {}
+  // insert symbol
   bool Insert(std::string name, T* symbol) {
     if (table_.find(name) != table_.end()) {
       return false;
@@ -26,12 +27,12 @@ class SymbolTableTemplate {
     return true;
   }
 
+  // find by name
   T* FindName(std::string name) {
     auto it = table_.find(name);
     if (it != table_.end()) return it->second;
     return nullptr;
   }
-
   T* operator[](std::string name) { return FindName(name); }
 
  protected:
@@ -39,6 +40,9 @@ class SymbolTableTemplate {
   std::unordered_map<std::string, T*> table_;
 };
 
+/**
+ * @brief type table
+ */
 class TypeTable : public SymbolTableTemplate<TypeTemplate> {
  public:
   TypeTable(std::string tag = "") : SymbolTableTemplate(tag + "_type") {
@@ -53,6 +57,7 @@ class TypeTable : public SymbolTableTemplate<TypeTemplate> {
     }
   }
 
+  // find by name with type check
   template <typename T>
   T* Find(std::string name) {
     auto entry = (*this)[name];
@@ -70,6 +75,9 @@ class TypeTable : public SymbolTableTemplate<TypeTemplate> {
   }
 };
 
+/**
+ * @brief symbol table
+ */
 class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {
  public:
   SymbolTable(std::string tag = "") : SymbolTableTemplate(tag + "_symbols") {
@@ -83,6 +91,7 @@ class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {
     }
   }
 
+  // find by name with type check
   template <typename T>
   T* Find(std::string name) {
     auto entry = (*this)[name];
@@ -98,7 +107,9 @@ class SymbolTable : public SymbolTableTemplate<ObjectSymbol> {
   }
 };
 
-// table set including symbol table and type table
+/**
+ * @brief table set including symbol table and type table
+ */
 class TableSet {
  public:
   TableSet(std::string tag, TableSet* pre_set)
@@ -113,11 +124,13 @@ class TableSet {
     log_debug("~TableSet(): delete '%s'", tag_.c_str());
   }
 
+  // getter and setter
   SymbolTable* symbols() { return &symbols_; }
   TypeTable* def_types() { return &def_types_; }
   TableSet* previous() { return prev_table_set_; }
   std::string tag() { return tag_; }
 
+  // united insert entry
   template <typename T>
   bool Insert(std::string name, T* symbol) {
     ObjectSymbol* object_flag = symbols_.FindName(name);
@@ -170,9 +183,9 @@ class TableSet {
 
  private:
   std::string tag_;
-  SymbolTable symbols_;
-  TypeTable def_types_;
-  TableSet* prev_table_set_;
+  SymbolTable symbols_;       // symbol table
+  TypeTable def_types_;       // type table
+  TableSet* prev_table_set_;  // up-layer table set
 };
 
 }  // namespace pascals

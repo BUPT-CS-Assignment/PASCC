@@ -14,7 +14,10 @@
 #include "type.h"
 
 namespace pascals {
-// Object Symbols for variables
+
+/**
+ * @brief object symbol
+ */
 class ObjectSymbol {
  public:
   enum class SYMBOL_TYPE {
@@ -30,6 +33,7 @@ class ObjectSymbol {
   }
   virtual ~ObjectSymbol() {}
 
+  // getter and setter
   std::string name() { return name_; }
   TypeTemplate* type() { return type_; }
   int decl_line() { return decl_line_; }
@@ -43,10 +47,11 @@ class ObjectSymbol {
   bool is_ref_;
   int decl_line_;
   SYMBOL_TYPE symbol_type_;
-  //  std::vector<int> ref_lines_;
 };
 
-// Object symbol for const variables
+/**
+ * @brief const symbol
+ */
 class ConstSymbol : public ObjectSymbol {
  public:
   ConstSymbol() {}
@@ -57,9 +62,8 @@ class ConstSymbol : public ObjectSymbol {
 
   ~ConstSymbol() {}
 
-  // get value by int or char type
+  // getter and stter
   ConstValue value() { return value_; }
-  // get value type
   BasicType* type() { return value_.type(); }
   void set_ref(bool r) override { is_ref_ = false; }
   bool is_ref() override { return false; }
@@ -68,7 +72,9 @@ class ConstSymbol : public ObjectSymbol {
   ConstValue value_;
 };
 
-// function symbols
+/**
+ * @brief function symbol
+ */
 class FunctionSymbol : public ObjectSymbol {
  public:
   enum class PARAM_MODE {
