@@ -1357,7 +1357,7 @@ else_part:
             break;
         $$ = new ElseNode(ElseNode::GrammarType::EPSILON);
     }
-    | ELSE statement 
+    | ELSE statement
     {
         // else_part -> ELSE statement.
         if(error_flag)
@@ -1487,6 +1487,26 @@ call_procedure_statement:
     | ID
     {   
         // call_procedure_statement -> id.
+        FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
+        if(tmp == nullptr) {
+            semantic_error(real_ast,"No such procedure named " + $1.value.get<string>(),$1.line_num,$1.column_num);
+            break;
+        } else {
+            //函数调用 类型检查
+            if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
+                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
+            }
+        }
+        if(error_flag)
+            break;
+        $$ = new ProcedureCallNode(ProcedureCallNode::GrammarType::ID);
+        LeafNode *id_node = new LeafNode($1.value);
+        $$->append_child(id_node);
+        real_ast->libs()->Call(tmp->name());
+    };
+    | ID '(' ')'
+    {
+        // call_procedure_statement -> id().
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             semantic_error(real_ast,"No such procedure named " + $1.value.get<string>(),$1.line_num,$1.column_num);
