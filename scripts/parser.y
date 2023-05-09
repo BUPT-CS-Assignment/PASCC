@@ -1266,8 +1266,7 @@ variable:
             }
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
-                yyerror(real_ast,"Type check failed\n");
-                yyerror(real_ast,"variable -> id id_varparts.\n");
+                semantic_error(real_ast,"Type check failed. Failed to get value for a complex type.",line_count,0);
             }
             if(tmp->is_ref()){
                 name = "*("+name+")";
@@ -1379,10 +1378,9 @@ branch_list:
         // branch_list -> branch_list branch.
         //todo 检查类型是否一致
         if(error_flag)
-            break;        //对于某个branch_list，要求其内含的所有branch类型都一致，不需要存值
+            break;        
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"branch_list -> branch_list branch.\n");
+            semantic_error(real_ast,"Type check failed. Different types for branches.",line_count,0);
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1536,8 +1534,7 @@ expression:
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, $2.value.get<string>());
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"expression -> simple_expression relop simple_expression\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation RELOP.",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1563,8 +1560,7 @@ expression:
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, "=");
         
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"expression -> simple_expression '=' simple_expression\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '='.",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1655,16 +1651,15 @@ simple_expression:
     |PLUS term
     {
         // simple_expression -> + term.
-
+        //类型检查
         if(!is_basic($2.type_ptr)){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression -> + term\n");
+            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '+'.",line_count,0);
         }
+
         auto result=compute((BasicType*)$2.type_ptr, "+");
         
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression -> + term\n");
+            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '+'.",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1679,15 +1674,14 @@ simple_expression:
     |UMINUS term
     {
         // simple_expression -> - term.
+        //类型检查
         if(!is_basic($2.type_ptr)){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression -> - term\n");
+            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '-'.",line_count,0);
         }
         auto result=compute((BasicType*)$2.type_ptr, "-");
         
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression -> - term\n");
+            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '-'.",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1700,10 +1694,10 @@ simple_expression:
     }
     | simple_expression ADDOP term
     {
-        // simple_expression -> simple_expression or term.
+        // simple_expression -> simple_expression or term.、
+        //类型检查
         if($1.type_ptr!=$3.type_ptr){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"simple_expression -> simple_expression or term\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = $1.type_ptr;
@@ -1728,8 +1722,7 @@ simple_expression:
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"+");
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"expression -> simple_expression '+' simple_expression\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
         }
         $$.type_ptr = result;
 
@@ -1751,8 +1744,7 @@ simple_expression:
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"-");
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"expression -> simple_expression '-' simple_expression\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '-'.",line_count,0);
         }
         $$.type_ptr = result;
 
@@ -1782,8 +1774,7 @@ term:
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,$2.value.get<string>());
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"term -> term mulop factor\n");
+            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation MULOP.",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1838,8 +1829,7 @@ factor:
             semantic_error(real_ast,"No such function named " + $1.value.get<string>(),$1.line_num,$1.column_num);
             break;
         }else if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"call_procedure_statement -> ID '(' expression_list ')'\n");
+            semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
             break;
         }
         //if(error_flag)
@@ -1881,8 +1871,7 @@ factor:
         auto result=compute((BasicType*)$2.type_ptr, "not");
         
         if(result==TYPE_ERROR){
-            yyerror(real_ast,"Type check failed\n");
-            yyerror(real_ast,"factor -> not factor\n");
+            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation 'not'.",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
