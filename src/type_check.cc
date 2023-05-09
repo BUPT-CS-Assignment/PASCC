@@ -35,10 +35,12 @@ TypeTemplate * IDVarpartsAttr::AccessCheck(TypeTemplate *base_type) {
       }
       vistor.clear();
       // check record
+      if (cur_type->template_type() != TypeTemplate::TYPE::RECORD) {
+        return TYPE_ERROR;
+      }
       cur_type =
           cur_type->DynamicCast<RecordType>()->Find((*var_parts)[i].name);
-      if (cur_type == TYPE_ERROR ||
-          cur_type->template_type() != TypeTemplate::TYPE::RECORD) {
+      if (cur_type == TYPE_ERROR) {
         return TYPE_ERROR;
       }
     }
