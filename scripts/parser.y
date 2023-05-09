@@ -1146,6 +1146,20 @@ statement:
         $$->append_child($3.variable_list_node);
         delete $3.type_ptr_list;
     }
+    |READLN '('  ')'
+    {
+        // statement -> READLN '('  ')'
+        if(error_flag)
+            break;
+        $$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
+    }
+    |READLN
+    {
+        // statement -> READLN
+        if(error_flag)
+            break;
+        $$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
+    }
     |WRITE '(' expression_list ')'
     {
         // statement -> WRITE '(' expression_list ')'
