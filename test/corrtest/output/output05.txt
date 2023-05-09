@@ -3,6 +3,7 @@ procedure-test
 2023
 
 function-test
-2023
-6
+before testFunc := 54
+after testFunc := 54
+7
 24 54
