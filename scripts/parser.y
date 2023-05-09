@@ -49,7 +49,7 @@ void semantic_error(AST* real_ast,std::string msg,int line,int row){
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
 %token ADDOP NOT PLUS UMINUS CONSTASSIGNOP  
 %token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_ VAR SUBCATALOG
-%token<token_info> ASSIGNOP WRITE WRITELN SEP READ READLN TRUE FALSE
+%token<token_info> ASSIGNOP WRITE WRITELN SEP READ READLN TRUE FALSE ';'
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
 %type<periods_node_info> periods
@@ -2594,10 +2594,26 @@ factor: '(' error
         }
     };
 
+subprogram_head: FUNCTION ID formal_parameter ':' error
+    {
+        new_line_flag=false;
+        location_pointer_refresh();
+        if(yychar==ARRAY||yychar==RECORD||yychar==ID)
+        {
+            yyerror(real_ast,"The result of a function must be of type integer, real, Boolean, or char.");
+        }
+        while(yychar!=';'&&!new_line_flag)
+            yychar=yylex();
+        if(yychar==';'){
+            fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+            fprintf(stderr,"\t| %s",location_pointer);
+            yychar=yylex();
+        }
+    }    
+
 
 /*statement相关*/
 // compound_statement: BEGIN_ statement_list END
-
 // IF expression THEN statement else_part
 statement: IF error
     {
