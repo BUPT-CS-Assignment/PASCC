@@ -1055,7 +1055,8 @@ statement:
         if(is_same($2.type_ptr,TYPE_REAL)||!is_basic($2.type_ptr)){
             semantic_error(real_ast,"Type check failed. Type conflict for CASE statement.",line_count,0);
         }
-        if(!is_same($4.type_ptr,TYPE_ERROR)||!is_same($2.type_ptr,$4.type_ptr)){
+        if(!is_same($4.type_ptr,TYPE_ERROR)){
+            if(!is_same($2.type_ptr,$4.type_ptr))
             semantic_error(real_ast,"Type check failed. Type conflict for CASE statement.",line_count,0);
         }
         // statement -> case expression of case_body end.
@@ -1267,7 +1268,7 @@ variable:
             }
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
-                semantic_error(real_ast,"Type check failed. Failed to get value for a complex type.",line_count,0);
+                semantic_error(real_ast,"Type check failed. Failed to access value from a complex type.",line_count,0);
             }
             if(tmp->is_ref()){
                 name = "*("+name+")";
