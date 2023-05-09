@@ -16,7 +16,7 @@ using std::string;
  *    optional arguments:
  *    tag  name      n-args  note
  *     -h, --help      -     show help message
- *     -i, --input    [?]    input json file
+ *     -i, --input    [?]    input pascal-s file
  *     -o, --output   [?]    output c file
  *     -s, --style    [?]    code style
  *     -d, --debug    [?]    debug mode
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
   // add optional argument 'input json file' to set input json file
   parser.add_argument<string>("-i", "--input")
       .nArgs('?')
-      .help("input json file")
+      .help("input pascal-s file")
       .default_("test.pas");
   // add optional argument 'output file' to set output c file
   parser.add_argument<string>("-o", "--output")

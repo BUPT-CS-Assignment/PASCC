@@ -256,6 +256,8 @@ void TypeInit() {
   operation_map[Operation(TYPE_INT, TYPE_INT, "<=")] = TYPE_BOOL;
   operation_map[Operation(TYPE_INT, TYPE_INT, ">=")] = TYPE_BOOL;
   // real
+  operation_map[Operation(TYPE_REAL, NULL, "-")] = TYPE_INT;
+  operation_map[Operation(TYPE_REAL, NULL, "+")] = TYPE_INT;
   operation_map[Operation(TYPE_REAL, TYPE_REAL, "+")] = TYPE_REAL;
   operation_map[Operation(TYPE_REAL, TYPE_REAL, "-")] = TYPE_REAL;
   operation_map[Operation(TYPE_REAL, TYPE_REAL, "*")] = TYPE_REAL;
