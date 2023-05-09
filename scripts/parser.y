@@ -1057,7 +1057,7 @@ statement:
         }
         if(!is_same($4.type_ptr,TYPE_ERROR)){
             if(!is_same($2.type_ptr,$4.type_ptr))
-            semantic_error(real_ast,"Type check failed. Type conflict for CASE statement.",line_count,0);
+                semantic_error(real_ast,"Type check failed. Type conflict for CASE statement.",line_count,0);
         }
         // statement -> case expression of case_body end.
         $$ = new StatementNode(StatementNode::GrammarType::CASE_STATEMET);
@@ -1721,13 +1721,15 @@ simple_expression:
             break;
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
+           $$.type_ptr = $1.type_ptr;
         }
-        auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"+");
-        if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
+        else{
+            auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"+");
+            if(result==TYPE_ERROR){
+                semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
+            }
+            $$.type_ptr = result;
         }
-        $$.type_ptr = result;
-
         $$.simple_expression_node = new SimpleExpressionNode();
         $$.simple_expression_node->append_child($1.simple_expression_node);
         LeafNode *plus_node = new LeafNode(ConstValue("+"));
