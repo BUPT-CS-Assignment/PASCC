@@ -1,13 +1,10 @@
 #include "ast.h"
-
-#include <ctime>
-
 #include "log.h"
+#include <ctime>
 
 using std::stack;
 using std::string;
 using std::vector;
-using json = nlohmann::json;
 
 namespace pascals {
 namespace ast {
@@ -104,11 +101,7 @@ vector<LeafNode *> IdListNode::Lists() {
   return lists;
 }
 
-// void ConstDeclarationsNode::TransCode() {
-//   if (grammar_type_ == GrammarType::CONST_DECLARATION) {
-//     TransCodeAt(0);
-//   }
-// }
+
 void ConstDeclarationNode::print_type(FILE *dst) {
   if (type_ == TYPE_INT) {
     PRINT("int ")
@@ -175,11 +168,6 @@ void VariableDeclarationNode::Format(FILE *dst) {
   PRINT(";\n")
 }
 
-// void TypeDeclarationsNode::TransCode() {
-//   if(grammar_type_ == GrammarType::TYPE_DECLARATION) {
-//     TransCodeAt(0);
-//   }
-// }
 
 void TypeDeclarationNode::Format(FILE *dst) {
   if (grammar_type_ == GrammarType::MULTIPLE_DECL) {
@@ -198,16 +186,6 @@ void TypeDeclarationNode::Format(FILE *dst) {
     tnode->PeriodsFormat(dst);
   }
   PRINT(";\n")
-  //  for (int idx = 0; idx < child_list_.size(); idx += 2) {
-  //    child_list_[idx]->TransCode();
-  //    auto type_node = child_list_[idx + 1]->DynamicCast<TypeNode>();
-  //    auto base_type = type_node->base_type();
-  //    OUT("typedef ")
-  //    base_type->TransCode();
-  //    OUT(" ")
-  //    type_node->TransCode();
-  //    OUT(";\n")
-  //  }
 }
 
 void TypeNode::Format(FILE *dst) {
@@ -274,9 +252,6 @@ void FormalParamNode::Format(FILE *dst) {
   for (auto child : child_list_) {
     child->Format(dst);
   }
-  //  if (grammar_type_ == GrammarType::PARAM_LISTS) {
-  //    TransCodeAt(0);
-  //  }
   PRINT(")")
 }
 
@@ -289,11 +264,6 @@ void ParamListsNode::Format(FILE *dst) {
   }
 }
 
-// void ParamListNode::TransCode() {
-//   TransCodeAt(0);
-//   PRINT(", ")
-//   TransCodeAt(1);
-// }
 
 void VarParamNode::Format(FILE *dst) {
   ValueParamNode *vp = child_list_[0]->DynamicCast<ValueParamNode>();
@@ -354,12 +324,6 @@ void StatementNode::Format(FILE *dst) {
       PRINT(";\n")
       break;
     }
-      //  case GrammarType::FUNC_ASSIGN_OP_EXP: {
-      //    PRINT("return ")
-      //    FormatAt(1, dst);
-      //    PRINT(";\n");
-      //    break;
-      //  }
     case GrammarType::PROCEDURE_CALL:
     case GrammarType::COMPOUND_STATEMENT: {
       FormatAt(0, dst);
