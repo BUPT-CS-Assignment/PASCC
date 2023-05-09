@@ -494,8 +494,15 @@ record_body :
         if(error_flag)
             break;
         $$.record_body_node = new RecordBodyNode();
-    }
-    | var_declaration ';'
+    } | var_declaration {
+	// record_body -> var_declaration.
+	$$.record_info = $1.record_info;
+	if(error_flag)
+	    break;
+	$$.record_body_node = new RecordBodyNode();
+	$$.record_body_node->append_child($1.variable_declaration_node);
+	delete $1.pos_info;
+    } | var_declaration ';'
     {
         // record_body -> var_declaration.
         $$.record_info = $1.record_info;
