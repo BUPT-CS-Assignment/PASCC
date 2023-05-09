@@ -77,8 +77,8 @@ PLUS                    "+"
 UMINUS                  "-"
 
 /* 常数 */
-INT_NUM                 {digits}
-REAL_NUM                {digits}{fraction}
+INT_NUM                 [+-]?{digits}
+REAL_NUM                [+-]?{digits}{fraction}
 
 /* 注释 */
 ANNO_1                  (\{[^}]*\})      
