@@ -1,4 +1,4 @@
-program TestArray;
+program TestArray(input);
 var  
   arr1: array[1..3] of integer;  
   arr2, arr3: array [1..10] of array ['a'..'z'] of record x: integer; y: char; end; 

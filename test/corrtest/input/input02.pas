@@ -1,4 +1,4 @@
-program TestRecord;
+program TestRecord();
 var
   rec1: record x: integer; y: char; end;
   rec2: record x: integer; y: char; end; 

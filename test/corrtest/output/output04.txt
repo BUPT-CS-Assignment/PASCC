@@ -2,7 +2,9 @@ if .. then .. else
 n < 5
 
 case .. of .. end
-n is between 1 and 3
+n is between 4 and 6
+m is true
+ch is c
 
 while .. do
 1
