@@ -681,6 +681,7 @@ var_declaration :
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
             semantic_error(real_ast,"Undefined type",$5.line_num,$5.column_num);
+            break;
         } else {
             for (auto i : *($3.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
@@ -708,6 +709,7 @@ var_declaration :
             semantic_error(real_ast,"Undefined type",$3.line_num,$3.column_num);
             $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
             $$.pos_info = new std::unordered_map<std::string, std::pair<int,int>>();
+            break;
         } else {
             $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
             $$.pos_info = new std::unordered_map<std::string, std::pair<int,int>>();
@@ -1104,6 +1106,10 @@ statement:
             break;
         //类型检查
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($2.value.get<string>());
+        if(tmp==nullptr){
+            semantic_error(real_ast,"Undefined ID",$2.line_num,$2.column_num);
+            break;
+        }
         if((!is_basic(tmp->type()))||(!is_same(tmp->type(),$4.type_ptr))){
             semantic_error(real_ast,"Type check failed. Ilegal ID type for FOR statement.",line_count,0);
         }
@@ -1463,6 +1469,7 @@ call_procedure_statement:
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             semantic_error(real_ast,"Type check failed. Procedure not exist.",$1.line_num,$1.column_num);
+            break;
         }
         if(!tmp || !tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
@@ -1491,6 +1498,7 @@ call_procedure_statement:
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
             semantic_error(real_ast,"No such procedure named " + $1.value.get<string>(),$1.line_num,$1.column_num);
+            break;
         } else {
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
