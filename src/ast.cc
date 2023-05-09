@@ -420,7 +420,7 @@ string VariableListNode::FormatString() {
     BasicType *type = basic_types[i];
     string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d"
                    : type == TYPE_STRINGLIKE               ? "%s"
-                   : type == TYPE_REAL                     ? "%.2f"
+                   : type == TYPE_REAL                     ? "%f"
                    : type == TYPE_CHAR
                        ? "%c"
                        : throw std::runtime_error(
