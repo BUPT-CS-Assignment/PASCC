@@ -6,51 +6,54 @@
 #define PASCC_SYMBOL_H
 
 #include <iostream>
-#include <vector>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
+
 #include "type.h"
 
 namespace pascals {
 // Object Symbols for variables
 class ObjectSymbol {
-public:
+ public:
   enum class SYMBOL_TYPE {
     VAR,
     CONST,
     FUNCTION,
   };
-  ObjectSymbol () {}
-  ObjectSymbol (std::string name, TypeTemplate* type, int decl_line, bool is_ref = false)
-      : name_(name), type_(type), decl_line_(decl_line), is_ref_(is_ref) {symbol_type_ = SYMBOL_TYPE::VAR;}
+  ObjectSymbol() {}
+  ObjectSymbol(std::string name, TypeTemplate* type, int decl_line,
+               bool is_ref = false)
+      : name_(name), type_(type), decl_line_(decl_line), is_ref_(is_ref) {
+    symbol_type_ = SYMBOL_TYPE::VAR;
+  }
   virtual ~ObjectSymbol() {}
 
-  std::string name() {return name_;}
+  std::string name() { return name_; }
   TypeTemplate* type() { return type_; }
   int decl_line() { return decl_line_; }
   virtual void set_ref(bool r) { is_ref_ = r; }
   virtual bool is_ref() { return is_ref_; }
   SYMBOL_TYPE symbol_type() { return symbol_type_; }
 
-protected:
+ protected:
   std::string name_;
   TypeTemplate* type_;
   bool is_ref_;
   int decl_line_;
   SYMBOL_TYPE symbol_type_;
-//  std::vector<int> ref_lines_;
+  //  std::vector<int> ref_lines_;
 };
-
-
-
 
 // Object symbol for const variables
 class ConstSymbol : public ObjectSymbol {
-public:
+ public:
   ConstSymbol() {}
   ConstSymbol(std::string name, ConstValue value, int decl_line)
-      : ObjectSymbol(name, value.type(), decl_line), value_(value){symbol_type_ = SYMBOL_TYPE::CONST;}
+      : ObjectSymbol(name, value.type(), decl_line), value_(value) {
+    symbol_type_ = SYMBOL_TYPE::CONST;
+  }
 
   ~ConstSymbol() {}
 
@@ -61,14 +64,13 @@ public:
   void set_ref(bool r) override { is_ref_ = false; }
   bool is_ref() override { return false; }
 
-private:
+ private:
   ConstValue value_;
 };
 
-
 // function symbols
 class FunctionSymbol : public ObjectSymbol {
-public:
+ public:
   enum class PARAM_MODE {
     VALUE,
     REFERENCE,
@@ -79,9 +81,9 @@ public:
 
   FunctionSymbol() {}
   FunctionSymbol(const FunctionSymbol& f);
-  FunctionSymbol(std::string name, BasicType *return_type, int decl_line,
+  FunctionSymbol(std::string name, BasicType* return_type, int decl_line,
                  const std::vector<Parameter>& params);
-  FunctionSymbol(std::string name, BasicType *return_type, int decl_line);
+  FunctionSymbol(std::string name, BasicType* return_type, int decl_line);
 
   // get parameters size
   int param_size() { return params_.size(); }
@@ -90,24 +92,22 @@ public:
   bool InsertParam(Parameter&);
 
   // passing parameter assertion
-  bool AssertParams(const std::vector<TypeTemplate *> &params,
+  bool AssertParams(const std::vector<TypeTemplate*>& params,
                     const std::vector<bool> value_type_in);
   bool AssertParams();
   // get param type
-  ParamType* operator[](std::string );
+  ParamType* operator[](std::string);
   // check ref
   bool IsReference(std::string);
   void set_ref(bool r) override { is_ref_ = false; }
   bool is_ref() override { return false; }
   std::vector<bool> ParamRefVec();
 
-private:
+ private:
   std::vector<Parameter> params_;
   std::unordered_map<std::string, int> param_map_;
 };
 
+}  // namespace pascals
 
-
-} // namespace pascals
-
-#endif // PASCC_SYMBOL_H
+#endif  // PASCC_SYMBOL_H

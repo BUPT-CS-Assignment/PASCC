@@ -1,10 +1,11 @@
 #ifndef PASCC_TYPE_H_
 #define PASCC_TYPE_H_
 
-#include <iostream>
 #include <string.h>
-#include <string>
+
+#include <iostream>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
@@ -12,24 +13,26 @@
 namespace pascals {
 
 class TypeTemplate {
-public:
-
+ public:
   enum class TYPE { BASIC, RECORD, ARRAY };
   TypeTemplate() {}
   TypeTemplate(TYPE template_type) : template_type_(template_type) {}
   virtual ~TypeTemplate() {}
-  template <typename T> T *DynamicCast() { return dynamic_cast<T *>(this); }
+  template <typename T>
+  T *DynamicCast() {
+    return dynamic_cast<T *>(this);
+  }
 
   TYPE template_type() { return template_type_; }
   bool StringLike();
 
-protected:
+ protected:
   TYPE template_type_;
 };
 
 // basic type including INT, REAL, CHAR, BOOL
 class BasicType : public TypeTemplate {
-public:
+ public:
   enum class BASIC_TYPE { INT, REAL, BOOL, CHAR, NONE };
 
   BasicType() : TypeTemplate(TYPE::BASIC), basic_type_(BASIC_TYPE::NONE) {}
@@ -41,20 +44,20 @@ public:
   BASIC_TYPE type() { return basic_type_; }
   std::string type_name() {
     switch (basic_type_) {
-    case BASIC_TYPE::INT:
-      return "int";
-    case BASIC_TYPE::REAL:
-      return "float";
-    case BASIC_TYPE::BOOL:
-      return "int";
-    case BASIC_TYPE::CHAR:
-      return "char";
-    default:
-      return "void";
+      case BASIC_TYPE::INT:
+        return "int";
+      case BASIC_TYPE::REAL:
+        return "float";
+      case BASIC_TYPE::BOOL:
+        return "int";
+      case BASIC_TYPE::CHAR:
+        return "char";
+      default:
+        return "void";
     }
   }
 
-private:
+ private:
   BASIC_TYPE basic_type_;
 };
 extern BasicType *TYPE_INT;
@@ -67,8 +70,7 @@ extern BasicType *TYPE_STRINGLIKE;
 
 // Array type
 class ArrayType : public TypeTemplate {
-public:
-  
+ public:
   // Array bound
   struct ArrayBound {
     BasicType *type_;
@@ -87,31 +89,33 @@ public:
   ArrayType() : TypeTemplate(TYPE::ARRAY), base_type_(TYPE_NONE) {}
   ArrayType(TypeTemplate *type) : TypeTemplate(TYPE::ARRAY), base_type_(type) {}
   ArrayType(TypeTemplate *type, std::vector<ArrayBound> bounds)
-      : TypeTemplate(TYPE::ARRAY), base_type_(type),
+      : TypeTemplate(TYPE::ARRAY),
+        base_type_(type),
         bounds_(std::move(bounds)) {}
   ArrayType(const ArrayType &a2);
   ~ArrayType() {}
 
   TypeTemplate *base_type() { return base_type_; }
   bool Valid() { return base_type_ != TYPE_NONE && base_type_ != TYPE_ERROR; }
-  size_t dims() { return bounds_.size(); }              // get dimensions
-  std::vector<ArrayBound> &bounds() { return bounds_; } // get bounds
-  ArrayBound bound(size_t i) { return bounds_[i]; } // get bound of dimension i
-  bool StringLike(int access_layer = 0); // check if string-like (array of char)
+  size_t dims() { return bounds_.size(); }               // get dimensions
+  std::vector<ArrayBound> &bounds() { return bounds_; }  // get bounds
+  ArrayBound bound(size_t i) { return bounds_[i]; }  // get bound of dimension i
+  bool StringLike(
+      int access_layer = 0);  // check if string-like (array of char)
 
   ArrayType &operator=(const ArrayType &a2);
   bool operator==(const ArrayType &a2) const;
-  ArrayType Visit(std::vector<TypeTemplate *> v_types); // visit array
-  ArrayType Visit(unsigned int v_layer);                // visit array
+  ArrayType Visit(std::vector<TypeTemplate *> v_types);  // visit array
+  ArrayType Visit(unsigned int v_layer);                 // visit array
 
-private:
-  TypeTemplate *base_type_;        // basic types or record type
-  std::vector<ArrayBound> bounds_; // multi-dims bounds
+ private:
+  TypeTemplate *base_type_;         // basic types or record type
+  std::vector<ArrayBound> bounds_;  // multi-dims bounds
 };
 
 // Record type
 class RecordType : public TypeTemplate {
-public:
+ public:
   RecordType() : TypeTemplate(TYPE::RECORD) {}
   RecordType(std::unordered_map<std::string, TypeTemplate *> types_map)
       : TypeTemplate(TYPE::RECORD), types_map_(std::move(types_map)) {}
@@ -121,24 +125,24 @@ public:
   TypeTemplate *Find(std::string name);
   TypeTemplate *Visit(std::vector<std::string> names);
 
-private:
+ private:
   std::unordered_map<std::string, TypeTemplate *> types_map_;
 };
 
-
-extern std::vector<TypeTemplate*>* PTR_COLLECTOR;
-static void PtrCollect(TypeTemplate* t){
-  if(t == TYPE_ERROR || t->template_type() == TypeTemplate::TYPE::BASIC) return;
+extern std::vector<TypeTemplate *> *PTR_COLLECTOR;
+static void PtrCollect(TypeTemplate *t) {
+  if (t == TYPE_ERROR || t->template_type() == TypeTemplate::TYPE::BASIC)
+    return;
   PTR_COLLECTOR->push_back(t);
 }
-static void ReleaseTemp(){
-  for(auto t : *PTR_COLLECTOR){
+static void ReleaseTemp() {
+  for (auto t : *PTR_COLLECTOR) {
     delete t;
   }
 }
 
 class Operation {
-public:
+ public:
   Operation() {}
   Operation(BasicType *in_type1, BasicType *in_type2, std::string op)
       : in_type1(in_type1), in_type2(in_type2), op(std::move(op)) {}
@@ -162,7 +166,7 @@ struct OperationHash {
            std::hash<std::string>()(k.op);
   }
 };
-typedef std::unordered_map<Operation, BasicType*, OperationHash> OperationMap;
+typedef std::unordered_map<Operation, BasicType *, OperationHash> OperationMap;
 extern OperationMap operation_map;
 
 /********************************************
@@ -243,7 +247,7 @@ bool is_same(RecordType *t1, std::vector<std::string> n1, RecordType *t2,
 bool is_same(RecordType *t1, std::vector<std::string> n1, TypeTemplate *t2);
 
 class ConstValue {
-public:
+ public:
   ConstValue() {}
   ~ConstValue() {}
   ConstValue(const ConstValue &other);
@@ -282,7 +286,8 @@ public:
   void set_unimus();
 
   BasicType *type() { return m_Type; }
-  template <typename T> T get() {
+  template <typename T>
+  T get() {
     if (std::is_same<T, int>::value)
       return *(T *)(&m_INT);
     else if (std::is_same<T, char>::value)
@@ -310,7 +315,7 @@ public:
   // operation /
   ConstValue operator/(const ConstValue &other);
 
-private:
+ private:
   BasicType *m_Type = nullptr;
   union {
     int m_INT;
@@ -321,6 +326,6 @@ private:
   std::string m_STRING;
 };
 
-}// namespace pascals
+}  // namespace pascals
 
-#endif // PASCC_TYPE_H_
+#endif  // PASCC_TYPE_H_

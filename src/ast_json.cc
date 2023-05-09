@@ -1,12 +1,13 @@
 //
 // Created by jianxff on 2023/4/17.
 //
-#include "ast.h"
-#include "log.h"
 #include <fstream>
 
-using std::vector;
+#include "ast.h"
+#include "log.h"
+
 using std::string;
+using std::vector;
 using json = nlohmann::json;
 
 namespace pascals {
@@ -26,7 +27,9 @@ Node *Node::Create(std::string node_name, int sub_type, int other_type) {
   } else if (node_name == "const_decls") {
     return new ConstDeclarationsNode();
   } else if (node_name == "const_decl") {
-    // return new ConstDeclarationNode((ConstDeclarationNode::GrammarType)sub_type); // TODO
+    // return new
+    // ConstDeclarationNode((ConstDeclarationNode::GrammarType)sub_type); //
+    // TODO
   } else if (node_name == "const_var") {
     return new ConstVariableNode();
   } else if (node_name == "var_decls") {
@@ -115,10 +118,8 @@ Node *Node::Create(std::string node_name, int sub_type, int other_type) {
 Node *Node::Create(nlohmann::json &json_node) {
   string type_name = json_node.at("type");
   int sub_type = 0, other_type = 0;
-  if (json_node.contains("sub_type"))
-    sub_type = json_node.at("sub_type");
-  if (json_node.contains("other_type"))
-    other_type = json_node.at("other_type");
+  if (json_node.contains("sub_type")) sub_type = json_node.at("sub_type");
+  if (json_node.contains("other_type")) other_type = json_node.at("other_type");
   return Create(type_name, sub_type, other_type);
 }
 
@@ -141,16 +142,12 @@ void AST::LoadFromJson(std::string file_name) {
 }
 
 void Node::LoadFromJson(const nlohmann::json &node_json) {
-  if (!node_json.contains("children"))
-    return;
+  if (!node_json.contains("children")) return;
   for (auto item : node_json.at("children")) {
-
     string type_name = item.at("type");
     int sub_type = 0, other_type = 0;
-    if (item.contains("sub_type"))
-      sub_type = item.at("sub_type");
-    if (item.contains("other_type"))
-      other_type = item.at("other_type");
+    if (item.contains("sub_type")) sub_type = item.at("sub_type");
+    if (item.contains("other_type")) other_type = item.at("other_type");
 
     Node *node = Node::Create(type_name, sub_type, other_type);
     if (type_name == "leaf") {
@@ -198,5 +195,5 @@ void Node::LoadFromJson(const nlohmann::json &node_json) {
   }
 }
 
-} // namespace ast
-} // namespace pascals
+}  // namespace ast
+}  // namespace pascals

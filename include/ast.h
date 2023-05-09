@@ -2,11 +2,12 @@
 #define PASCC_AST_H
 
 #include <iostream>
-#include <vector>
 #include <stack>
+#include <vector>
+
 #include "json.hpp"
-#include "symbol_table.h"
 #include "pstdlib.h"
+#include "symbol_table.h"
 namespace pascals {
 namespace ast {
 
@@ -19,7 +20,7 @@ namespace ast {
  * @brief Basic Node class
  */
 class Node {
-public:
+ public:
   // constructor
   Node() : parent_(nullptr){};
   virtual ~Node() {
@@ -33,8 +34,14 @@ public:
                       int other_type = 0);
   static Node *Create(nlohmann::json &json_node);
   // type cast
-  template <typename T> T *StaticCast() { return dynamic_cast<T *>(this); }
-  template <typename T> T *DynamicCast() { return dynamic_cast<T *>(this); }
+  template <typename T>
+  T *StaticCast() {
+    return dynamic_cast<T *>(this);
+  }
+  template <typename T>
+  T *DynamicCast() {
+    return dynamic_cast<T *>(this);
+  }
 
   // getter and setter functions
   void set_parent(Node *parent) { parent_ = parent; }
@@ -44,8 +51,8 @@ public:
     // child->set_parent(this);
     child_list_.emplace_back(child);
   }
-  Node* get(int pos) {
-    if(pos < 0) pos += child_list_.size();
+  Node *get(int pos) {
+    if (pos < 0) pos += child_list_.size();
     return child_list_[pos];
   }
 
@@ -55,14 +62,13 @@ public:
     return child_list_[pos < 0 ? pos + child_list_.size() : pos]->Format(dst);
   }
   virtual void Format(FILE *dst) {
-    for (auto child : child_list_)
-      child->Format(dst);
+    for (auto child : child_list_) child->Format(dst);
   }
   // load from json file
   void LoadFromJson(const nlohmann::json &);
 
-protected:
-  Node *parent_;                   // parent node pointer
+ protected:
+  Node *parent_;  // parent node pointer
   // child pointer list
   std::vector<Node *> child_list_;
 };
@@ -71,14 +77,13 @@ protected:
  * @brief AST class
  */
 class AST {
-public:
+ public:
   // getter and setter functions
   ~AST() {
     log_debug("~AST(): delete ast");
-    if (root_ != nullptr)
-      delete root_;
+    if (root_ != nullptr) delete root_;
   }
-  bool Valid(){return root_ != nullptr;}
+  bool Valid() { return root_ != nullptr; }
   Node *root() { return root_; }
   PStdLibs *libs() { return &libs_; }
   void set_root(Node *root) { root_ = root; }
@@ -91,8 +96,8 @@ public:
    */
   void Format(FILE *dst);
 
-private:
-  Node *root_; // root node pointer
+ private:
+  Node *root_;  // root node pointer
   PStdLibs libs_;
 };
 
@@ -101,7 +106,7 @@ private:
  * Leaf Node including id, num, letter ...
  */
 class LeafNode : public Node {
-public:
+ public:
   LeafNode() {}
   // const value
   LeafNode(ConstValue val) : value_(val) {}
@@ -115,29 +120,31 @@ public:
   void set_ref(bool ref) { is_ref_ = ref; }
 
   // template value getter
-  template <typename T> T value() { return value_.get<T>(); }
+  template <typename T>
+  T value() {
+    return value_.get<T>();
+  }
   BasicType *type() { return value_.type(); }
   // Analyze reference
-  bool AnalyzeReference(TableSet *ts,
-                        FunctionSymbol *fn);
+  bool AnalyzeReference(TableSet *ts, FunctionSymbol *fn);
   void Format(FILE *dst) override;
 
-private:
-  ConstValue value_;    // const values
-  bool is_ref_ = false; // is referenced
+ private:
+  ConstValue value_;     // const values
+  bool is_ref_ = false;  // is referenced
 };
 
 class ProgramNode : public Node {
   // program → program_head  program_body
-public:
+ public:
 };
 
 class ProgramHeadNode : public Node {
   // programhead → program_id (idlists)
-public:
+ public:
   void Format(FILE *dst) override;
 
-private:
+ private:
 };
 
 class ProgramBodyNode : public Node {
@@ -146,28 +153,28 @@ class ProgramBodyNode : public Node {
   //                var_declarations
   //                subprogram_declarations
   //                compound_statement
-public:
+ public:
   void Format(FILE *dst) override;
 
-private:
+ private:
 };
 
 class IdListNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    SINGLE_ID,  // idlists → id
-    MULTIPLE_ID // idlists → idlist,id
+    SINGLE_ID,   // idlists → id
+    MULTIPLE_ID  // idlists → idlist,id
   };
   IdListNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
   std::vector<LeafNode *> Lists();
 
-private:
+ private:
   GrammarType grammar_type_;
 };
 
 class ConstDeclarationsNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    EPSILON,             //const_declarations → EPSILON
   //    CONST_DECLARATION    //const_declarations → const_declaration
@@ -175,28 +182,28 @@ public:
 };
 
 class ConstDeclarationNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    VALUE,      // ConstDeclaration → id = const_var
-    DECLARATION // ConstDeclaration →ConstDeclaration; id = const_var
+    VALUE,       // ConstDeclaration → id = const_var
+    DECLARATION  // ConstDeclaration →ConstDeclaration; id = const_var
   };
   ConstDeclarationNode(GrammarType gt, BasicType *bt)
       : grammar_type_(gt), type_(bt) {}
   void print_type(FILE *dst);
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
   BasicType *type_;
 };
 
 class ConstVariableNode : public Node {
   // const_variable → +id | -id | id | +num | -num | num | 'letter'
-public:
+ public:
 };
 
 class VariableDeclarationsNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    EPSILON,          //variable_declarations→EPSILON
   //    VAR_DECLARATION   //variable_declarations→var VariableDeclaration
@@ -204,23 +211,23 @@ public:
 };
 
 class VariableDeclarationNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    SINGLE_DECL,  // VariableDeclaration → idlist : xx
-    MULTIPLE_DECL // VariableDeclaration → VariableDeclaration ; idlist : xx
+    SINGLE_DECL,   // VariableDeclaration → idlist : xx
+    MULTIPLE_DECL  // VariableDeclaration → VariableDeclaration ; idlist : xx
   };
   enum class ListType { TYPE, ID };
   VariableDeclarationNode(GrammarType gt, ListType lt)
       : grammar_type_(gt), list_type_(lt) {}
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
   ListType list_type_;
 };
 
 class TypeDeclarationsNode : public Node {
-public:
+ public:
   //    enum class GrammarType {
   //      EPSILON,         //TypeDeclarations→EPSILON
   //      TYPE_DECLARATION //TypeDeclarations→type TypeDeclaration
@@ -228,21 +235,21 @@ public:
 };
 
 class TypeDeclarationNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    SINGLE_DECL,  // id = type
-    MULTIPLE_DECL // TypeDeclaration→TypeDeclaration ; id = type
+    SINGLE_DECL,   // id = type
+    MULTIPLE_DECL  // TypeDeclaration→TypeDeclaration ; id = type
   };
 
   TypeDeclarationNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
 };
 
 class TypeNode : public Node {
-public:
+ public:
   enum class GrammarType { BASIC_TYPE, ARRAY, RECORD_TYPE };
 
   TypeNode(GrammarType gt) : grammar_type_(gt) {}
@@ -254,14 +261,14 @@ public:
   void PeriodsFormat(FILE *dst);
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
   TypeNode *base_type_node_;
 };
 
 class BasicTypeNode : public Node {
   // BasicType →integer|real|boolean|char
-public:
+ public:
   BasicTypeNode() {}
   BasicTypeNode(BasicType *type) : type_(type) {}
 
@@ -269,11 +276,11 @@ public:
     std::string type_name = type_->type_name() + (ref ? "*" : "");
     return type_name;
   }
-  void set_type(BasicType *type) { type_ = type;}
+  void set_type(BasicType *type) { type_ = type; }
   BasicType *type() { return type_; }
   void Format(FILE *dst) override;
 
-private:
+ private:
   BasicType *type_;
 };
 
@@ -295,12 +302,12 @@ class PeriodsNode : public Node {
 
 class PeriodNode : public Node {
   // Period → const_var ... const var
-public:
+ public:
   void Format(FILE *dst) override;
   int len() { return len_; }
   void set_len(int len) { len_ = len; }
 
-private:
+ private:
   int len_;
 };
 
@@ -308,13 +315,14 @@ class SubprogramDeclarationsNode : public Node {
   // public:
   //  enum class GrammarType {
   //    EPSILON,            //subprogram_declarations → EPSILON
-  //    SUBPROGRAM_DECL     //subprogram_declarations → subprogram_declarations subprogram subprogram_declaration ;
+  //    SUBPROGRAM_DECL     //subprogram_declarations → subprogram_declarations
+  //    subprogram subprogram_declaration ;
   //  };
 };
 
 class SubprogramDeclarationNode : public Node {
   // subprogram_declaration -> subprogram_head subprogram_body
-public:
+ public:
   void Format(FILE *dst) override;
 };
 
@@ -323,30 +331,30 @@ class SubprogramBodyNode : public Node {
   //                type_declarations
   //                var_declarations
   //                compound_statement
-public:
+ public:
 };
 
 class SubprogramHeadNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    PROCEDURE, // subprogram_head → procedure id formal_parameter
-    FUNCTION   // subprogram_head → function id formal_parameter : basic_type
+    PROCEDURE,  // subprogram_head → procedure id formal_parameter
+    FUNCTION    // subprogram_head → function id formal_parameter : basic_type
   };
 
   SubprogramHeadNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
   GrammarType grammar_type() { return grammar_type_; }
   void set_id(std::string id) { id_ = id; }
-  std::string id(){return id_;}
+  std::string id() { return id_; }
 
-private:
+ private:
   std::string id_;
 
   GrammarType grammar_type_;
 };
 
 class FormalParamNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    EPSILON,      //formal_parameter → EPSILON
   //    PARAM_LISTS,  //formal_parameter → ( parameter_lists )
@@ -355,21 +363,21 @@ public:
 };
 
 class ParamListsNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    SINGLE_PARAM_LIST,   // param_lists→ param_list
-    MULTIPLE_PARAM_LIST, // param_lists→ param_lists ; param_list
+    SINGLE_PARAM_LIST,    // param_lists→ param_list
+    MULTIPLE_PARAM_LIST,  // param_lists→ param_lists ; param_list
   };
 
   ParamListsNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
 };
 
 class ParamListNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    VAR_PARAM,              //parameter_list → var_parameter
   //    VALUE_PARAM,            //parameter_list → value_parameter
@@ -382,65 +390,67 @@ public:
 
 class VarParamNode : public Node {
   // VarParam → var ValueParam
-public:
+ public:
   void Format(FILE *dst) override;
 
-private:
+ private:
 };
 
 class ValueParamNode : public Node {
   // ValueParam → idlist : basic_type
-public:
+ public:
   void Format(FILE *dst) override;
   void Format(bool ref, FILE *dst);
 
-private:
+ private:
 };
 
 class CompoundStatementNode : public Node {
   // CompoundStatement → begin StatementList end
-public:
+ public:
 };
 
 class StatementListNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    STATEMENT,                  //statement_list → statement
-  //    STATEMENT_LIST_STATEMENT,   //statement_list → statement_list ; statement
+  //    STATEMENT_LIST_STATEMENT,   //statement_list → statement_list ;
+  //    statement
   //  };
 };
 
 class StatementNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    EPSILON,            // statement → EPSILON
-    VAR_ASSIGN_OP_EXP,  // statement → variable assignop expression
-    FUNC_ASSIGN_OP_EXP, // statement → func_id assignop expression
-    PROCEDURE_CALL,     // statement → procedure_call
-    COMPOUND_STATEMENT, // statement → compound_statement
-    IF_STATEMENT,       // statement → if expression then statement else_part
-    FOR_STATEMENT, // statement → for id assignop expression downto expression do statement
-    READ_STATEMENT,    // statement → read ( variable_list )
-    READLN_STATEMENT,  // statement → readln ( variable_list )
-    WRITE_STATEMENT,   // statement → write ( expression_list )
-    WRITELN_STATEMENT, // statement → writeln ( expression_list )
-    CASE_STATEMET,     // statement → case expression of case_body end
-    WHILE_STATEMENT,   // statement → while expression do statement
-    REPEAT_STATEMENT   // statement → repeat statement_list until expression
+    EPSILON,             // statement → EPSILON
+    VAR_ASSIGN_OP_EXP,   // statement → variable assignop expression
+    FUNC_ASSIGN_OP_EXP,  // statement → func_id assignop expression
+    PROCEDURE_CALL,      // statement → procedure_call
+    COMPOUND_STATEMENT,  // statement → compound_statement
+    IF_STATEMENT,        // statement → if expression then statement else_part
+    FOR_STATEMENT,  // statement → for id assignop expression downto expression
+                    // do statement
+    READ_STATEMENT,     // statement → read ( variable_list )
+    READLN_STATEMENT,   // statement → readln ( variable_list )
+    WRITE_STATEMENT,    // statement → write ( expression_list )
+    WRITELN_STATEMENT,  // statement → writeln ( expression_list )
+    CASE_STATEMET,      // statement → case expression of case_body end
+    WHILE_STATEMENT,    // statement → while expression do statement
+    REPEAT_STATEMENT    // statement → repeat statement_list until expression
   };
 
   StatementNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
 };
 
 class VariableListNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    VARIABLE,               // variable_list → variable
-    VARIABLE_LIST_VARIABLE, // variable_list → variable_list , variable
+    VARIABLE,                // variable_list → variable
+    VARIABLE_LIST_VARIABLE,  // variable_list → variable_list , variable
   };
 
   VariableListNode(GrammarType gt) : grammar_type_(gt) {}
@@ -449,7 +459,7 @@ public:
   void Format(bool ref, FILE *dst);
   bool set_types(std::vector<TypeTemplate *> *type_list);
 
-private:
+ private:
   // TODO get basic_type ptr lists
   std::vector<BasicType *> basic_types;
   GrammarType grammar_type_;
@@ -457,15 +467,15 @@ private:
 
 class VariableNode : public Node {
   // variable → id id_varparts
-public:
+ public:
   void Format(bool ref, FILE *dst);
 };
 
 class IDVarPartNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    _ID,      // id_varpart → .id
-    EXP_LIST, // id_varpart → [ expression_list ]
+    _ID,       // id_varpart → .id
+    EXP_LIST,  // id_varpart → [ expression_list ]
   };
 
   IDVarPartNode(GrammarType gt) : grammar_type_(gt) {}
@@ -473,20 +483,19 @@ public:
   void Format(FILE *dst) override;
   void set_array_lb(int lb) { array_lb_ = lb; }
 
-private:
+ private:
   int array_lb_ = 0;
   GrammarType grammar_type_;
 };
 
 class IDVarPartsNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    EPSILON,      //id_varparts → EPSILON
   //    MULTIPLE_IDv, //id_varparts → id_varparts id_varpart
   //  };
   void set_lb(std::vector<ArrayType::ArrayBound> &bound) {
-    if (child_list_.size() == 0)
-      return;
+    if (child_list_.size() == 0) return;
     child_list_[0]->DynamicCast<IDVarPartsNode>()->set_lb(bound);
     if (child_list_[1]->DynamicCast<IDVarPartNode>()->grammar_type() ==
         IDVarPartNode::GrammarType::EXP_LIST) {
@@ -497,7 +506,7 @@ public:
 };
 
 class BranchListNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    SINGLE_BRAN,   //branchlist → branch
   //    MULTIPLE_BRAN, //branchlist → branchlist branch
@@ -505,7 +514,7 @@ public:
 };
 
 class CaseBodyNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    BRANCH_LIST,   //case_body → branch_list
   //    EPSILON,       //case_body → EPSILON
@@ -514,52 +523,51 @@ public:
 
 class BranchNode : public Node {
   // branch → const_list : statement
-public:
+ public:
   void Format(FILE *dst) override;
 
-private:
+ private:
 };
 
 class ConstListNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    SINGLE_CON,   //constlist → const_variable
   //    MULTIPLE_CON, //constlist → constlist , const_variable
   //  };
   void Format(FILE *dst) override;
-
 };
 
 class UpdownNode : public Node {
   // updown → to | downto
-public:
+ public:
   UpdownNode(bool is_increase = true) : is_increase_(is_increase) {}
   bool IsIncrease() { return is_increase_; }
   void set_increase(bool inc) { is_increase_ = inc; }
 
-private:
+ private:
   bool is_increase_;
 };
 
 class ProcedureCallNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    ID,          // procedure_call → id
-    ID_EXP_LIST, // procedure_call → id ( expression_list )
+    ID,           // procedure_call → id
+    ID_EXP_LIST,  // procedure_call → id ( expression_list )
   };
 
   ProcedureCallNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
 };
 
 class ElseNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    EPSILON,        // else_part → EPSILON
-    ELSE_STATEMENT, // else_part → else statement
+    EPSILON,         // else_part → EPSILON
+    ELSE_STATEMENT,  // else_part → else statement
   };
 
   ElseNode(GrammarType gt) : grammar_type_(gt) {}
@@ -568,15 +576,15 @@ public:
     return child_list_[0]->DynamicCast<StatementNode>();
   }
 
-private:
+ private:
   GrammarType grammar_type_;
 };
 
 class ExpressionListNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    EXP,          // expression_list → expression
-    EXP_LIST_EXP, // expression_list → expression_list , expression
+    EXP,           // expression_list → expression
+    EXP_LIST_EXP,  // expression_list → expression_list , expression
   };
 
   ExpressionListNode(GrammarType gt) : grammar_type_(gt) {}
@@ -585,7 +593,7 @@ public:
   bool set_types(std::vector<TypeTemplate *> *type_list);
   void set_ref(std::stack<bool> *ref);
 
-private:
+ private:
   // TODO get basic_type ptr lists
   std::vector<BasicType *> basic_types;
   GrammarType grammar_type_;
@@ -597,9 +605,10 @@ class ExpressionNode : public Node {
   // str_expression -> str_
   // str_expression -> str_expression + str_
   //    S_EXP,              // expression → simple_expression
-  //    S_EXP_ADDOP_TERM,   // expression → simple_expression relop simple_expression
+  //    S_EXP_ADDOP_TERM,   // expression → simple_expression relop
+  //    simple_expression
   //  };
-public:
+ public:
   enum class TargetType {
     EXPRESSION,
     VAR_ARRAY,
@@ -612,7 +621,7 @@ public:
   TargetType target_type() { return target_type_; }
   void Format(FILE *dst) override;
 
-private:
+ private:
   TargetType target_type_;
   bool is_ref_ = 0;
 };
@@ -620,12 +629,12 @@ private:
 class StrExpressionNode : public Node {
   // str_expression -> str_ ## [leaf]
   // str_expression -> str_expression + str_
-public:
+ public:
   void Format(FILE *dst) override;
 };
 
 class SimpleExpressionNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    TERM,               //simple_expression → term
   //    POSI_TERM,          //simple_expression → +term
@@ -635,7 +644,7 @@ public:
 };
 
 class TermNode : public Node {
-public:
+ public:
   //  enum class GrammarType {
   //    FACTOR,               //term → factor
   //    TERM_MULOP_FACTOR,    //term → term mulop factor
@@ -643,34 +652,34 @@ public:
   void set_op_div(bool op) { op_div = op; }
   void Format(FILE *dst) override;
 
-private:
+ private:
   bool op_div = false;
 };
 
 class FactorNode : public Node {
-public:
+ public:
   enum class GrammarType {
-    UCONST_VAR,  // factor → unsigned_const_variable
-    VARIABLE,    // factor → variable
-    EXP,         // factor → ( expression )
-    ID_EXP_LIST, // factor → id ( expression_list )
-    NOT,         // factor → not factor
+    UCONST_VAR,   // factor → unsigned_const_variable
+    VARIABLE,     // factor → variable
+    EXP,          // factor → ( expression )
+    ID_EXP_LIST,  // factor → id ( expression_list )
+    NOT,          // factor → not factor
   };
 
   FactorNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
 
-private:
+ private:
   GrammarType grammar_type_;
 };
 
 class UnsignConstVarNode : public Node {
   // unsigned_const_variable → num | 'letter'
-public:
+ public:
 };
 
-} // namespace ast
+}  // namespace ast
 
-}// namespace pascals
+}  // namespace pascals
 
 #endif
