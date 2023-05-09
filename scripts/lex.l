@@ -88,7 +88,7 @@ ANNO_2                  ("//"[^\n]*)
 ID                      ({letter}|[_])({letter}|{digit}|[_])*
 
 /* 字符 */
-CHAR                    ('[^\n]')
+CHAR                    ('[^'\n]')
 /*字符串*/
 STRING_                 (\'([^\\\'\n]|(\\.)){2,}\')
 
@@ -186,10 +186,11 @@ SUBCATALOG              ".."
                         }
 
 ('')                              { cache_line(); print_error("Illegal character constant"); }
+(''')                             { cache_line(); print_error("Illegal character constant"); }
 ('\n')                            { cache_line(); print_error("Illegal character constant"); }
 
-('[^'\n][^']*(\n)[^']*')         { cache_line(); print_error("Illegal string constant"); }
-('[^']*(\n)[^']*[^'\n]')         { cache_line(); print_error("Illegal string constant"); }
+('[^'\n][^']*(\n)[^']*')          { cache_line(); print_error("Illegal string constant"); }
+('[^']*(\n)[^']*[^'\n]')          { cache_line(); print_error("Illegal string constant"); }
               
 (\{[^}]*)                         { cache_line(); print_error("Unclosed comment"); }
 ('[^']*)                          { cache_line(); print_error("Unclosed string constant"); }
