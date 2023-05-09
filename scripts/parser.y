@@ -1481,10 +1481,8 @@ call_procedure_statement:
     {   
         //类型检查
         // call_procedure_statement -> id.
-        ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
+        FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"Type check failed. Procedure not exist.",$1.line_num,$1.column_num);
-        } else if(ObjectSymbol::SYMBOL_TYPE::FUNCTION == tmp->symbol_type()){
             semantic_error(real_ast,"No such procedure named " + $1.value.get<string>(),$1.line_num,$1.column_num);
         } else {
             //函数调用 类型检查
@@ -1837,7 +1835,7 @@ factor:
         $$.is_lvalue = false;
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"Type check failed. Function not exist.",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"No such function named " + $1.value.get<string>(),$1.line_num,$1.column_num);
             break;
         }else if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
             yyerror(real_ast,"Type check failed\n");
