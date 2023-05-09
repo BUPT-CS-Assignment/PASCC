@@ -1494,7 +1494,7 @@ call_procedure_statement:
         } else {
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
+                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",$1.line_num,0);
             }
         }
         if(error_flag)
@@ -1514,7 +1514,7 @@ call_procedure_statement:
         } else {
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
+                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",$1.line_num,0);
             }
         }
         if(error_flag)
