@@ -191,10 +191,8 @@ SUBCATALOG              ".."
 ('[^\n](.|\n)*\n(.|\n)*')         { cache_line(); print_error("Illegal string constant"); }
 ('(.|\n)*\n(.|\n)*[^\n]')         { cache_line(); print_error("Illegal string constant"); }
               
-
 (\{[^}]*)                         { cache_line(); print_error("Unclosed comment"); }
 ('[^']*)                          { cache_line(); print_error("Unclosed string constant"); }
-
 
 .                                 { cache_line(); print_error("Illegal character"); char_count++; }
 
