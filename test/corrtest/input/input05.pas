@@ -1,54 +1,49 @@
-program TestStd;
+program TestProcAndFunc;
 
 var
-  x: integer;
-  c: char;
-  b: boolean;
-  f: real;
+  a, b: integer;
+
+procedure testPro1;
+begin
+  writeln(2023);
+end;
+
+procedure testPro2(n: integer);
+begin
+  writeln(n + 1);
+end;
+
+function testFunc: integer;
+begin
+  writeln(2023);
+  testFunc := 54;
+end;
+
+function gcd(a, b: integer): integer;
+begin
+  if b = 0 then gcd := a
+  else gcd := gcd(b, a mod b);
+end;
+
+procedure swap(var x, y: integer);
+var
+  temp: integer;
+begin
+  temp := x;
+  x := y;
+  y := temp;
+end;
 
 begin
-  x := -5;
-  writeln("abs(", x, ") = ", abs(x));
+  writeln('procedure-test');
+  testPro1;
+  testPro2(2022);
   
-  writeln("sqr(", x, ") = ", sqr(x));
-
-  writeln("odd(", x, ") = ", odd(x));
-
-  x := 65;
-  writeln("chr(", x, ") = ", chr(x));
-
-  c := 'B';
-  writeln("ord(", c, ") = ", ord(c));
-
-  writeln("succ(", c, ") = ", succ(c));
-
-  writeln("pred(", c, ") = ", pred(c));
-
-  f := 3.8;
-  writeln("round(", f, ") = ", round(f));
-
-  f := 3.8;
-  writeln("trunc(", f, ") = ", trunc(f));
-
-  f := 90;
-  writeln("sin(", f, ") = ", sin(f));
-
-  f := 180;
-  writeln("cos(", f, ") = ", cos(f));
-
-  f := 2;
-  writeln("exp(", f, ") = ", exp(f));
-
-  f := 10;
-  writeln("ln(", f, ") = ", ln(f));
-
-  f := 16;
-  writeln("sqrt(", f, ") = ", sqrt(f));
-
-  f := 1;
-  writeln("arctan(", f, ") = ", arctan(f));
-
-  writeln("eof = ", eof);
-
-  writeln("eoln = ", eoln);
+  writeln();
+  writeln('function-test');  
+  a := testFunc;
+  b := 24;
+  writeln(gcd(a, b));
+  swap(a, b);
+  writeln(a, ' ', b);
 end.

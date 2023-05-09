@@ -1,8 +1,22 @@
-procedure-test
-2023
-2023
+if .. then .. else
+n < 5
 
-function-test
-2023
-6
-24 54
+case .. of .. end
+n is between 1 and 3
+
+while .. do
+1
+2
+3
+
+repeat .. until
+1
+2
+
+for .. to/downto .. do
+3
+2
+1
+1
+2
+3

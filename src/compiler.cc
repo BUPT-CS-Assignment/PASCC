@@ -29,18 +29,24 @@ Compiler::Compiler(std::string dir) {
   }else{
     cur_dir_ = dir;
   }
-  log_info("compiler: current dir : %s", cur_dir_.c_str());
+  log_debug("compiler: current dir : %s", cur_dir_.c_str());
 }
 
 
 int Compiler::Compile(string in, string out, string st) {
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   AST ast;
+  try{
+    yyparse(&ast);
+  }catch (std::exception& e){
+    log_error("internal error: %s", e.what());
+    return -1;
+  }
 
-  if(yyparse(&ast) == 0){
-    log_info("syntax assert no-error");
+  if(ast.Valid()){
+    log_info("syntax assert success.");
   }else{
-    log_error("syntax error");
+    log_error("syntax error.");
     return -1;
   }
   // ast format
@@ -104,7 +110,7 @@ void Compiler::Remove(std::string file_name, bool rm_all) {
 #ifdef WIN32
     sprintf(cmd_buf,"if exist \"%s\" del \"%s\"",fp,fp);
 #else
-    sprintf(cmd_buf,"find . -type f -name '%s' -delete",fp);
+    sprintf(cmd_buf,"find . -type f -wholename '%s' -delete",fp);
 #endif
 
     log_debug("compiler: remove command : %s",cmd_buf);
@@ -140,5 +146,5 @@ void yyinput(const char* in){
 
 void yydebug_(int level){
   // TODO  set yydebug
-  yydebug = (level == 4);
+  yydebug = (level == 5);
 }

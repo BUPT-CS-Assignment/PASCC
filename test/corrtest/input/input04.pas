@@ -1,49 +1,44 @@
-program TestProcAndFunc;
-
+program TestFlowControl;
 var
-  a, b: integer;
-
-procedure testPro1;
+  n: integer;
 begin
-  writeln(2023);
-end;
+  n := 3;
 
-procedure testPro2(n: integer);
-begin
-  writeln(n + 1);
-end;
+  writeln('if .. then .. else');
+  if n <= 0 then writeln('n <= 0')
+  else 
+    if n >= 5 then writeln('n >= 5')
+    else writeln('n < 5');
 
-function testFunc: integer;
-begin
-  writeln(2023);
-  testFunc := 54;
-end;
+  writeln;
+  writeln('case .. of .. end');
+  case n of
+    1, 2, 3: writeln('n is between 1 and 3');
+    4, 5, 6: writeln('n is between 4 and 6');
+    7: writeln('n is 7')
+  end;
 
-function gcd(a, b: integer): integer;
-begin
-  if b = 0 then gcd := a
-  else gcd := gcd(b, a mod b);
-end;
+  writeln();
+  writeln('while .. do');
+  n := 1;
+  while n <= 3 do
+  begin
+    writeln(n);
+    n := n + 1;
+  end;
 
-function swap(var x, y: integer): integer;
-var
-  temp: integer;
-begin
-  temp := x;
-  x := y;
-  y := temp;
-end;
+  writeln;
+  writeln('repeat .. until');
+  n := 1;
+  repeat
+    writeln(n);
+    n := n + 1;
+  until n = 3;
 
-begin
-  writeln("procedure-test");
-  testPro1;
-  testPro2(2022);
-  
-  writeln("");
-  writeln("function-test");  
-  a := testFunc;
-  b := 24;
-  writeln(gcd(a, b));
-  swap(a, b);
-  writeln(a, " ", b);
+  writeln();
+  writeln('for .. to/downto .. do');
+  for n := 3 downto 1 do
+    writeln(n);
+  for n := 1 to 3 do
+    writeln(n);
 end.

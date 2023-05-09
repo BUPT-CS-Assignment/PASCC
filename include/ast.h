@@ -41,8 +41,12 @@ public:
   Node *parent() { return parent_; }
   // append child
   void append_child(Node *child) {
-    //child->set_parent(this);
+    // child->set_parent(this);
     child_list_.emplace_back(child);
+  }
+  Node* get(int pos) {
+    if(pos < 0) pos += child_list_.size();
+    return child_list_[pos];
   }
 
   // generate
@@ -59,7 +63,8 @@ public:
 
 protected:
   Node *parent_;                   // parent node pointer
-  std::vector<Node *> child_list_; // child pointer list
+  // child pointer list
+  std::vector<Node *> child_list_;
 };
 
 /**
@@ -73,6 +78,7 @@ public:
     if (root_ != nullptr)
       delete root_;
   }
+  bool Valid(){return root_ != nullptr;}
   Node *root() { return root_; }
   PStdLibs *libs() { return &libs_; }
   void set_root(Node *root) { root_ = root; }
@@ -264,6 +270,7 @@ public:
     return type_name;
   }
   void set_type(BasicType *type) { type_ = type;}
+  BasicType *type() { return type_; }
   void Format(FILE *dst) override;
 
 private:
@@ -328,8 +335,13 @@ public:
 
   SubprogramHeadNode(GrammarType gt) : grammar_type_(gt) {}
   void Format(FILE *dst) override;
+  GrammarType grammar_type() { return grammar_type_; }
+  void set_id(std::string id) { id_ = id; }
+  std::string id(){return id_;}
 
 private:
+  std::string id_;
+
   GrammarType grammar_type_;
 };
 
@@ -514,9 +526,8 @@ public:
   //    SINGLE_CON,   //constlist → const_variable
   //    MULTIPLE_CON, //constlist → constlist , const_variable
   //  };
-  // ConstListNode(GrammarType gt) : grammar_type_(gt) {}
-  std::vector<Node *> *Consts() { return &child_list_; }
-  void Format_Constlist(FILE *dst, StatementNode *statement);
+  void Format(FILE *dst) override;
+
 };
 
 class UpdownNode : public Node {

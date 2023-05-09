@@ -1,11 +1,14 @@
 %option case-insensitive
 %{   
 #include "parser.h"
+#include "log.h"
 #include "parser.tab.h"
 
 int last_line_count;    
 int line_count = 1;
 int char_count = 1;
+int left_brackets_num=0;
+int left_Mbrackets_num=0;
 bool new_line_flag;
 int i;
 std::string cur_line_info;
@@ -78,15 +81,16 @@ INT_NUM                 {digits}
 REAL_NUM                {digits}{fraction}
 
 /* 注释 */
-ANNO                    (\{[^}]*\})      
+ANNO_1                  (\{[^}]*\})      
+ANNO_2                  ("//"[^\n]*)
 
 /* 标识符 */
-ID                      {letter}({letter}|{digit})*
+ID                      ({letter}|[_])({letter}|{digit}|[_])*
 
 /* 字符 */
-CHAR                    ('({letter}|{digit})')
+CHAR                    ('[^\\n]')
 /*字符串*/
-STRING_                  (\"([^\\\"\n]|(\\.))*\")
+STRING_                  (\'([^\\\'\n]|(\\.)){2,}\')
 
 
 /* 运算符 */
@@ -97,7 +101,7 @@ MULOP                   ("*"|"/"|"div"|"mod"|"and")
 ASSIGNOP                ":="
 
 /* 分隔符 */
-SEP                     (";"|"."|"("|")"|","|":"|"["|"]")
+SEP                     (";"|"."|","|":")
 SUBCATALOG              ".."
   
 %% 
@@ -143,7 +147,8 @@ SUBCATALOG              ".."
 {INT_NUM}               { cache_line(); to_int(); return INT_NUM; }
 {REAL_NUM}              { cache_line(); to_float(); return REAL_NUM; }
 
-{ANNO}                  { cache_line(); process_anno(); }
+{ANNO_1}                { cache_line(); process_anno(); }
+{ANNO_2}                { cache_line(); process_anno(); }
 
 {CHAR}                  { cache_line(); to_char(); return CHAR; }
 {STRING_}               { cache_line(); to_str_case_sensitive(); return STRING_; }
@@ -159,13 +164,33 @@ SUBCATALOG              ".."
 {SEP}                   { cache_line(); to_str(); return yytext[0]; }
 {SUBCATALOG}            { cache_line(); to_str(); return SUBCATALOG; }
 
+("[")                   { cache_line(); to_str(); left_Mbrackets_num++;return yytext[0];}    
+("(")                   { cache_line(); to_str(); left_brackets_num++;return yytext[0];}
+("]")                   { 
+                            cache_line(); to_str(); 
+                            left_Mbrackets_num--;
+                            if(left_Mbrackets_num<0){
+                                left_Mbrackets_num=0;
+                                print_error("A'[' is expected.");
+                            }
+                            return yytext[0];
+                        }
+(")")                   { 
+                            cache_line(); to_str(); 
+                            left_brackets_num--;
+                            if(left_brackets_num<0){
+                                left_brackets_num=0;
+                                print_error("A'(' is expected.");
+                            }
+                            return yytext[0];
+                        }
+
 ('')                                            { cache_line(); print_error("Illegal character constant"); }
 ('{letter}({letter}|[^{letter}'])+')            { cache_line(); print_error("Illegal character constant"); }
 ('[^{letter}']({letter}|[^{letter}'])*')        { cache_line(); print_error("Illegal character constant"); }
 
 (\{[^}]*)               { cache_line(); print_error("Unclosed comment"); }
 ('[^']*)                { cache_line(); print_error("Unclosed character constant"); }
-
 .                       { cache_line(); print_error("Illegal character"); char_count++; }
 
 %%
@@ -182,7 +207,7 @@ void wrap()
 
 void process_anno()
 {
-    printf("ANNO\t\t%s\t\t\t%d\t\t%d\n", yytext, line_count, char_count);
+    log_debug("ANNO\t\t%s\t\t\t%d\t\t%d", yytext, line_count, char_count);
     for(i = 0; i < strlen(yytext); i++)
     {
         if(yytext[i] == '\n') wrap();
@@ -199,7 +224,7 @@ void cache_line()
 
 void print_error(const char *msg)
 {
-    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s - %s\n", line_count, char_count, msg, yytext); 
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s: %s\n", line_count, char_count, msg, yytext);
 }
 
 void to_str()
