@@ -47,9 +47,9 @@ void semantic_error(AST* real_ast,std::string msg,int line,int row){
 %token PROGRAM FUNCTION PROCEDURE TO DOWNTO 
 %token ARRAY TYPE CONST RECORD
 %token IF THEN ELSE CASE OF WHILE DO FOR REPEAT UNTIL BEGIN_ END
-%token ADDOP NOT PLUS UMINUS TRUE FALSE CONSTASSIGNOP  
+%token ADDOP NOT PLUS UMINUS CONSTASSIGNOP  
 %token<token_info> ID CHAR INT_NUM REAL_NUM BASIC_TYPE RELOP MULOP STRING_ VAR SUBCATALOG
-%token<token_info> ASSIGNOP WRITE WRITELN SEP READ READLN
+%token<token_info> ASSIGNOP WRITE WRITELN SEP READ READLN TRUE FALSE
 %type<id_list_node_info> id_list
 %type<value_node_info> const_variable num
 %type<periods_node_info> periods
@@ -316,6 +316,20 @@ const_variable :
             break; 
         $$.const_variable_node = new LeafNode($1.value);
 
+    }| TRUE
+    {
+        $$.type_ptr = TYPE_BOOL;
+        $$.value = $1.value;
+        if(error_flag)
+            break; 
+        $$.const_variable_node = new LeafNode(ConstValue(true));
+    }| FALSE
+    {
+        $$.type_ptr = TYPE_BOOL;
+        $$.value = $1.value;
+        if(error_flag)
+            break; 
+        $$.const_variable_node = new LeafNode(ConstValue(false));
     };
 
 num :
