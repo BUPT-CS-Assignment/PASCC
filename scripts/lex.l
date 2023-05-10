@@ -149,8 +149,8 @@ SUBCATALOG              ".."
 {INT_NUM}               { cache_line(); to_int(); return INT_NUM; }
 {REAL_NUM}              { cache_line(); to_float(); return REAL_NUM; }
 
-{ANNO_1}                { cache_line(); process_anno(); }
-{ANNO_2}                { cache_line(); process_anno(); }
+{ANNO_1}                { process_anno(); }
+{ANNO_2}                { process_anno(); }
 
 {CHAR}                  { cache_line(); to_char(); return CHAR; }
 {STRING_}               { cache_line(); to_str_case_sensitive(); return STRING_; }

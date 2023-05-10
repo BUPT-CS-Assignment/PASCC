@@ -2081,7 +2081,7 @@ program_head: PROGRAM error
         if(yychar==';')
             yyerror(real_ast,"expected identifier before ';'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2265,7 +2265,7 @@ const_declaration: ID '=' error
         if(yychar==';')
             yyerror(real_ast,"expected const value before ';'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2330,7 +2330,7 @@ const_declaration: const_declaration ';' ID '=' error
         if(yychar==';')
             yyerror(real_ast,"expected const value before ';'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2348,7 +2348,7 @@ const_declaration: const_declaration ';'error
         if(yychar=='=')
             yyerror(real_ast,"expected identifier before '='");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2382,7 +2382,7 @@ type_declaration: ID '=' error
         if(yychar==';')
             yyerror(real_ast,"expected type before ';'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2447,7 +2447,7 @@ type_declaration: type_declaration ';' ID '=' error
         if(yychar==';')
             yyerror(real_ast,"expected type before ';'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2465,7 +2465,7 @@ type_declaration: type_declaration ';' error
         if(yychar=='=')
             yyerror(real_ast,"expected identifier before '='");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2499,7 +2499,7 @@ var_declaration: id_list ':' error
         if(yychar==';')
             yyerror(real_ast,"expected type identifier before ';'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2520,7 +2520,7 @@ var_declaration: var_declaration ';' id_list ':' error
         if(yychar==';')
             yyerror(real_ast,"expected type identifier before ';'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2538,7 +2538,7 @@ var_declaration: var_declaration ';' error
         if(yychar==':')
             yyerror(real_ast,"expected identifier before ':'");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2746,7 +2746,7 @@ statement: IF error
             fprintf(stderr,"\t| %s",location_pointer);
         }
         else{
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
@@ -2761,7 +2761,7 @@ statement: REPEAT error
         if(yychar=='='||yychar==RELOP||yychar==END)
             yyerror(real_ast,"'UNTIL' might be missing");
         else
-            yyerror(real_ast,"syntax error");
+            yyerror(real_ast,"Syntax error");
         location_pointer_refresh();
         while(yychar!=';'&&!new_line_flag && yychar!=END)
             yychar=yylex();
@@ -2772,7 +2772,91 @@ statement: REPEAT error
 // statement:FOR ID ASSIGNOP expression updown expression DO statement 
 
 // WHILE expression DO statement
- 
+
+statement: WHILE error
+{
+    new_line_flag=false;
+    location_pointer_refresh();
+    char msg[] = "'do' might be missing";
+    int length = last_line_info.size();
+    if(yychar==ID)
+        fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
+    else{
+        fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,"Syntax error");   
+    }
+    while(yychar!=';'&&!new_line_flag && yychar!=END)
+        yychar=yylex();
+    memset(location_pointer,' ',length);
+    memcpy(location_pointer+length,"^\n\0",3);
+    fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+    fprintf(stderr,"\t| %s",location_pointer);
+};
+
+statement:WHILE expression  DO error
+{
+    new_line_flag=false;
+    yyerror(real_ast,"Syntax error");
+    location_pointer_refresh();
+    while(yychar!=';'&&!new_line_flag && yychar!=END)
+        yychar=yylex();
+    fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+    fprintf(stderr,"\t| %s",location_pointer);
+}; 
+
+statement:FOR ID ASSIGNOP expression  updown expression DO error
+{
+    new_line_flag=false;
+    yyerror(real_ast,"Syntax error");
+    location_pointer_refresh();
+    while(yychar!=';'&& yychar!=END)
+        yychar=yylex();
+    if(new_line_flag){
+        fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+    else if(yychar==';'){
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+};
+
+statement:FOR ID ASSIGNOP expression  updown error
+{
+    new_line_flag=false;
+    yyerror(real_ast,"Syntax error");
+    location_pointer_refresh();
+    while(yychar!=';'&& yychar!=END)
+        yychar=yylex();
+    if(new_line_flag){
+        fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+    else if(yychar==';'){
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+};
+
+statement:FOR ID ASSIGNOP error
+{
+    new_line_flag=false;
+    if(yychar==INT_NUM)
+        yyerror(real_ast,"'to' or 'downto' might be missing");
+    else
+        yyerror(real_ast,"Syntax error");
+    location_pointer_refresh();
+    while(yychar!=';'&& yychar!=END)
+        yychar=yylex();
+    if(new_line_flag){
+        fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+    else if(yychar==';'){
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    }
+};
+
 
 statement: variable ASSIGNOP type
     {
