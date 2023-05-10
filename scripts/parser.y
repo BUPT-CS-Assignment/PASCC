@@ -106,9 +106,9 @@ program :
 	ProgramNode* node = new ProgramNode();
         node->append_child($1);
         node->append_child($2);
-        real_ast->set_root(node);
 
         if(!error_flag && !semantic_error_flag && !lex_error_flag){
+            real_ast->set_root(node);
             real_ast->set_valid(true);
         }
         delete top_table_set;
