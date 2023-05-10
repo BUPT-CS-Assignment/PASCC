@@ -13,7 +13,7 @@ int i;
 int last_line_count;            // 当前行的前一个非空行 号
 std::string cur_line_info;      // 当前行已读入信息
 std::string last_line_info;     // 当前行的前一个非空行 信息
-int lex_error_flag = 0;
+int lex_error_flag = 0;         // 标志词法分析过程中是否出现错误
 
 void wrap();
 void process_anno();
