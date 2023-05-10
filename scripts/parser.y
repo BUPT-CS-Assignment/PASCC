@@ -1311,7 +1311,10 @@ variable:
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
                 string tn1 = type_name(tmp->type());
-                if(tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::FUNCTION || tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::CONST){
+                if(tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::FUNCTION ||
+                   tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::CONST ||
+                   tmp->type() == TYPE_ERROR ||
+                   tmp->type()->template_type() == TypeTemplate::TYPE::BASIC){
                     if($2.var_parts != nullptr && $2.var_parts->size() != 0){
                     	semantic_error(real_ast,"requested value is nither array nor record (have '"+tn1+"')",line_count,0);
                     }
