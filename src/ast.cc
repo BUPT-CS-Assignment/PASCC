@@ -553,6 +553,7 @@ bool ExpressionListNode::set_types(std::vector<TypeTemplate *> *type_list) {
 }
 
 void ExpressionListNode::set_ref(std::stack<bool> *ref) {
+  if(child_list_.size() == 0 || ref == nullptr || ref->size() == 0) return;
   if (grammar_type_ == GrammarType::EXP) {
     if (ref->top()) child_list_[0]->DynamicCast<ExpressionNode>()->set_is_ref();
   } else {
