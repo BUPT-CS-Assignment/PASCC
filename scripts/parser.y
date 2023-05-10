@@ -1323,7 +1323,7 @@ variable:
 		    }
                 }
                 tn2 += "]";
-                semantic_error(real_ast,"invalid access to '"+tn1+"' by '"+tn2+"'",line_count,0);
+                semantic_error(real_ast,"subscripted value has type '"+tn1+"' but access with "+tn2,line_count,0);
             }
             if(tmp->is_ref()){
                 name = "*("+name+")";
