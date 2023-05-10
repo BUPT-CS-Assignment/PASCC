@@ -1311,19 +1311,26 @@ variable:
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
                 string tn1 = type_name(tmp->type());
-                string tn2 = "[";
-                std::vector<VarParts>* vp = $2.var_parts;
-                if(vp == nullptr) tn2 += "error";
-                else{
-                    for(int i=0;i<vp->size();i++){
-			if((*vp)[i].subscript != nullptr){
-			    tn2 += type_name(*((*vp)[i].subscript));
-			    if(i != vp->size() - 1) tn2 += ", ";
-			}
-		    }
+                if(tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::FUNCTION || tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::CONST){
+                    if($2.var_parts != nullptr && $2.var_parts->size() != 0){
+                    	semantic_error(real_ast,"requested value is nither array nor record (have '"+tn1+"')",line_count,0);
+                    }
+                }else{
+                    string tn2;
+                    std::vector<VarParts>* vp = $2.var_parts;
+                    if(vp == nullptr) tn2 += "error";
+                    else{
+                        for(int i=0;i<vp->size();i++){
+                            if((*vp)[i].flag == 0){
+                                tn2 += "[" + type_name(*((*vp)[i].subscript)) + "]";
+                            }else{
+                            	tn2 += (*vp)[i].name;
+                            }
+			    if(i != vp->size() - 1) tn2 += ",";
+		        }
+                    }
+                    semantic_error(real_ast,"invalid request from '"+tn1+"' with '"+tn2+"'",line_count,0);
                 }
-                tn2 += "]";
-                semantic_error(real_ast,"subscripted value has type '"+tn1+"' but access with "+tn2,line_count,0);
             }
             if(tmp->is_ref()){
                 name = "*("+name+")";
@@ -2481,7 +2488,7 @@ var_declaration: id_list ':' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"expected identifier or type before ';'");
+            yyerror(real_ast,"expected type identifier before ';'");
         else
             yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
@@ -2502,7 +2509,7 @@ var_declaration: var_declaration ';' id_list ':' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"expected identifier or type before ';'");
+            yyerror(real_ast,"expected type identifier before ';'");
         else
             yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
