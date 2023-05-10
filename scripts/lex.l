@@ -171,7 +171,7 @@ SUBCATALOG              ".."
                             left_Mbrackets_num--;
                             if(left_Mbrackets_num<0){
                                 left_Mbrackets_num=0;
-                                print_error("a '[' is expected");
+                                print_error("expected '['");
                             }
                             return yytext[0];
                         }
@@ -180,7 +180,7 @@ SUBCATALOG              ".."
                             left_brackets_num--;
                             if(left_brackets_num<0){
                                 left_brackets_num=0;
-                                print_error("a '(' is expected");
+                                print_error("expected '('");
                             }
                             return yytext[0];
                         }
@@ -229,7 +229,7 @@ void cache_line()
 
 void print_error(const char *msg)
 {
-    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s: %s\n", line_count, char_count, msg, yytext);
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s at '%s'\n", line_count, char_count, msg, yytext);
 }
 
 void to_str()

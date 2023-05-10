@@ -1310,8 +1310,20 @@ variable:
             }
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
-                string tn = type_name(tmp->type());
-                semantic_error(real_ast,"cannot access by type '"+tn+"'",line_count,0);
+                string tn1 = type_name(tmp->type());
+                string tn2 = "[";
+                std::vector<VarParts>* vp = $2.var_parts;
+                if(vp == nullptr) tn2 += "error";
+                else{
+                    for(int i=0;i<vp->size();i++){
+			if((*vp)[i].subscript != nullptr){
+			    tn2 += type_name(*((*vp)[i].subscript));
+			    if(i != vp->size() - 1) tn2 += ", ";
+			}
+		    }
+                }
+                tn2 += "]";
+                semantic_error(real_ast,"invalid access to '"+tn1+"' by '"+tn2+"'",line_count,0);
             }
             if(tmp->is_ref()){
                 name = "*("+name+")";
@@ -2602,8 +2614,7 @@ id_varpart: '[' error
             yyerror(real_ast,"expected ']' before ';'");
         }else if(yychar == ASSIGNOP){
             yyerror(real_ast,"expected ']' before ':='");
-        }
-        else
+        }else
             yyerror(real_ast,"invalid expression");
         int left_num = 1;   // 括号匹配
         while (yychar!=';' && yychar!=ASSIGNOP && new_line_flag==false && yychar!= YYEOF ){
@@ -2769,7 +2780,7 @@ statement: variable ASSIGNOP error
 
 statement: variable ':' 
     {
-        yyerror(real_ast,"expected ':=' (have ':' and '='");
+        yyerror(real_ast,"expected ':=' (have ':' and '=')");
         location_pointer_refresh();
     } '=' expression
     {
