@@ -12,6 +12,7 @@ extern "C"
     extern bool new_line_flag;
     extern int yyleng;
     extern int last_line_count;
+    extern int semantic_error_flag;
 }
 extern std::string cur_line_info;
 extern std::string last_line_info;
@@ -21,7 +22,6 @@ int _ = (log_set_level(LOG_INFO), 0);
 TableSet* top_table_set = new TableSet("main",nullptr);
 
 int error_flag=0;
-int semantic_error_flag=0;
 char location_pointer[256];
 void location_pointer_refresh();
 
@@ -2594,10 +2594,11 @@ ID_or_type:ID
 
 type: ARRAY '[' periods ']' error
     {
+        new_line_flag=false;
         location_pointer_refresh();
-        yyerror(real_ast,"expected 'of' before type");
-    } type
-    {
+        yyerror(real_ast,"The symbol 'of' is expected here.");
+        while(yychar!=';' && !new_line_flag)
+            yychar=yylex();
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
@@ -2606,15 +2607,23 @@ type: ARRAY  error
     {
         new_line_flag=false;
         location_pointer_refresh();
-        yyerror(real_ast,"invalid periods");
-        while(yychar!=';' && !new_line_flag && yychar!=OF )
+        yyerror(real_ast,"Invaild periods.");
+        while(yychar!=';' && !new_line_flag)
             yychar=yylex();
-    }
-     OF type 
-    {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
+
+type: ARRAY '[' periods ']' OF error
+    {
+        new_line_flag=false;
+        location_pointer_refresh();
+        yyerror(real_ast,"unknown error!");
+        while(yychar!=';' && !new_line_flag)
+            yychar=yylex();
+        fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
+        fprintf(stderr,"\t| %s",location_pointer);
+    };    
 
 id_varpart: '[' error 
     {

@@ -11,6 +11,7 @@ int left_brackets_num=0;
 int left_Mbrackets_num=0;
 bool new_line_flag;
 int i;
+int semantic_error_flag=0;
 std::string cur_line_info;
 std::string last_line_info;
 
@@ -206,6 +207,8 @@ void wrap()
         cur_line_info.clear();
         last_line_count= line_count;
     }
+    left_brackets_num=0;
+    left_Mbrackets_num=0;
     line_count++; 
     char_count = 1;
 }
@@ -235,7 +238,8 @@ void print_lex_error(const char *msg)
 
 void print_syntax_error(const char *msg)
 {
-    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s at '%s'\n", line_count, char_count, msg, yytext);
+    semantic_error_flag=1;
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s: %s\n", line_count, char_count, msg, yytext);
 }
 
 void to_str()
