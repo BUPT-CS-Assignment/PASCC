@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
   parser.add_argument<string>("-s", "--style")
       .nArgs('?')
       .help("code style")
-      .choices({"google", "llvm", "chromium", "mozilla", "webkit"});
+      .choices({"google", "none", "llvm", "chromium", "mozilla", "webkit"});
   // add optional argument 'debug level' to set debug level
   parser.add_argument<int>("-d", "--debug")
       .nArgs('?')

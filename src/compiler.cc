@@ -71,7 +71,7 @@ int Compiler::Compile(AST* in, string out, string st) {
 }
 
 void Compiler::CodeFormat(string file_name, string st) {
-  if (file_name.length() == 0 || st.length() == 0) return;
+  if (file_name.length() == 0 || st.length() == 0 || st == "none") return;
   if (CODE_STYLES.find(st) == CODE_STYLES.end()) {
     log_warn("undefined code style: %s, reset to 'google'", st.c_str());
     st = "google";
