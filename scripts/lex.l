@@ -3,16 +3,16 @@
 #include "parser.h"
 #include "log.h"
 #include "parser.tab.h"
-
-int last_line_count;    
-int line_count = 1;
-int char_count = 1;
-int left_brackets_num=0;
-int left_Mbrackets_num=0;
-bool new_line_flag;
+    
+int line_count = 1;             // 当前行 号
+int char_count = 1;             // 当前列 号
+int left_brackets_num = 0;      // 当前未被匹配的左小括号数
+int left_Mbrackets_num = 0;     // 当前未被匹配的左中括号数
+bool new_line_flag;             // 标志换行符的读入 
 int i;
-std::string cur_line_info;
-std::string last_line_info;
+int last_line_count;            // 当前行的前一个非空行 号
+std::string cur_line_info;      // 当前行已读入信息
+std::string last_line_info;     // 当前行的前一个非空行 信息
 int lex_error_flag = 0;
 
 void wrap();
@@ -202,10 +202,11 @@ SUBCATALOG              ".."
 %%
 void wrap()
 {
-    if(cur_line_info.size()!=0){ // 跳过空行
+    // 跳过空行
+    if(cur_line_info.size() != 0){ 
         last_line_info = cur_line_info;
         cur_line_info.clear();
-        last_line_count= line_count;
+        last_line_count = line_count;
     }
     line_count++; 
     char_count = 1;
