@@ -2036,7 +2036,7 @@ program:error
     {
         location_pointer_refresh();
         new_line_flag=false;
-        yyerror(real_ast,"There are unrecoverable errors. Please check the code carefully.");
+        yyerror(real_ast,"unrecoverable errors occurred");
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2044,7 +2044,6 @@ program:error
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
-        //fprintf(stderr,"abort!\n");
         while (yychar!= YYEOF){
             yychar = yylex();
         }        
@@ -2058,9 +2057,9 @@ program_head: PROGRAM error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"An identifier is expected.");
+            yyerror(real_ast,"expected identifier before ';'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2076,14 +2075,14 @@ program: program_head program_body error
         int length=cur_line_info.size();
         if(length==0){
             length = last_line_info.size();
-            char msg[]="A dot is expected at the end of the program .";
+            char msg[]="expected '.' at the end of the program";
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
             memcpy(location_pointer+length,"^\n\0",3);
             fprintf(stderr,"%d:\t| %s\n",last_line_count,last_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }else{        
-            yyerror(real_ast,"A dot is expected at the end of the program .");
+            yyerror(real_ast,"expected '.' at the end of the program");
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
@@ -2094,7 +2093,7 @@ program: program_head program_body error
 const_declarations: CONST error
     {
         if(yychar==TYPE || yychar==BEGIN_ || yychar==VAR || yychar==FUNCTION || yychar== PROCEDURE){
-            char msg[] = "A ';' is expected here.";
+            char msg[] = "expected ';'";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
@@ -2104,7 +2103,7 @@ const_declarations: CONST error
             break;
         }
         else if(yychar==ID){
-            char msg[] = "A ';' is expected here.";
+            char msg[] = "expected ';'";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
@@ -2116,9 +2115,9 @@ const_declarations: CONST error
             location_pointer_refresh();
             new_line_flag=false;
             if(yychar=='=')
-                yyerror(real_ast,"A const definition must begin with an identifier");
+                yyerror(real_ast,"expected identifier before '='");
             else
-                yyerror(real_ast,"There are unrecoverable errors in const_declarations. ");
+                yyerror(real_ast,"unrecoverable errors occurred in const_declarations");
             while (new_line_flag==false && yychar!= YYEOF){
                 yychar = yylex();
             }
@@ -2135,7 +2134,7 @@ const_declarations: CONST error
 type_declarations: TYPE  error
     {
         if(yychar==BEGIN_ || yychar==VAR || yychar==FUNCTION || yychar== PROCEDURE){
-            char msg[] = "A ';' is expected here.";
+            char msg[] = "expected ';'";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
@@ -2145,7 +2144,7 @@ type_declarations: TYPE  error
             break;
         }
         else if(yychar==ID){
-            char msg[] = "A ';' is expected here.";
+            char msg[] = "expected ';'";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
@@ -2157,9 +2156,9 @@ type_declarations: TYPE  error
             location_pointer_refresh();
             new_line_flag=false;
             if(yychar=='=')
-                yyerror(real_ast,"A type definition must begin with an identifier");
+                yyerror(real_ast,"expected identifier before '='");
             else
-                yyerror(real_ast,"There are unrecoverable errors in type_declarations.");
+                yyerror(real_ast,"unrecoverable errors occurred in type_declarations");
             while (new_line_flag==false && yychar!= YYEOF){
                 yychar = yylex();
             }
@@ -2176,7 +2175,7 @@ type_declarations: TYPE  error
 var_declarations: VAR error
     {
         if( yychar==BEGIN_ || yychar==FUNCTION || yychar== PROCEDURE){
-            char msg[] = "A ';' is expected here.";
+            char msg[] = "expcted ';'";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
@@ -2186,7 +2185,7 @@ var_declarations: VAR error
             break;
         }
         else if(yychar==ID){      
-            char msg[] = "A ';' is expected here.";
+            char msg[] = "expected ';'";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
@@ -2198,9 +2197,9 @@ var_declarations: VAR error
             location_pointer_refresh();
             new_line_flag=false;
             if(yychar==':')
-                yyerror(real_ast,"A var definition must begin with an identifier");
+                yyerror(real_ast,"expected identifier before ':'");
             else
-                yyerror(real_ast,"There are unrecoverable errors in var_declarations.");
+                yyerror(real_ast,"unrecoverable errors occurred in var_declarations");
             while (new_line_flag==false && yychar!= YYEOF){
                 yychar = yylex();
             }
@@ -2218,7 +2217,7 @@ var_declarations: VAR error
 const_declaration: ID const_variable
     {
         location_pointer_refresh();
-        yyerror(real_ast,"A '=' is expected.");
+        yyerror(real_ast,"expected '=' before const value");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
@@ -2226,7 +2225,7 @@ const_declaration: ID const_variable
 const_declaration: const_declaration ';' ID const_variable
     {
         location_pointer_refresh();
-        yyerror(real_ast,"A '=' is expected.");
+        yyerror(real_ast,"expected '=' before const value");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };     
@@ -2235,12 +2234,10 @@ const_declaration: ID '=' error
     {
         location_pointer_refresh();
         new_line_flag=false;
-        if(yychar==TRUE||yychar==FALSE)
-            yyerror(real_ast,"Const value cannot be Boolean.");
-        else if(yychar==';')
-            yyerror(real_ast,"A const value is expected here.");
+        if(yychar==';')
+            yyerror(real_ast,"expected const value before ';'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2256,7 +2253,7 @@ const_declaration: ID '=' error
 
 const_declaration: ID ASSIGNOP 
     {
-        yyerror(real_ast,"Should be a '=', not a ':='.");
+        yyerror(real_ast,"expected '=' (have ':=')");
         location_pointer_refresh();
     }
     const_variable 
@@ -2267,7 +2264,7 @@ const_declaration: ID ASSIGNOP
     
 const_declaration: const_declaration ';' ID ASSIGNOP
     {
-        yyerror(real_ast,"Should be a '=', not a ':='.");
+        yyerror(real_ast,"expected '=' (have ':=')");
         location_pointer_refresh();
     }
     const_variable
@@ -2278,7 +2275,7 @@ const_declaration: const_declaration ';' ID ASSIGNOP
 
 const_declaration: ID ':' 
     {
-        yyerror(real_ast,"Should be a '=', not a ':'.");
+        yyerror(real_ast,"expected '=' (have ':')");
         location_pointer_refresh();
     }
     const_variable 
@@ -2289,7 +2286,7 @@ const_declaration: ID ':'
     
 const_declaration: const_declaration ';' ID ':'
     {
-        yyerror(real_ast,"Should be a '=', not a ':'.");
+        yyerror(real_ast,"expected '=' (have ':')");
         location_pointer_refresh();
     }
     const_variable
@@ -2302,12 +2299,10 @@ const_declaration: const_declaration ';' ID '=' error
     {
         location_pointer_refresh();
         new_line_flag=false;
-        if(yychar==TRUE||yychar==FALSE)
-            yyerror(real_ast,"Const value cannot be Boolean.");
-        else if(yychar==';')
-            yyerror(real_ast,"A const value is expected here.");
+        if(yychar==';')
+            yyerror(real_ast,"expected const value before ';'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2323,9 +2318,9 @@ const_declaration: const_declaration ';'error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar=='=')
-            yyerror(real_ast,"An identifier is expected here.");
+            yyerror(real_ast,"expected identifier before '='");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2339,7 +2334,7 @@ const_declaration: const_declaration ';'error
 type_declaration: ID type
     {
         location_pointer_refresh();
-        yyerror(real_ast,"A '=' is expected.");
+        yyerror(real_ast,"expected '=' before type");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
@@ -2347,7 +2342,7 @@ type_declaration: ID type
 type_declaration: type_declaration ';' ID type
     {
         location_pointer_refresh();
-        yyerror(real_ast,"A '=' is expected.");
+        yyerror(real_ast,"expected '=' before type");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };    
@@ -2357,9 +2352,9 @@ type_declaration: ID '=' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"A TYPE is expected here.");
+            yyerror(real_ast,"expected type before ';'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2375,7 +2370,7 @@ type_declaration: ID '=' error
 
 type_declaration: ID ASSIGNOP 
     {
-        yyerror(real_ast,"Should be a '=', not a ':='.");
+        yyerror(real_ast,"expected '=' (have ':=')");
         location_pointer_refresh();
     }
     type 
@@ -2386,7 +2381,7 @@ type_declaration: ID ASSIGNOP
 
 type_declaration: type_declaration ';' ID ASSIGNOP 
     {
-        yyerror(real_ast,"Should be a '=', not a ':='.");
+        yyerror(real_ast,"expected '=' (have ':=')");
         location_pointer_refresh();
     }
     type 
@@ -2397,7 +2392,7 @@ type_declaration: type_declaration ';' ID ASSIGNOP
 
 type_declaration: ID ':' 
     {
-        yyerror(real_ast,"Should be a '=', not a ':'.");
+        yyerror(real_ast,"expected '=' (have ':')");
         location_pointer_refresh();
     }
     type 
@@ -2408,7 +2403,7 @@ type_declaration: ID ':'
 
 type_declaration: type_declaration ';' ID ':' 
     {
-        yyerror(real_ast,"Should be a '=', not a ':'.");
+        yyerror(real_ast,"expected '=' (have ':')");
         location_pointer_refresh();
     }
     type 
@@ -2422,9 +2417,9 @@ type_declaration: type_declaration ';' ID '=' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"A TYPE is expected here.");
+            yyerror(real_ast,"expected type before ';'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2440,9 +2435,9 @@ type_declaration: type_declaration ';' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar=='=')
-            yyerror(real_ast,"An identifier is expected here.");
+            yyerror(real_ast,"expected identifier before '='");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2456,7 +2451,7 @@ type_declaration: type_declaration ';' error
 var_declaration:id_list ID_or_type
     {
         location_pointer_refresh();
-        yyerror(real_ast,"A ':' is expected.");
+        yyerror(real_ast,"expected ':' before identifier or type");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };
@@ -2464,7 +2459,7 @@ var_declaration:id_list ID_or_type
 var_declaration: var_declaration ';' id_list ID_or_type
     {
         location_pointer_refresh();
-        yyerror(real_ast,"A ':' is expected.");
+        yyerror(real_ast,"expected ':' before identifier or type");
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
     };     
@@ -2474,9 +2469,9 @@ var_declaration: id_list ':' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"A type identifier is expected here.");
+            yyerror(real_ast,"expected identifier or type before ';'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2495,9 +2490,9 @@ var_declaration: var_declaration ';' id_list ':' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"A type identifier is expected here.");
+            yyerror(real_ast,"expected identifier or type before ';'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2513,9 +2508,9 @@ var_declaration: var_declaration ';' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==':')
-            yyerror(real_ast,"An identifier is expected here.");
+            yyerror(real_ast,"expected identifier before ':'");
         else
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2528,7 +2523,7 @@ var_declaration: var_declaration ';' error
 
 var_declaration: id_list ASSIGNOP 
     {
-        yyerror(real_ast,"Should be a '=', not a ':='.");
+        yyerror(real_ast,"expected ':' (have ':=')");
         location_pointer_refresh();
     }
     ID_or_type 
@@ -2539,7 +2534,7 @@ var_declaration: id_list ASSIGNOP
 
 var_declaration: var_declaration ';' id_list ASSIGNOP 
     {
-        yyerror(real_ast,"Should be a '=', not a ':='.");
+        yyerror(real_ast,"expected ':' (have ':=')");
         location_pointer_refresh();
     }
     ID_or_type 
@@ -2550,7 +2545,7 @@ var_declaration: var_declaration ';' id_list ASSIGNOP
 
 var_declaration: ID '=' 
     {
-        yyerror(real_ast,"Should be a ':', not a '='.");
+        yyerror(real_ast,"expected ':' (have '=')");
         location_pointer_refresh();
     }
     ID_or_type 
@@ -2561,7 +2556,7 @@ var_declaration: ID '='
 
 var_declaration: var_declaration ';' ID '=' 
     {
-        yyerror(real_ast,"Should be a ':', not a '='.");
+        yyerror(real_ast,"expected ':' (have '=')");
         location_pointer_refresh();
     }
     ID_or_type 
@@ -2578,7 +2573,7 @@ ID_or_type:ID
 type: ARRAY '[' periods ']' error
     {
         location_pointer_refresh();
-        yyerror(real_ast,"The symbol 'of' is expected here.");
+        yyerror(real_ast,"expected 'of' before type");
     } type
     {
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
@@ -2589,7 +2584,7 @@ type: ARRAY  error
     {
         new_line_flag=false;
         location_pointer_refresh();
-        yyerror(real_ast,"Invaild periods.");
+        yyerror(real_ast,"invalid periods");
         while(yychar!=';' && !new_line_flag && yychar!=OF )
             yychar=yylex();
     }
@@ -2603,10 +2598,13 @@ id_varpart: '[' error
     {
         location_pointer_refresh();
         new_line_flag=false;
-        if(yychar==';'|| yychar==ASSIGNOP)
-            yyerror(real_ast,"An ']' is expected.");
+        if(yychar==';'){
+            yyerror(real_ast,"expected ']' before ';'");
+        }else if(yychar == ASSIGNOP){
+            yyerror(real_ast,"expected ']' before ':='");
+        }
         else
-            yyerror(real_ast,"Invaild expression.");
+            yyerror(real_ast,"invalid expression");
         int left_num = 1;   // 括号匹配
         while (yychar!=';' && yychar!=ASSIGNOP && new_line_flag==false && yychar!= YYEOF ){
             if(yychar=='[') left_num++;
@@ -2632,9 +2630,9 @@ id_varpart: '[' error
         }
     };
 
-type: ARRAY '[' periods ']'OF ID 
+type: ARRAY '[' periods ']' OF ID
     {
-        yyerror(real_ast,"Arrays of user-defined type are not supported");
+        yyerror(real_ast,"unsupported definition of array using customized type");
         location_pointer_refresh();
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
@@ -2645,9 +2643,9 @@ factor: '(' error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"An ')' is expected.");
+            yyerror(real_ast,"expected ')' before ';'");
         else
-            yyerror(real_ast,"Invaild expression.");
+            yyerror(real_ast,"invalid expression");
         int left_num = 1;   // 括号匹配
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF ){
             if(yychar=='(') left_num++;
@@ -2675,7 +2673,7 @@ subprogram_head: FUNCTION ID formal_parameter ':' error
         location_pointer_refresh();
         if(yychar==ARRAY||yychar==RECORD||yychar==ID)
         {
-            yyerror(real_ast,"The result of a function must be of type integer, real, Boolean, or char.");
+            yyerror(real_ast,"return type of function should be integer, real, boolean or char");
         }
         while(yychar!=';'&&!new_line_flag)
             yychar=yylex();
@@ -2697,13 +2695,13 @@ statement: IF error
         while(yychar!=THEN && !new_line_flag&&yychar!=';')
             yychar=yylex();
         if(yychar==THEN){
-            yyerror(real_ast,"Invaild expression.");
+            yyerror(real_ast,"invalid expression");
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
             yychar=yylex();
         }
         else if(yychar==';'){
-            char msg[] = "Invaild statement.There might be A 'THEN' missing";
+            char msg[] = "'THEN' might be missing";
             int length = last_line_info.size();
             fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s\n", last_line_count,length,msg);   
             memset(location_pointer,' ',length);
@@ -2712,7 +2710,7 @@ statement: IF error
             fprintf(stderr,"\t| %s",location_pointer);
         }
         else{
-            yyerror(real_ast,"unknown error.");
+            yyerror(real_ast,"syntax error");
             fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
             fprintf(stderr,"\t| %s",location_pointer);
         }
@@ -2725,9 +2723,9 @@ statement: REPEAT error
     {
         new_line_flag=false;
         if(yychar=='='||yychar==RELOP||yychar==END)
-            yyerror(real_ast,"Invaild statement.There might be A 'UNTIL' missing");
+            yyerror(real_ast,"'UNTIL' might be missing");
         else
-            yyerror(real_ast,"unknown error");
+            yyerror(real_ast,"syntax error");
         location_pointer_refresh();
         while(yychar!=';'&&!new_line_flag && yychar!=END)
             yychar=yylex();
@@ -2742,7 +2740,7 @@ statement: REPEAT error
 
 statement: variable ASSIGNOP type
     {
-        yyerror(real_ast,"No type or procedure identifiers may occur as part of an expression.");
+        yyerror(real_ast,"type identifier not allowed");
         location_pointer_refresh();
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
         fprintf(stderr,"\t| %s",location_pointer);
@@ -2753,9 +2751,9 @@ statement: variable ASSIGNOP error
         location_pointer_refresh();
         new_line_flag=false;
         if(yychar==';')
-            yyerror(real_ast,"A expression is expected here.");
+            yyerror(real_ast,"expected expression before ';'");
         else
-            yyerror(real_ast,"Invaild expression.");
+            yyerror(real_ast,"invalid expression");
         while (yychar!=';' && new_line_flag==false && yychar!= YYEOF){
             yychar = yylex();
         }
@@ -2771,7 +2769,7 @@ statement: variable ASSIGNOP error
 
 statement: variable ':' 
     {
-        yyerror(real_ast,"No space between : and =.");
+        yyerror(real_ast,"expected ':=' (have ':' and '='");
         location_pointer_refresh();
     } '=' expression
     {
