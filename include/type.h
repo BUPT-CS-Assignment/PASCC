@@ -26,6 +26,7 @@ class TypeTemplate {
   }
 
   TYPE template_type() { return template_type_; }
+  virtual std::string name() = 0;
   bool StringLike();  // check if stringlike (array of char)
 
  protected:
@@ -47,7 +48,7 @@ class BasicType : public TypeTemplate {
 
   // getter and setter
   BASIC_TYPE type() { return basic_type_; }
-  std::string type_name() {
+  std::string c_name() {
     switch (basic_type_) {
       case BASIC_TYPE::INT:
         return "int";
@@ -61,6 +62,7 @@ class BasicType : public TypeTemplate {
         return "void";
     }
   }
+  std::string name() override;
 
  private:
   BASIC_TYPE basic_type_;
@@ -90,6 +92,7 @@ class ArrayType : public TypeTemplate {
     ArrayBound(const ArrayBound &b2)
         : type_(b2.type_), lb_(b2.lb_), ub_(b2.ub_){};
     ArrayBound &operator=(const ArrayBound &b2);
+    std::string name();
     bool operator==(const ArrayBound &b2) const {
       return type_ == b2.type_ && lb_ == b2.lb_ && ub_ == b2.ub_;
     }
@@ -112,6 +115,7 @@ class ArrayType : public TypeTemplate {
   ArrayBound bound(size_t i) { return bounds_[i]; }  // get bound of dimension i
   bool StringLike(
       int access_layer = 0);  // check if string-like (array of char)
+  std::string name() override;
 
   ArrayType &operator=(const ArrayType &a2);
   bool operator==(const ArrayType &a2) const;
@@ -134,6 +138,8 @@ class RecordType : public TypeTemplate {
   RecordType(std::unordered_map<std::string, TypeTemplate *> types_map)
       : TypeTemplate(TYPE::RECORD), types_map_(std::move(types_map)) {}
   ~RecordType() {}
+
+  std::string name() override;
 
   // add elements
   bool add(std::string name, TypeTemplate *type);
@@ -263,6 +269,20 @@ bool is_same(RecordType *t1, std::vector<std::string> n1, RecordType *t2,
  * @return
  */
 bool is_same(RecordType *t1, std::vector<std::string> n1, TypeTemplate *t2);
+
+/**
+ * @brief get type string of a type
+ * @param t
+ * @return
+ */
+std::string type_name(TypeTemplate* t);
+
+/**
+ * @brief get type string of a vector of types
+ * @param t
+ * @return
+ */
+std::string type_name(const std::vector<TypeTemplate*> &t);
 
 /**
  * @brief const value

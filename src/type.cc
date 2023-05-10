@@ -108,6 +108,40 @@ ConstValue ConstValue::operator/(const ConstValue& other) {
   }
 }
 
+std::string BasicType::name() {
+  switch (basic_type_) {
+    case BASIC_TYPE::INT:
+      return "integer";
+    case BASIC_TYPE::REAL:
+      return "real";
+    case BASIC_TYPE::BOOL:
+      return "boolean";
+    case BASIC_TYPE::CHAR:
+      return "char";
+    default:
+      return "none";
+  }
+}
+
+std::string ArrayType::ArrayBound::name() {
+  if(type_ != TYPE_CHAR && type_ != TYPE_INT) {
+    return "[error]";
+  }
+  if(type_ == TYPE_CHAR){
+    return "[" + string(1, (char)lb_) + ".." + string(1, (char)ub_) + "]";
+  }
+  return "[" + std::to_string(lb_) + ".." + std::to_string(ub_) + "]";
+}
+
+std::string ArrayType::name() {
+  std::string ret = "array";
+  for (auto& b : bounds_) {
+    ret += b.name();
+  }
+  string base_name = base_type_ == TYPE_ERROR ? "error" : base_type_->name();
+  return ret + " of " + base_name;
+}
+
 ArrayType::ArrayBound& ArrayType::ArrayBound::operator=(const ArrayBound& b2) {
   type_ = b2.type_;
   lb_ = b2.lb_;
@@ -158,6 +192,15 @@ bool ArrayType::operator==(const ArrayType& a2) const {
     if (!(bounds_[i] == a2.bounds_[i])) return false;
   }
   return true;
+}
+
+std::string RecordType::name() {
+  std::string ret = "record ";
+  for (auto& e : types_map_) {
+    string type_name = e.second == TYPE_ERROR ? "error" : e.second->name();
+    ret += " " + e.first + ":" + type_name + ";";
+  }
+  return ret + " end";
 }
 
 TypeTemplate* RecordType::Visit(std::vector<std::string> names) {
@@ -256,8 +299,8 @@ void TypeInit() {
   operation_map[Operation(TYPE_INT, TYPE_INT, "<=")] = TYPE_BOOL;
   operation_map[Operation(TYPE_INT, TYPE_INT, ">=")] = TYPE_BOOL;
   // real
-  operation_map[Operation(TYPE_REAL, NULL, "-")] = TYPE_INT;
-  operation_map[Operation(TYPE_REAL, NULL, "+")] = TYPE_INT;
+  operation_map[Operation(TYPE_REAL, NULL, "-")] = TYPE_REAL;
+  operation_map[Operation(TYPE_REAL, NULL, "+")] = TYPE_REAL;
   operation_map[Operation(TYPE_REAL, TYPE_REAL, "+")] = TYPE_REAL;
   operation_map[Operation(TYPE_REAL, TYPE_REAL, "-")] = TYPE_REAL;
   operation_map[Operation(TYPE_REAL, TYPE_REAL, "*")] = TYPE_REAL;

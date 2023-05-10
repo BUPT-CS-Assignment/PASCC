@@ -240,7 +240,7 @@ class BasicTypeNode : public Node {
   BasicTypeNode(BasicType *type) : type_(type) {}
 
   std::string TypeName(bool ref = false) {
-    std::string type_name = type_->type_name() + (ref ? "*" : "");
+    std::string type_name = type_->c_name() + (ref ? "*" : "");
     return type_name;
   }
   void set_type(BasicType *type) { type_ = type; }

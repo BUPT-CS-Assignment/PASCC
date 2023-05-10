@@ -95,6 +95,7 @@ class FunctionSymbol : public ObjectSymbol {
   int param_size() { return params_.size(); }
   // get params at specific position
   const Parameter* ParamAt(int pos) { return &params_[pos]; }
+  std::string ParamName();
   bool InsertParam(Parameter&);
 
   // passing parameter assertion

@@ -71,4 +71,20 @@ bool is_same(RecordType* t1, vector<string> n1, TypeTemplate* t2) {
   return is_same(temp_t1, t2);
 }
 
+
+string type_name(TypeTemplate* t){
+  if(t == TYPE_ERROR) return "error";
+  if(t == TYPE_STRINGLIKE) return "stringlike";
+  return t->name();
+}
+
+string type_name(const vector<TypeTemplate*> &t){
+  string res = "";
+  for(int i = 0; i < t.size(); i++){
+    res += type_name(t[i]);
+    if(i != t.size() - 1) res += ", ";
+  }
+  return res;
+}
+
 }  // namespace pascals

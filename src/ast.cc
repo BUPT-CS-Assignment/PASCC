@@ -211,7 +211,7 @@ void TypeNode::PeriodsFormat(FILE *dst) {
 }
 
 void BasicTypeNode::Format(FILE *dst) {
-  PRINT("%s", type_->type_name().c_str())
+  PRINT("%s", type_->c_name().c_str())
 }
 
 void PeriodNode::Format(FILE *dst) { PRINT("[%d]", len_) }
@@ -230,7 +230,7 @@ void SubprogramDeclarationNode::Format(FILE *dst) {
 
   FormatAt(0, dst);
   PRINT("{\n")
-  if (func_flag) PRINT("%s %s;\n", type->type_name().c_str(), id.c_str())
+  if (func_flag) PRINT("%s %s;\n", type->c_name().c_str(), id.c_str())
   FormatAt(1, dst);
   if (func_flag) PRINT("return %s;\n", id.c_str())
   PRINT("}\n")
