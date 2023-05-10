@@ -12,6 +12,7 @@ namespace ast {
 
 /* **************** ast output **************** */
 void AST::Format(FILE *dst) {
+  if(!Valid()) return;
   if (root_ != nullptr) {
     libs_.Format(dst);
     root_->Format(dst);

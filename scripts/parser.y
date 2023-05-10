@@ -12,11 +12,11 @@ extern "C"
     extern bool new_line_flag;
     extern int yyleng;
     extern int last_line_count;
-    extern int semantic_error_flag;
 }
 extern std::string cur_line_info;
 extern std::string last_line_info;
-
+extern int lex_error_flag;
+int semantic_error_flag = 0;
 std::stack<TableSet*> table_set_queue;
 int _ = (log_set_level(LOG_INFO), 0);
 TableSet* top_table_set = new TableSet("main",nullptr);
@@ -103,13 +103,13 @@ program :
     program_head program_body '.'
     {   
         // prgram -> program_head program_body '.'
-        if(!error_flag&&!semantic_error_flag){
-            ProgramNode* node = new ProgramNode();
-            node->append_child($1);
-            node->append_child($2);
-            real_ast->set_root(node);
-        } else {
-            real_ast->set_root(nullptr); 
+	ProgramNode* node = new ProgramNode();
+        node->append_child($1);
+        node->append_child($2);
+        real_ast->set_root(node);
+
+        if(!error_flag && !semantic_error_flag && !lex_error_flag){
+            real_ast->set_valid(true);
         }
         delete top_table_set;
     };
@@ -2094,6 +2094,12 @@ program: program_head program_body error
         location_pointer_refresh();
         table_set_queue.push(top_table_set);
         real_ast->libs()->Preset(table_set_queue.top()->symbols());
+        ProgramNode* node = new ProgramNode();
+	node->append_child($1);
+	node->append_child($2);
+	real_ast->set_root(node);
+	delete top_table_set;
+
         int length=cur_line_info.size();
         if(length==0){
             length = last_line_info.size();

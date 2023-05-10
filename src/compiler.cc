@@ -44,11 +44,12 @@ int Compiler::Compile(string in, string out, string st) {
 
   if (ast.Valid()) {
     log_info("tick(): yyparse cost %lf ms.",Tick());
-    log_info("syntax assert success.");
+    log_info("successfully generated AST.");
   } else {
-    log_error("syntax error.");
+    log_error("some error occurred when parsing.");
     return -1;
   }
+
   // ast format
   return Compile(&ast, out, st);
 }

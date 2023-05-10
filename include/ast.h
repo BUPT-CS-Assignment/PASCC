@@ -68,7 +68,8 @@ class AST {
     log_debug("~AST(): delete ast");
     if (root_ != nullptr) delete root_;
   }
-  bool Valid() { return root_ != nullptr; }
+  bool Valid() { return valid_ && root_ != nullptr; }
+  void set_valid(bool v) { valid_ = v;}
   // getter and setter
   Node *root() { return root_; }
   PStdLibs *libs() { return &libs_; }
@@ -78,6 +79,7 @@ class AST {
   void Format(FILE *dst);
 
  private:
+  bool valid_ = false;
   Node *root_;
   PStdLibs libs_;
 };
