@@ -2596,7 +2596,7 @@ type: ARRAY '[' periods ']' error
     {
         new_line_flag=false;
         location_pointer_refresh();
-        yyerror(real_ast,"The symbol 'of' is expected here.");
+        yyerror(real_ast,"expected 'of' before type.");
         while(yychar!=';' && !new_line_flag)
             yychar=yylex();
         fprintf(stderr,"%d:\t| %s\n",line_count,cur_line_info.c_str());
