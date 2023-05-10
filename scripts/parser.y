@@ -201,7 +201,8 @@ const_declaration :
         ConstSymbol *symbol = new ConstSymbol($3.value.get<string>(),$5.value,$3.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($3.value.get<string>(),symbol)){
-            semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
+            string tn = $3.value.get<string>();
+            semantic_error(real_ast,"redefinition of '"+tn+"'",$3.line_num,$3.column_num);
         } else{
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::DECLARATION,$5.type_ptr);
             $$->append_child($1);
@@ -220,7 +221,8 @@ const_declaration :
         ConstSymbol *symbol = new ConstSymbol($1.value.get<string>(),$3.value,$1.line_num);
 
         if(!table_set_queue.top()->Insert<ConstSymbol>($1.value.get<string>(),symbol)){
-            semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
+            string tn = $1.value.get<string>();
+            semantic_error(real_ast,"redefinition of '"+tn+"'",$1.line_num,$1.column_num);
         } else {
             $$ = new ConstDeclarationNode(ConstDeclarationNode::GrammarType::VALUE,$3.type_ptr);
             LeafNode* leaf_node = new LeafNode($1.value);
@@ -237,7 +239,8 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared or  is not a const variable.",$2.line_num,$2.column_num);
+            string tn = $2.value.get<string>();
+            semantic_error(real_ast,"'"+tn+"' undeclared or is not constant",$2.line_num,$2.column_num);
             $$.is_right = false;
         } else {
             /* You cannot use variables to assign values to constants */
@@ -254,7 +257,8 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($2.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            semantic_error(real_ast,"The identifier \'"+ $2.value.get<string>() +"\' has not been declared or is not a const variable.",$2.line_num,$2.column_num);
+            string tn = $2.value.get<string>();
+            semantic_error(real_ast,"'"+tn+"' undeclared or is not constant",$2.line_num,$2.column_num);
             $$.is_right = false;
         } else {
             /* You cannot use variables to assign values to constants */
@@ -271,7 +275,8 @@ const_variable :
         ConstSymbol *symbol = table_set_queue.top()->SearchEntry<ConstSymbol>($1.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(!symbol){
-            semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has not been declared or is not a const variable.",$1.line_num,$1.column_num);
+            string tn = $1.value.get<string>();
+            semantic_error(real_ast,"'"+tn+"' undeclared or is not constant",$1.line_num,$1.column_num);
             $$.is_right = false;
         } else {
             $$.type_ptr = symbol->type();
@@ -366,19 +371,13 @@ type_declaration :
         // type_declaration -> type_declaration ';' ID '=' type
         if(error_flag)
             break;
-        if ($5.main_type == TypeAttr::BASIC) {
-            if (!table_set_queue.top()->Insert<BasicType>($3.value.get<string>(),dynamic_cast<BasicType*>($5.type_ptr))){
-                semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
-            }
-        } else if ($5.main_type == TypeAttr::ARRAY) {
-            if (!table_set_queue.top()->Insert<ArrayType>($3.value.get<string>(),dynamic_cast<ArrayType*>($5.type_ptr))){
-                semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
-            } 
-        } else if ($5.record_info) {
-            if (!table_set_queue.top()->Insert<RecordType>($3.value.get<string>(),dynamic_cast<RecordType*>($5.type_ptr))){
-                semantic_error(real_ast,"The identifier \'"+ $3.value.get<string>() +"\' has been declared.",$3.line_num,$3.column_num);
-            } 
-        }
+        string tn = $3.value.get<string>();
+        bool err1 = $5.main_type == TypeAttr::BASIC && !table_set_queue.top()->Insert<BasicType>(tn,dynamic_cast<BasicType*>($5.type_ptr));
+        bool err2 = $5.main_type == TypeAttr::ARRAY && !table_set_queue.top()->Insert<ArrayType>(tn,dynamic_cast<ArrayType*>($5.type_ptr));
+        bool err3 = $5.record_info && !table_set_queue.top()->Insert<RecordType>(tn,dynamic_cast<RecordType*>($5.type_ptr));
+        if(err1 || err2 || err3){
+	    semantic_error(real_ast,"redefinition of '"+tn+"'",$3.line_num,$3.column_num);
+	}
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::MULTIPLE_DECL);
         $$->append_child($1);
@@ -395,19 +394,13 @@ type_declaration :
         // type_declaration -> ID '=' type
         if(error_flag)
             break;
-        if ($3.main_type == TypeAttr::BASIC) {
-            if (!table_set_queue.top()->Insert<BasicType>($1.value.get<string>(),dynamic_cast<BasicType*>($3.type_ptr))){
-                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
-            } 
-        } else if ($3.main_type == TypeAttr::ARRAY) {
-            if (!table_set_queue.top()->Insert<ArrayType>($1.value.get<string>(),dynamic_cast<ArrayType*>($3.type_ptr))){
-                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
-            } 
-        } else if ($3.record_info) {
-            if (!table_set_queue.top()->Insert<RecordType>($1.value.get<string>(),dynamic_cast<RecordType*>($3.type_ptr))){
-                semantic_error(real_ast,"The identifier \'"+ $1.value.get<string>() +"\' has been declared.",$1.line_num,$1.column_num);
-            } 
-        }
+        string tn = $1.value.get<string>();
+        bool err1 = $3.main_type == TypeAttr::BASIC && !table_set_queue.top()->Insert<BasicType>(tn,dynamic_cast<BasicType*>($3.type_ptr));
+        bool err2 = $3.main_type == TypeAttr::ARRAY && !table_set_queue.top()->Insert<ArrayType>(tn,dynamic_cast<ArrayType*>($3.type_ptr));
+        bool err3 = $3.record_info && !table_set_queue.top()->Insert<RecordType>(tn,dynamic_cast<RecordType*>($3.type_ptr));
+        if(err1 || err2 || err3){
+	    semantic_error(real_ast,"redefinition of '"+tn+"'",$1.line_num,$1.column_num);
+	}
 
         $$ = new TypeDeclarationNode(TypeDeclarationNode::GrammarType::SINGLE_DECL);
         LeafNode *leaf_node = new LeafNode($1.value);
@@ -566,11 +559,11 @@ period :
             $$.bound->lb_ = int($1.value.get<int>());
             $$.bound->ub_ = int($3.value.get<int>());
         } else {
-            semantic_error(real_ast,"array bound must be integer or char",$2.line_num,$2.column_num);
+            semantic_error(real_ast,"array bound should be integer or char",$2.line_num,$2.column_num);
         }
         if(arr_len < 0){
             arr_len = 0;
-            semantic_error(real_ast,"array bound must be positive",$2.line_num,$2.column_num);
+            semantic_error(real_ast,"array bound should be positive",$2.line_num,$2.column_num);
         }
         if(error_flag){
             break;
@@ -597,7 +590,7 @@ var_declarations :
             int row = $2.pos_info->find(i.first)->second.second;
             ObjectSymbol *obj = new ObjectSymbol(i.first, i.second,line);
             if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first,obj)){
-                semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line,row);
+                semantic_error(real_ast,"redefinition of '"+ i.first +"'",line,row);
                 yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
             }
         }
@@ -620,7 +613,7 @@ var_declaration :
             auto res = $$.record_info->insert(make_pair(i.first, $5.type_ptr));
             $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
             if (!res.second){
-                semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
+                semantic_error(real_ast,"redefinition of '"+ i.first +"'",line_count,i.second);
             }
         }
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::MULTIPLE_DECL,VariableDeclarationNode::ListType::TYPE);
@@ -648,7 +641,7 @@ var_declaration :
             auto res = $$.record_info->insert(make_pair(i.first, $3.type_ptr));
             $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
             if (!res.second){
-                semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
+                semantic_error(real_ast,"redefinition of '"+ i.first +"'",line_count,i.second);
             }
         }
         $$.variable_declaration_node = new VariableDeclarationNode(VariableDeclarationNode::GrammarType::SINGLE_DECL,VariableDeclarationNode::ListType::TYPE);
@@ -672,14 +665,15 @@ var_declaration :
         $$.pos_info = $1.pos_info;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($5.value.get<string>());
         if(tmp == nullptr){
-            semantic_error(real_ast,"Undefined type",$5.line_num,$5.column_num);
+            string tn = $5.value.get<string>();
+            semantic_error(real_ast,"undefined type '"+tn+"'",$5.line_num,$5.column_num);
             break;
         } else {
             for (auto i : *($3.list_ref)){
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
                 $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
                 if (!res.second){
-                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
+                    semantic_error(real_ast,"redefinition of '"+ i.first +"'",line_count,i.second);
                 }
             }
         }
@@ -699,7 +693,8 @@ var_declaration :
                 break;
         TypeTemplate *tmp = table_set_queue.top()->SearchEntry<TypeTemplate>($3.value.get<string>());
         if(tmp==nullptr){
-            semantic_error(real_ast,"Undefined type",$3.line_num,$3.column_num);
+            string tn = $3.value.get<string>();
+            semantic_error(real_ast,"undefined type '"+tn+"'",$3.line_num,$3.column_num);
             $$.record_info = new std::unordered_map<std::string, TypeTemplate*>();
             $$.pos_info = new std::unordered_map<std::string, std::pair<int,int>>();
             break;
@@ -710,7 +705,7 @@ var_declaration :
                 auto res = $$.record_info->insert(make_pair(i.first, tmp));
                 $$.pos_info->insert(make_pair(i.first,std::make_pair(line_count,i.second)));
                 if (!res.second){
-                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line_count,i.second);
+                    semantic_error(real_ast,"redefinition of '"+ i.first +"'",line_count,i.second);
                 }
             }
         }
@@ -772,7 +767,8 @@ subprogram_head :
             tmp = new FunctionSymbol($2.value.get<string>(), $5.type_ptr, $2.line_num);
         }
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            semantic_error(real_ast,"Redefinition of function",$2.line_num,$2.column_num);
+            string tn = $2.value.get<string>();
+            semantic_error(real_ast,"redefinition of function '"+tn+"'",$2.line_num,$2.column_num);
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
@@ -794,7 +790,7 @@ subprogram_head :
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     int line = $3.pos_info->at(cnt).first;
                     int row = $3.pos_info->at(cnt).second;
-                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line,row);
+                    semantic_error(real_ast,"redefinition of '"+ i.first +"'",line,row);
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
                 }
                 cnt++;
@@ -828,7 +824,8 @@ subprogram_head :
         }
         
         if (!table_set_queue.top()->Insert<FunctionSymbol>($2.value.get<string>(), tmp)){
-            semantic_error(real_ast,"Redefinition of procedure",$2.line_num,$2.column_num);
+            string tn = $2.value.get<string>();
+            semantic_error(real_ast,"redefinition of procedure '"+tn+"'",$2.line_num,$2.column_num);
             yynote($2.value.get<string>(),table_set_queue.top()->SearchEntry<FunctionSymbol>($2.value.get<string>())->decl_line());
         } 
 
@@ -847,7 +844,7 @@ subprogram_head :
                 if(!table_set_queue.top()->Insert<ObjectSymbol>(i.first, tmp)){
                     int line = $3.pos_info->at(cnt).first;
                     int row = $3.pos_info->at(cnt).second;
-                    semantic_error(real_ast,"The identifier \'"+ i.first +"\' has been declared.",line,row);
+                    semantic_error(real_ast,"redefinition of '"+ i.first +"'",line,row);
                     yynote(i.first,table_set_queue.top()->SearchEntry<ObjectSymbol>(i.first)->decl_line());
                 }
                 cnt++;
@@ -997,7 +994,9 @@ statement:
         		 $1.type_ptr->StringLike() &&
         		 $3.type_ptr==TYPE_STRINGLIKE);
         if(!var_flag && !str_flag){
-            semantic_error(real_ast,"Type check failed. Type conflict for ASSIGN operation.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            semantic_error(real_ast,"incompatible type assigning '"+tn1+"' from '"+tn2+"'",line_count,0);
             break;
         }
         std::string func_name = table_set_queue.top()->tag();
@@ -1007,7 +1006,7 @@ statement:
         }else{
             $$ = new StatementNode(StatementNode::GrammarType::VAR_ASSIGN_OP_EXP);
             if (!$1.is_lvalue){
-                semantic_error(real_ast,"The left-hand side of an assignment must be a variable.",$2.line_num,$2.column_num);
+                semantic_error(real_ast,"lvalue required as left operand of assignment",$2.line_num,$2.column_num);
             }
         }
         if(error_flag)
@@ -1039,7 +1038,8 @@ statement:
             break;
         //类型检查
         if(!is_same($2.type_ptr,TYPE_BOOL)){
-            semantic_error(real_ast,"Type check failed. Ilegal expression type for IF statement.",line_count,0);
+            string tn = type_name($2.type_ptr);
+            semantic_error(real_ast,"IF quantity cannot be '"+tn+"'",line_count,0);
         }
         $$ = new StatementNode(StatementNode::GrammarType::IF_STATEMENT);
         $$->append_child($2.expression_node);
@@ -1052,12 +1052,17 @@ statement:
         if(error_flag)
             break;
         //类型检查
-        if(is_same($2.type_ptr,TYPE_REAL)||!is_basic($2.type_ptr)){
-            semantic_error(real_ast,"Type check failed. Type conflict for CASE statement.",line_count,0);
+        bool valid = $2.type_ptr == TYPE_INT || $2.type_ptr == TYPE_BOOL || $2.type_ptr == TYPE_CHAR;
+        if(!valid){
+            string tn = type_name($2.type_ptr);
+            semantic_error(real_ast,"CASE quantity cannot be '"+tn+"'",line_count,0);
         }
         if(!is_same($4.type_ptr,TYPE_ERROR)){
-            if(!is_same($2.type_ptr,$4.type_ptr))
-                semantic_error(real_ast,"Type check failed. Type conflict for CASE statement.",line_count,0);
+            if(!is_same($2.type_ptr,$4.type_ptr)){
+            	string tn = type_name($2.type_ptr);
+            	string tn2 = type_name($4.type_ptr);
+                semantic_error(real_ast,"CASE label cannot reduce from '"+tn2+"' to '"+tn+"'",line_count,0);
+            }
         }
         $$ = new StatementNode(StatementNode::GrammarType::CASE_STATEMET);
         $$->append_child($2.expression_node);
@@ -1069,7 +1074,8 @@ statement:
         if(error_flag)
             break;
         if(!is_same($2.type_ptr,TYPE_BOOL)){
-            semantic_error(real_ast,"Type check failed. Ilegal expression type for WHILE statement.",line_count,0);
+            string tn = type_name($2.type_ptr);
+            semantic_error(real_ast,"WHILE quantity cannot be '"+tn+"'",line_count,0);
         }
         $$ = new StatementNode(StatementNode::GrammarType::WHILE_STATEMENT);
         $$->append_child($2.expression_node);
@@ -1083,7 +1089,8 @@ statement:
             break;
         //类型检查
         if(!is_same($4.type_ptr,TYPE_BOOL)){
-            semantic_error(real_ast,"Type check failed. Ilegal expression type for REPEAT statement.",line_count,0);
+            string tn = type_name($4.type_ptr);
+            semantic_error(real_ast,"REPEAT quantity cannot be '"+tn+"'",line_count,0);
         }
         $$ = new StatementNode(StatementNode::GrammarType::REPEAT_STATEMENT);
         $$->append_child($2);
@@ -1097,15 +1104,20 @@ statement:
         //类型检查
         ObjectSymbol *tmp = table_set_queue.top()->SearchEntry<ObjectSymbol>($2.value.get<string>());
         if(tmp==nullptr){
-            semantic_error(real_ast,"Undefined ID",$2.line_num,$2.column_num);
+            string tn = $2.value.get<string>();
+            semantic_error(real_ast,"'"+tn+"' undeclared",$2.line_num,$2.column_num);
             break;
         }
         if((!is_basic(tmp->type()))||(!is_same(tmp->type(),$4.type_ptr))){
-            semantic_error(real_ast,"Type check failed. Ilegal ID type for FOR statement.",line_count,0);
+            string tn1 = type_name(tmp->type());
+            string tn2 = type_name($4.type_ptr);
+            semantic_error(real_ast,"incompatible type assigning '"+tn1+"' from '"+tn2+"'",line_count,0);
         }
 
         if((!is_same($4.type_ptr,$6.type_ptr))||(is_same($4.type_ptr,TYPE_REAL))){
-            semantic_error(real_ast,"Type check failed. Ilegal expression type for FOR statement.",line_count,0);
+            string tn1 = type_name($4.type_ptr);
+            string tn2 = type_name($6.type_ptr);
+            semantic_error(real_ast,"invalid updown type from '"+tn1+"' to '"+tn2+"'",line_count,0);
         }
         $$ = new StatementNode(StatementNode::GrammarType::FOR_STATEMENT);
         LeafNode *id_node = new LeafNode($2.value);
@@ -1128,7 +1140,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.variable_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expected in READ",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"basic type is expected in READ",$1.line_num,$1.column_num);
         }  
         $$ = new StatementNode(StatementNode::GrammarType::READ_STATEMENT);
         $$->append_child($3.variable_list_node);
@@ -1140,7 +1152,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.variable_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expected in READLN",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"basic type is expected in READLN",$1.line_num,$1.column_num);
         }
         $$ = new StatementNode(StatementNode::GrammarType::READLN_STATEMENT);
         $$->append_child($3.variable_list_node);
@@ -1166,7 +1178,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.expression_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expected in WRITE",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"basic type is expected in WRITE",$1.line_num,$1.column_num);
         }
         
         $$ = new StatementNode(StatementNode::GrammarType::WRITE_STATEMENT);
@@ -1180,7 +1192,7 @@ statement:
         if(error_flag)
             break;
         if(!$3.expression_list_node->set_types($3.type_ptr_list)){
-            semantic_error(real_ast,"BasicType is expected in WRITELN",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"basic type is expected in WRITELN",$1.line_num,$1.column_num);
         }
         $$ = new StatementNode(StatementNode::GrammarType::WRITELN_STATEMENT);
         $$->append_child($3.expression_list_node);
@@ -1234,12 +1246,15 @@ variable:
         $$.type_ptr = TYPE_ERROR;
         $$.is_lvalue = false;
         if(tmp == nullptr){
-            semantic_error(real_ast,"Function \'"+$1.value.get<string>()+"\' not defined",$1.line_num,$1.column_num);
+            string tn = $1.value.get<string>();
+            semantic_error(real_ast,"undefined function '"+tn+"'",$1.line_num,$1.column_num);
             break;
         }
         if(tmp->type() != nullptr && tmp->symbol_type() == ObjectSymbol::SYMBOL_TYPE::FUNCTION){
             if(!tmp->AssertParams()){
-                semantic_error(real_ast,"Function call failed",$1.line_num,$1.column_num);
+                string tn = $1.value.get<string>();
+                string param = tmp->ParamName();
+	        semantic_error(real_ast,"too few arguments to function '"+tn+"' (expected '("+param+")')",$1.line_num,$1.column_num);
                 break;
             }
             $$.type_ptr = tmp->type();
@@ -1250,7 +1265,8 @@ variable:
             LeafNode *id_node = new LeafNode(name);
             $$.variable_node->append_child(id_node);
         } else {
-            semantic_error(real_ast,"Function \'"+$1.value.get<string>()+"\' not defined",$1.line_num,$1.column_num);
+            string tn = $1.value.get<string>();
+            semantic_error(real_ast,"undefined function '"+tn+"'",$1.line_num,$1.column_num);
         }
          
     }
@@ -1264,7 +1280,7 @@ variable:
         $$.name = new std::string($1.value.get<string>());
         $$.type_ptr = TYPE_ERROR;
         if(tmp == nullptr) {
-            semantic_error(real_ast,"Variable \'"+name+ "\' not defined",$1.line_num,$1.column_num);
+            semantic_error(real_ast,"'"+name+ "' undeclared",$1.line_num,$1.column_num);
             break;
         } else {
             //类型检查
@@ -1276,7 +1292,8 @@ variable:
                 //函数调用 类型检查
                 if (name!=table_set_queue.top()->tag()){
                     if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                        semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
+                        string param = dynamic_cast<FunctionSymbol*>(tmp)->ParamName();
+                        semantic_error(real_ast,"too many arguments to function '"+name+"' (expected '("+param+")')",line_count,0);
                     }else{
                     	name += "()";
                     }
@@ -1293,7 +1310,8 @@ variable:
             }
             $$.type_ptr = $2.AccessCheck(tmp->type());
             if($$.type_ptr==nullptr){
-                semantic_error(real_ast,"Type check failed. Failed to access value from a complex type.",line_count,0);
+                string tn = type_name(tmp->type());
+                semantic_error(real_ast,"cannot access by type '"+tn+"'",line_count,0);
             }
             if(tmp->is_ref()){
                 name = "*("+name+")";
@@ -1403,7 +1421,9 @@ branch_list:
         if(error_flag)
             break;        
         if($1.type_ptr!=$3.type_ptr){
-            semantic_error(real_ast,"Type check failed. Different types for branches.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            semantic_error(real_ast,"branch type conflict between '"+tn1+"' and '"+tn2+"'",line_count,0);
         }
         $$.type_ptr = $1.type_ptr;
 
@@ -1436,7 +1456,9 @@ const_list:
     {
         // const_list -> const_list , const_variable.
         if($1.type_ptr != $3.type_ptr) {
-           semantic_error(real_ast,"Const_list type not match",line_count,0);
+           string tn1 = type_name($1.type_ptr);
+           string tn2 = type_name($3.type_ptr);
+           semantic_error(real_ast,"constlist type conflict between '"+tn1+"' and '"+tn2+"'",line_count,0);
         }
         $$.type_ptr = $1.type_ptr;
         if(error_flag)
@@ -1475,11 +1497,15 @@ call_procedure_statement:
         // call_procedure_statement -> id (expression_list).
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"Type check failed. Procedure not exist.",$1.line_num,$1.column_num);
+            string tn = $1.value.get<string>();
+            semantic_error(real_ast,"undefined procedure '"+tn+"'",$1.line_num,$1.column_num);
             break;
         }
         if(!tmp || !tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
-            semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
+            string tn = $1.value.get<string>();
+            string param = tmp->ParamName();
+            string input = type_name(*($3.type_ptr_list));
+            semantic_error(real_ast,"invalid arguments '("+input+")' to procedure '"+tn+"' (expected '("+param+")')",line_count,0);
         }
         if(error_flag)
             break;
@@ -1503,12 +1529,15 @@ call_procedure_statement:
         // call_procedure_statement -> id.
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"No such procedure named " + $1.value.get<string>(),$1.line_num,$1.column_num);
+            string tn = $1.value.get<string>();
+            semantic_error(real_ast,"undefined procedure '"+tn+"'",$1.line_num,$1.column_num);
             break;
         } else {
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",$1.line_num,0);
+                string tn = $1.value.get<string>();
+                string param = dynamic_cast<FunctionSymbol*>(tmp)->ParamName();
+	        semantic_error(real_ast,"too few arguments to procedure '"+tn+"' (expected '("+param+")')",line_count,0);
             }
         }
         if(error_flag)
@@ -1523,12 +1552,15 @@ call_procedure_statement:
         // call_procedure_statement -> id().
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"No such procedure named " + $1.value.get<string>(),$1.line_num,$1.column_num);
+            string tn = $1.value.get<string>();
+            semantic_error(real_ast,"undefined procedure '"+tn+"'",$1.line_num,$1.column_num);
             break;
         } else {
             //函数调用 类型检查
             if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
-                semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",$1.line_num,0);
+                string tn = $1.value.get<string>();
+                string param = dynamic_cast<FunctionSymbol*>(tmp)->ParamName();
+	        semantic_error(real_ast,"too many arguments to procedure '"+tn+"' (expected '("+param+")')",$1.line_num,0);
             }
         }
         if(error_flag)
@@ -1573,11 +1605,17 @@ expression:
         // 类型检查
         //从这里开始进行运算检查
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation RELOP.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            string tn3 = $2.value.get<string>();
+            semantic_error(real_ast,"invalid operands to binary "+tn3+" (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, $2.value.get<string>());
         if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation RELOP.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+	    string tn2 = type_name($3.type_ptr);
+	    string tn3 = $2.value.get<string>();
+	    semantic_error(real_ast,"invalid operands to binary "+tn3+" (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1597,12 +1635,16 @@ expression:
         // expression -> simple_expression '=' simple_expression.
         // 类型检查
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-           semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '='.",line_count,0);
+           string tn1 = type_name($1.type_ptr);
+           string tn2 = type_name($3.type_ptr);
+           semantic_error(real_ast,"invalid operands to binary = (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr, "=");
         
         if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '='.",line_count,0);
+           string tn1 = type_name($1.type_ptr);
+           string tn2 = type_name($3.type_ptr);
+           semantic_error(real_ast,"invalid operands to binary = (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1695,13 +1737,13 @@ simple_expression:
         // simple_expression -> + term.
         //类型检查
         if(!is_basic($2.type_ptr)){
-            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '+'.",line_count,0);
+            semantic_error(real_ast,"wrong type argument to unary plus",line_count,0);
         }
 
         auto result=compute((BasicType*)$2.type_ptr, "+");
         
         if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '+'.",line_count,0);
+            semantic_error(real_ast,"wrong type argument to unary plus",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1718,12 +1760,12 @@ simple_expression:
         // simple_expression -> - term.
         //类型检查
         if(!is_basic($2.type_ptr)){
-            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '-'.",line_count,0);
+            semantic_error(real_ast,"wrong type argument to unary minus",line_count,0);
         }
         auto result=compute((BasicType*)$2.type_ptr, "-");
         
         if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation '-'.",line_count,0);
+            semantic_error(real_ast,"wrong type argument to unary minus",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1739,7 +1781,9 @@ simple_expression:
         // simple_expression -> simple_expression or term.、
         //类型检查
         if($1.type_ptr!=$3.type_ptr){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            semantic_error(real_ast,"invalid operands to binary or (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = $1.type_ptr;
@@ -1760,13 +1804,17 @@ simple_expression:
         if(error_flag)
             break;
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-           semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
+           string tn1 = type_name($1.type_ptr);
+           string tn2 = type_name($3.type_ptr);
+           semantic_error(real_ast,"invalid operands to binary + (have '"+tn1+"' and '"+tn2+"')",line_count,0);
            $$.type_ptr = $1.type_ptr;
         }
         else{
             auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"+");
             if(result==TYPE_ERROR){
-                semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '+'.",line_count,0);
+                 string tn1 = type_name($1.type_ptr);
+                 string tn2 = type_name($3.type_ptr);
+                 semantic_error(real_ast,"invalid operands to binary + (have '"+tn1+"' and '"+tn2+"')",line_count,0);
             }
             $$.type_ptr = result;
         }
@@ -1784,11 +1832,15 @@ simple_expression:
         // 类型检查
         // simple_expression -> simple_expression - term.
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '-'.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            semantic_error(real_ast,"invalid operands to binary - (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,"-");
         if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation '-'.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            semantic_error(real_ast,"invalid operands to binary - (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         $$.type_ptr = result;
 
@@ -1814,11 +1866,17 @@ term:
         // term -> term mulop factor.
         // 类型检查
         if((!is_basic($1.type_ptr))||(!is_basic($3.type_ptr))){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation MULOP.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            string tn3 = $2.value.get<string>();
+            semantic_error(real_ast,"invalid operands to binary "+tn3+" (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         auto result=compute((BasicType*)$1.type_ptr, (BasicType*)$3.type_ptr,$2.value.get<string>());
         if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal types for binary operation MULOP.",line_count,0);
+            string tn1 = type_name($1.type_ptr);
+            string tn2 = type_name($3.type_ptr);
+            string tn3 = $2.value.get<string>();
+            semantic_error(real_ast,"invalid operands to binary "+tn3+" (have '"+tn1+"' and '"+tn2+"')",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;
@@ -1870,10 +1928,13 @@ factor:
         $$.is_lvalue = false;
         FunctionSymbol *tmp = table_set_queue.top()->SearchEntry<FunctionSymbol>($1.value.get<string>());
         if(tmp == nullptr) {
-            semantic_error(real_ast,"No such function named " + $1.value.get<string>(),$1.line_num,$1.column_num);
+            semantic_error(real_ast,"undefined function '" + $1.value.get<string>() + "'",$1.line_num,$1.column_num);
             break;
         }else if(!tmp->AssertParams(*($3.type_ptr_list),*($3.is_lvalue_list))){
-            semantic_error(real_ast,"Type check failed. The parameter passed in does not match the type of the formal parameter.",line_count,0);
+            string tn = $1.value.get<string>();
+            string param = tmp->ParamName();
+            string input = type_name(*($3.type_ptr_list));
+            semantic_error(real_ast,"invalid arguments '("+input+")' to function '"+tn+"' (expected '("+param+")')",line_count,0);
             break;
         }
         //if(error_flag)
@@ -1910,12 +1971,12 @@ factor:
         // factor -> not factor.
         // 类型检查
         if(!is_basic($2.type_ptr)){
-            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation 'not'.",line_count,0);
+            semantic_error(real_ast,"wrong type argument to unary not",line_count,0);
         }
         auto result=compute((BasicType*)$2.type_ptr, "not");
         
         if(result==TYPE_ERROR){
-            semantic_error(real_ast,"Type check failed. Ilegal type for unary operation 'not'.",line_count,0);
+            semantic_error(real_ast,"wrong type argument to unary not",line_count,0);
         }
         $$.is_lvalue = false;
         $$.type_ptr = result;

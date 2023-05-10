@@ -171,7 +171,7 @@ SUBCATALOG              ".."
                             left_Mbrackets_num--;
                             if(left_Mbrackets_num<0){
                                 left_Mbrackets_num=0;
-                                print_error("A'[' is expected.");
+                                print_error("a '[' is expected");
                             }
                             return yytext[0];
                         }
@@ -180,22 +180,22 @@ SUBCATALOG              ".."
                             left_brackets_num--;
                             if(left_brackets_num<0){
                                 left_brackets_num=0;
-                                print_error("A'(' is expected.");
+                                print_error("a '(' is expected");
                             }
                             return yytext[0];
                         }
 
-('')                              { cache_line(); print_error("Illegal character constant"); }
-(''')                             { cache_line(); print_error("Illegal character constant"); }
-('\n')                            { cache_line(); print_error("Illegal character constant"); }
+('')                              { cache_line(); print_error("illegal character constant"); }
+(''')                             { cache_line(); print_error("illegal character constant"); }
+('\n')                            { cache_line(); print_error("illegal character constant"); }
 
-('[^'\n][^']*(\n)[^']*')          { cache_line(); print_error("Illegal string constant"); }
-('[^']*(\n)[^']*[^'\n]')          { cache_line(); print_error("Illegal string constant"); }
+('[^'\n][^']*(\n)[^']*')          { cache_line(); print_error("illegal string constant"); }
+('[^']*(\n)[^']*[^'\n]')          { cache_line(); print_error("illegal string constant"); }
               
-(\{[^}]*)                         { cache_line(); print_error("Unclosed comment"); }
-('[^']*)                          { cache_line(); print_error("Unclosed string constant"); }
+(\{[^}]*)                         { cache_line(); print_error("unclosed comment"); }
+('[^']*)                          { cache_line(); print_error("unclosed string constant"); }
 
-.                                 { cache_line(); print_error("Illegal character"); char_count++; }
+.                                 { cache_line(); print_error("illegal character"); char_count++; }
 
 %%
 void wrap()
@@ -222,8 +222,9 @@ void process_anno()
 void cache_line()
 {
     cur_line_info += yytext;
-    //std::cout<<"cur_line_info is "<<cur_line_info<<std::endl;
-
+    if(yydebug){
+        std::cout<<"cur_line_info is "<<cur_line_info<<std::endl;
+    }
 }
 
 void print_error(const char *msg)
@@ -233,8 +234,6 @@ void print_error(const char *msg)
 
 void to_str()
 {
-    // yylval.token_info.value.m_OTHERS = yytext;
-    // strcpy(yylval.token_info.value.m_OTHERS, yytext);
     std::string str = std::string(yytext);
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     yylval.token_info.value.set(str);
@@ -289,8 +288,6 @@ void to_char()
 
 void to_bool()
 {
-    // if() yylval.token_info.value.m_BOOLEAN = 1;
-    // else yylval.token_info.value.m_BOOLEAN = 0;
     yylval.token_info.value.set(yytext[0] == 'T');
     yylval.token_info.line_num = line_count;
     yylval.token_info.column_num = char_count;
