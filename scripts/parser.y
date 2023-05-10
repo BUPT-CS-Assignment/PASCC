@@ -439,6 +439,7 @@ type :
             if($6.type_ptr->template_type() == TypeTemplate::TYPE::ARRAY) {
                 for (auto i : *($6.bounds)){
                     merged_bounds->push_back(i);
+                    $$.bounds->push_back(i);
                 }
                 basic_type = $6.type_ptr->DynamicCast<ArrayType>()->base_type();
             }
