@@ -91,6 +91,7 @@ int main(int argc, char** argv) {
   string style = parser.get_value<string>("s");
 
   string dir = string(argv[0]);
+
   Compiler compiler(dir);
   if (compiler.Compile(in, out, style) < 0) return 1;
 

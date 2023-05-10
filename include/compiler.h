@@ -6,8 +6,9 @@
 #define PASCC_COMPILER_H
 
 #include <set>
-
+#include <chrono>
 #include "ast.h"
+
 extern FILE* yyin;
 const std::string stdout_ = "";
 const std::string stdin_ = "";
@@ -28,6 +29,8 @@ class Compiler {
               std::string st = "google");
   int Compile(pascals::ast::AST* in, std::string out, std::string st);
   void CodeExecute(std::string file_name, std::string args = "");
+  void ResetTick();
+  double Tick();
   void Remove(std::string file_name, bool rm_all = false);
 
  private:
@@ -43,6 +46,7 @@ class Compiler {
 #endif
 
   std::string cur_dir_;
+  std::chrono::high_resolution_clock::time_point start_point_;
   void CodeFormat(std::string file_name, std::string st);
 };
 

@@ -11,6 +11,7 @@
 #include "parser.tab.h"
 using pascals::ast::AST;
 using std::string;
+using namespace std::chrono;
 
 std::set<std::string> Compiler::CODE_STYLES = {
     "llvm", "google", "chromium", "mozilla", "webkit",
@@ -31,6 +32,7 @@ Compiler::Compiler(std::string dir) {
 }
 
 int Compiler::Compile(string in, string out, string st) {
+  ResetTick();
   yyinput(in.length() == 0 ? nullptr : in.c_str());
   AST ast;
   try {
@@ -41,6 +43,7 @@ int Compiler::Compile(string in, string out, string st) {
   }
 
   if (ast.Valid()) {
+    log_info("tick(): yyparse cost %lf ms.",Tick());
     log_info("syntax assert success.");
   } else {
     log_error("syntax error.");
@@ -62,9 +65,10 @@ int Compiler::Compile(AST* in, string out, string st) {
     log_fatal("failed to open file %s.c", out.c_str());
     return -1;
   }
-
+  ResetTick();
   // ast-format
   in->Format(dst);
+  log_info("tick(): ast format cost %lf ms.",Tick());
   // code-format
   CodeFormat(out, st);
   return 0;
@@ -76,6 +80,7 @@ void Compiler::CodeFormat(string file_name, string st) {
     log_warn("undefined code style: %s, reset to 'google'", st.c_str());
     st = "google";
   }
+  ResetTick();
   log_debug("compiler: code style : %s", st.c_str());
 
   char cmd_buf[128];
@@ -86,6 +91,7 @@ void Compiler::CodeFormat(string file_name, string st) {
   sprintf(cmd_buf, CLANG_FORMAT, st.c_str(), file_name.c_str());
 #endif
   system(cmd_buf);
+  log_info("tick(): clang-format cost %lf ms.",Tick());
 }
 
 void Compiler::Remove(std::string file_name, bool rm_all) {
@@ -121,6 +127,16 @@ void Compiler::CodeExecute(string file_name, string args) {
   string cmd = string(cmd_buf) + args;
   log_debug("compiler: exec command : %s", cmd.c_str());
   system(cmd.c_str());
+}
+
+void Compiler::ResetTick() {
+  start_point_ = std::chrono::high_resolution_clock::now();
+}
+
+double Compiler::Tick() {
+  auto cur = std::chrono::high_resolution_clock::now();
+  duration<double,std::ratio<1,1000>> duration_ms=duration_cast<duration<double,std::ratio<1,1000000>>>(cur - start_point_);
+  return duration_ms.count();
 }
 
 void yyinput(const char* in) {

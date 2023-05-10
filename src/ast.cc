@@ -17,7 +17,7 @@ void AST::Format(FILE *dst) {
     root_->Format(dst);
   }
   log_info("ast format success");
-  fclose(dst);
+  if(dst != stdout) fclose(dst);
 }
 
 //////////////////////////////
