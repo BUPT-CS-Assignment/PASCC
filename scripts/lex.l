@@ -17,7 +17,8 @@ std::string last_line_info;
 void wrap();
 void process_anno();
 void cache_line();
-void print_error(const char *msg);
+void print_syntax_error(const char *msg);
+void print_lex_error(const char *msg);
 
 void to_str();
 void to_str_case_sensitive();
@@ -171,7 +172,7 @@ SUBCATALOG              ".."
                             left_Mbrackets_num--;
                             if(left_Mbrackets_num<0){
                                 left_Mbrackets_num=0;
-                                print_error("expected '['");
+                                print_syntax_error("expected '['");
                             }
                             return yytext[0];
                         }
@@ -180,22 +181,22 @@ SUBCATALOG              ".."
                             left_brackets_num--;
                             if(left_brackets_num<0){
                                 left_brackets_num=0;
-                                print_error("expected '('");
+                                print_syntax_error("expected '('");
                             }
                             return yytext[0];
                         }
 
-('')                              { cache_line(); print_error("illegal character constant"); }
-(''')                             { cache_line(); print_error("illegal character constant"); }
-('\n')                            { cache_line(); print_error("illegal character constant"); }
+('')                              { cache_line(); print_lex_error("illegal character constant"); }
+(''')                             { cache_line(); print_lex_error("illegal character constant"); }
+('\n')                            { cache_line(); print_lex_error("illegal character constant"); }
 
-('[^'\n][^']*(\n)[^']*')          { cache_line(); print_error("illegal string constant"); }
-('[^']*(\n)[^']*[^'\n]')          { cache_line(); print_error("illegal string constant"); }
+('[^'\n][^']*(\n)[^']*')          { cache_line(); print_lex_error("illegal string constant"); }
+('[^']*(\n)[^']*[^'\n]')          { cache_line(); print_lex_error("illegal string constant"); }
               
-(\{[^}]*)                         { cache_line(); print_error("unclosed comment"); }
-('[^']*)                          { cache_line(); print_error("unclosed string constant"); }
+(\{[^}]*)                         { cache_line(); print_lex_error("unclosed comment"); }
+('[^']*)                          { cache_line(); print_lex_error("unclosed string constant"); }
 
-.                                 { cache_line(); print_error("illegal character"); char_count++; }
+.                                 { cache_line(); print_lex_error("illegal character"); char_count++; }
 
 %%
 void wrap()
@@ -227,7 +228,12 @@ void cache_line()
     }
 }
 
-void print_error(const char *msg)
+void print_lex_error(const char *msg)
+{
+    fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s - %s\n", line_count, char_count, msg, yytext);
+}
+
+void print_syntax_error(const char *msg)
 {
     fprintf(stderr,"%d,%d:\033[01;31m \terror\033[0m : %s at '%s'\n", line_count, char_count, msg, yytext);
 }
