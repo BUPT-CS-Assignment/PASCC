@@ -1293,7 +1293,7 @@ variable:
                 if (name!=table_set_queue.top()->tag()){
                     if(!dynamic_cast<FunctionSymbol*>(tmp)->AssertParams()){
                         string param = dynamic_cast<FunctionSymbol*>(tmp)->ParamName();
-                        semantic_error(real_ast,"too many arguments to function '"+name+"' (expected '("+param+")')",line_count,0);
+                        semantic_error(real_ast,"too few arguments to function '"+name+"' (expected '("+param+")')",line_count,0);
                     }else{
                     	name += "()";
                     }
