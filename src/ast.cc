@@ -419,11 +419,11 @@ string VariableListNode::FormatString() {
   string format = "";
   for (int i = 0; i < basic_types.size(); i++) {
     BasicType *type = basic_types[i];
-    string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d"
-                   : type == TYPE_STRINGLIKE               ? "%s"
-                   : type == TYPE_REAL                     ? "%f"
+    string chfmt = (type == TYPE_INT || type == TYPE_BOOL) ? "%d "
+                   : type == TYPE_STRINGLIKE               ? "%s "
+                   : type == TYPE_REAL                     ? "%f "
                    : type == TYPE_CHAR
-                       ? "%c"
+                       ? "%c "
                        : throw std::runtime_error(
                              "ExpressionListNode: FormatString() : error type");
     format += chfmt;
