@@ -68,8 +68,6 @@ def generate_random_value(value_type):
 def generate_function_params(function_name, now_vars, now_consts):
     parameters = functions[function_name][1]
     parameter_num = len(parameters)
-    #print("called! function name is: '" + function_name + "'\n")
-    #print("parameter_num is: " + str(parameter_num) + "\n")
     if parameter_num == 0:
         return ""
     else:
@@ -120,7 +118,6 @@ def generate_function_params(function_name, now_vars, now_consts):
                 elif value_original_type == 1:
                     value = random.choice(now_vars[3])
                     result += value
-        #print("result is: " + result + "\n")
         return result
 
 def generate_if_else_statement(depth, now_vars, now_consts, is_main, is_function):
@@ -154,6 +151,7 @@ def generate_case_statement(depth, now_vars, now_consts, is_main, is_function):
         case_value = generate_random_value(value_type)
         while case_value in already_used:
             case_value = generate_random_value(value_type)
+        already_used[case_value] = True
         file.write("    " + str(case_value) + " : \nbegin\n")
         generate_statements(depth + 1, now_vars, now_consts, is_main, is_function)
         if i == case_num - 1:
@@ -368,7 +366,6 @@ def generate_functions():
         function_name = generate_random_name()
         parameter_num = random.randint(0, 5)
         now_function_name = function_name
-        #print("now_function_name modified, now is " + now_function_name + "\n")
         return_type = random.randint(0, 3)
         now_function_return_type = return_type
         parameters = []
