@@ -107,7 +107,7 @@ program :
         node->append_child($1);
         node->append_child($2);
 
-        if(!error_flag && !semantic_error_flag && !lex_error_flag){
+        if((!error_flag) && (!semantic_error_flag) && (!lex_error_flag)){
             real_ast->set_root(node);
             real_ast->set_valid(true);
         }

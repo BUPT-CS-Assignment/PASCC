@@ -80,7 +80,7 @@ class AST {
 
  private:
   bool valid_ = false;
-  Node *root_;
+  Node *root_ = nullptr;
   PStdLibs libs_;
 };
 
