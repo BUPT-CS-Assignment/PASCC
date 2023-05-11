@@ -16,6 +16,7 @@ std::string last_line_info;     // 当前行的前一个非空行 信息
 int lex_error_flag = 0;         // 标志词法分析过程中是否出现错误
 
 void wrap();
+void process();
 void process_anno();
 void cache_line();
 void print_syntax_error(const char *msg);
@@ -187,17 +188,17 @@ SUBCATALOG              ".."
                             return yytext[0];
                         }
 
-('')                              { cache_line(); print_lex_error("illegal character constant"); }
-(''')                             { cache_line(); print_lex_error("illegal character constant"); }
-('\n')                            { cache_line(); print_lex_error("illegal character constant"); }
+('')                        { cache_line(); print_lex_error("illegal character constant"); }
+(''')                       { cache_line(); print_lex_error("illegal character constant"); }
+('\n')                      { cache_line(); print_lex_error("illegal character constant"); process(); }
 
-('[^'\n][^']*(\n)[^']*')          { cache_line(); print_lex_error("illegal string constant"); }
-('[^']*(\n)[^']*[^'\n]')          { cache_line(); print_lex_error("illegal string constant"); }
+('[^'\n][^']*(\n)[^']*')    { cache_line(); print_lex_error("illegal string constant"); process(); }
+('[^']*(\n)[^']*[^'\n]')    { cache_line(); print_lex_error("illegal string constant"); process(); }
               
-(\{[^}]*)                         { cache_line(); print_lex_error("unclosed comment"); }
-('[^']*)                          { cache_line(); print_lex_error("unclosed string constant"); }
+(\{[^}]*)                   { cache_line(); print_lex_error("unclosed comment"); process(); }
+('[^']*)                    { cache_line(); print_lex_error("unclosed string constant"); process(); }
 
-.                                 { cache_line(); print_lex_error("illegal character"); char_count++; }
+.                           { cache_line(); print_lex_error("illegal character"); char_count++; }
 
 %%
 void wrap()
@@ -210,6 +211,15 @@ void wrap()
     }
     line_count++; 
     char_count = 1;
+}
+
+void process()
+{
+    for(i = 0; i < strlen(yytext); i++)
+    {
+        if(yytext[i] == '\n') wrap();
+        else char_count++;
+    }  
 }
 
 void process_anno()
